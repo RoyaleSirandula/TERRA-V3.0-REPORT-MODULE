@@ -1,0 +1,183 @@
+/* ============================================================
+   TERRA – Animations & Micro-interactions
+   Keyframes and transition utility classes.
+   ============================================================ */
+
+/* ── Entry Animations ───────────────────────────────────────── */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Brand glow pulse for map marker / active elements */
+@keyframes glowPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 6px var(--clr-brand-glow);
+    }
+
+    50% {
+        box-shadow: 0 0 18px var(--clr-brand-glow);
+    }
+}
+
+/* ── Utility Classes ────────────────────────────────────────── */
+.anim-fade-in-up {
+    animation: fadeInUp var(--transition-slow) both;
+}
+
+.anim-fade-in {
+    animation: fadeIn var(--transition-slow) both;
+}
+
+.anim-slide-in {
+    animation: slideInLeft var(--transition-slow) both;
+}
+
+/* Skeleton loader */
+.skeleton {
+    background: linear-gradient(90deg,
+            var(--clr-surface-2) 25%,
+            var(--clr-border) 50%,
+            var(--clr-surface-2) 75%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.4s ease infinite;
+    border-radius: var(--radius-md);
+}
+
+@keyframes skeletonShimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Live pulse dot (Rangers / Alerts) */
+.live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--clr-brand);
+    animation: glowPulse 2s ease-in-out infinite;
+    display: inline-block;
+}
+
+/* Toast notifications */
+.toast-container {
+    position: fixed;
+    bottom: var(--sp-8);
+    right: var(--sp-8);
+    z-index: var(--z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    pointer-events: none;
+}
+
+.toast {
+    background: var(--clr-surface);
+    border: 1px solid var(--clr-border);
+    border-radius: var(--radius-md);
+    padding: var(--sp-4) var(--sp-5);
+    box-shadow: var(--shadow-lg);
+    font-size: var(--text-sm);
+    pointer-events: all;
+    animation: fadeInUp 0.3s both;
+    max-width: 320px;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-3);
+}
+
+.toast--success {
+    border-left: 3px solid var(--clr-brand);
+}
+
+.toast--error {
+    border-left: 3px solid var(--clr-danger);
+}
+
+.toast--warning {
+    border-left: 3px solid var(--clr-warning);
+}
+
+/* Modal */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s both;
+}
+
+.modal {
+    background: var(--clr-surface);
+    border: 1px solid var(--clr-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-8);
+    width: min(560px, 95vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: fadeInUp 0.25s both;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--sp-6);
+}
+
+.modal__title {
+    font-size: var(--text-xl);
+    font-weight: var(--fw-semibold);
+}

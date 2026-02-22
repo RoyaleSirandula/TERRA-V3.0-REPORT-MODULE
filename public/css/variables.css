@@ -1,0 +1,82 @@
+/* ============================================================
+   TERRA – Design Tokens
+   All visual constants live here. Edit once, apply everywhere.
+   ============================================================ */
+
+:root {
+  /* ── Colour Palette ──────────────────────────────────────── */
+  --clr-bg:           #0d1117;   /* Page background          */
+  --clr-surface:      #161b22;   /* Card / panel background  */
+  --clr-surface-2:    #21262d;   /* Nested surface / input   */
+  --clr-border:       #30363d;   /* Subtle dividers          */
+
+  --clr-brand:        #39d353;   /* Terra green (primary)    */
+  --clr-brand-dim:    #1a7a2e;   /* Dimmer brand shade       */
+  --clr-brand-glow:   rgba(57, 211, 83, 0.18);
+
+  --clr-accent:       #58a6ff;   /* Blue accent / links      */
+  --clr-warning:      #d29922;   /* Pending / caution        */
+  --clr-danger:       #f85149;   /* Rejected / error         */
+  --clr-success:      --clr-brand;
+
+  --clr-text:         #e6edf3;   /* Primary body text        */
+  --clr-text-muted:   #8b949e;   /* Secondary / helper text  */
+  --clr-text-inverse: #0d1117;   /* Text on bright surfaces  */
+
+  /* ── Typography ─────────────────────────────────────────── */
+  --font-sans:   'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
+
+  --text-xs:   0.70rem;
+  --text-sm:   0.85rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.35rem;
+  --text-2xl:  1.65rem;
+  --text-3xl:  2rem;
+  --text-hero: 2.8rem;
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold:600;
+  --fw-bold:    700;
+
+  /* ── Spacing ─────────────────────────────────────────────── */
+  --sp-1:   0.25rem;
+  --sp-2:   0.5rem;
+  --sp-3:   0.75rem;
+  --sp-4:   1rem;
+  --sp-5:   1.25rem;
+  --sp-6:   1.5rem;
+  --sp-8:   2rem;
+  --sp-10:  2.5rem;
+  --sp-12:  3rem;
+  --sp-16:  4rem;
+
+  /* ── Shape ───────────────────────────────────────────────── */
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-full:9999px;
+
+  /* ── Shadows ─────────────────────────────────────────────── */
+  --shadow-sm:   0 1px 3px rgba(0,0,0,.4);
+  --shadow-md:   0 4px 16px rgba(0,0,0,.5);
+  --shadow-lg:   0 8px 32px rgba(0,0,0,.6);
+  --shadow-glow: 0 0 20px var(--clr-brand-glow);
+
+  /* ── Transitions ─────────────────────────────────────────── */
+  --transition-fast:   150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow:   400ms ease;
+
+  /* ── Layout ──────────────────────────────────────────────── */
+  --sidebar-w: 240px;
+  --topbar-h:  60px;
+  --content-max: 1100px;
+  --z-sidebar:   100;
+  --z-topbar:    200;
+  --z-modal:     300;
+  --z-toast:     400;
+}
