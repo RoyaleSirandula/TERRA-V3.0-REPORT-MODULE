@@ -5,30 +5,29 @@
 
 const DashboardPage = (() => {
 
-    /* ── Stat Cards Configuration ────────────────────────────── */
-    /* To add a new stat, add an object here. No HTML edits needed. */
-    const STAT_CARDS = [
-        { label: 'Total Reports', value: '—', icon: '📋', meta: 'All time', id: 'stat-total' },
-        { label: 'Pending Validation', value: '—', icon: '⏳', meta: 'Awaiting review', id: 'stat-pending' },
-        { label: 'Validated Today', value: '—', icon: '✅', meta: 'This session', id: 'stat-validated' },
-        { label: 'Species Tracked', value: '—', icon: '🦏', meta: 'Unique species', id: 'stat-species' },
-    ];
+  /* ── Stat Cards Configuration ────────────────────────────── */
+  /* To add a new stat, add an object here. No HTML edits needed. */
+  const STAT_CARDS = [
+    { label: 'Total Reports', value: '—', meta: 'All time', id: 'stat-total' },
+    { label: 'Pending Validation', value: '—', meta: 'Awaiting review', id: 'stat-pending' },
+    { label: 'Validated Today', value: '—', meta: 'This session', id: 'stat-validated' },
+    { label: 'Species Tracked', value: '—', meta: 'Unique species', id: 'stat-species' },
+  ];
 
-    /* ── Internal: build stat cards ──────────────────────────── */
-    function buildStatCards() {
-        return STAT_CARDS.map(card => `
+  /* ── Internal: build stat cards ──────────────────────────── */
+  function buildStatCards() {
+    return STAT_CARDS.map(card => `
       <div class="stat-card anim-fade-in-up" id="${card.id}">
-        <div class="stat-card__icon">${card.icon}</div>
         <div class="stat-card__label">${card.label}</div>
         <div class="stat-card__value skeleton" style="height:2.2rem;width:5rem;"></div>
         <div class="stat-card__meta">${card.meta}</div>
       </div>
     `).join('');
-    }
+  }
 
-    /* ── Internal: build recent reports table (skeleton) ─────── */
-    function buildRecentTableSkeleton() {
-        const rows = Array(5).fill(`
+  /* ── Internal: build recent reports table (skeleton) ─────── */
+  function buildRecentTableSkeleton() {
+    const rows = Array(5).fill(`
       <tr>
         <td><span class="skeleton" style="display:inline-block;width:120px;height:14px;"></span></td>
         <td><span class="skeleton" style="display:inline-block;width:80px;height:14px;"></span></td>
@@ -37,7 +36,7 @@ const DashboardPage = (() => {
       </tr>
     `).join('');
 
-        return `
+    return `
       <div class="card mt-8 anim-fade-in-up" style="animation-delay:0.15s">
         <div class="card__header">
           <div>
@@ -61,11 +60,11 @@ const DashboardPage = (() => {
         </div>
       </div>
     `;
-    }
+  }
 
-    /* ── Internal: build AI confidence summary ───────────────── */
-    function buildConfidencePanel() {
-        return `
+  /* ── Internal: build AI confidence summary ───────────────── */
+  function buildConfidencePanel() {
+    return `
       <div class="card mt-6 anim-fade-in-up" style="animation-delay:0.25s">
         <div class="card__header">
           <div>
@@ -79,11 +78,11 @@ const DashboardPage = (() => {
         </div>
       </div>
     `;
-    }
+  }
 
-    /* ── Public: render ──────────────────────────────────────── */
-    function render(container) {
-        container.innerHTML = `
+  /* ── Public: render ──────────────────────────────────────── */
+  function render(container) {
+    container.innerHTML = `
       <div class="page-header anim-fade-in">
         <h1>Dashboard</h1>
         <p>Welcome back. Here's what's happening across Terra today.</p>
@@ -101,61 +100,61 @@ const DashboardPage = (() => {
       ${buildConfidencePanel()}
     `;
 
-        // Wire up "View All" button
-        container.querySelectorAll('[data-page]').forEach(btn => {
-            btn.addEventListener('click', () => Router.navigate(btn.dataset.page));
-        });
+    // Wire up "View All" button
+    container.querySelectorAll('[data-page]').forEach(btn => {
+      btn.addEventListener('click', () => Router.navigate(btn.dataset.page));
+    });
 
-        // Fetch live data
-        loadStats();
-    }
+    // Fetch live data
+    loadStats();
+  }
 
-    /* ── Internal: load live stat data from API ──────────────── */
-    async function loadStats() {
-        try {
-            const reports = await API.get('/reports?limit=5');
-            populateStats(reports);
-            populateRecentTable(reports);
-        } catch (err) {
-            // Silently degrade — show dashes instead of skeleton
-            STAT_CARDS.forEach(card => {
-                const el = document.getElementById(card.id);
-                if (el) {
-                    const val = el.querySelector('.stat-card__value');
-                    if (val) { val.classList.remove('skeleton'); val.textContent = '—'; }
-                }
-            });
+  /* ── Internal: load live stat data from API ──────────────── */
+  async function loadStats() {
+    try {
+      const reports = await API.get('/reports?limit=5');
+      populateStats(reports);
+      populateRecentTable(reports);
+    } catch (err) {
+      // Silently degrade — show dashes instead of skeleton
+      STAT_CARDS.forEach(card => {
+        const el = document.getElementById(card.id);
+        if (el) {
+          const val = el.querySelector('.stat-card__value');
+          if (val) { val.classList.remove('skeleton'); val.textContent = '—'; }
         }
+      });
+    }
+  }
+
+  /* ── Internal: fill stat card values ────────────────────── */
+  function populateStats(reports) {
+    const total = reports.length;
+    const pending = reports.filter(r => r.validation_status === 'PENDING').length;
+    const validated = reports.filter(r => r.validation_status === 'VALIDATED').length;
+    const species = new Set(reports.map(r => r.species_id).filter(Boolean)).size;
+
+    const values = [total, pending, validated, species];
+    STAT_CARDS.forEach((card, i) => {
+      const el = document.getElementById(card.id);
+      if (el) {
+        const val = el.querySelector('.stat-card__value');
+        if (val) { val.classList.remove('skeleton'); val.style = ''; val.textContent = values[i]; }
+      }
+    });
+  }
+
+  /* ── Internal: fill recent reports table ────────────────── */
+  function populateRecentTable(reports) {
+    const tbody = document.getElementById('recent-tbody');
+    if (!tbody) return;
+
+    if (reports.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--clr-text-muted)">No reports yet.</td></tr>`;
+      return;
     }
 
-    /* ── Internal: fill stat card values ────────────────────── */
-    function populateStats(reports) {
-        const total = reports.length;
-        const pending = reports.filter(r => r.validation_status === 'PENDING').length;
-        const validated = reports.filter(r => r.validation_status === 'VALIDATED').length;
-        const species = new Set(reports.map(r => r.species_id).filter(Boolean)).size;
-
-        const values = [total, pending, validated, species];
-        STAT_CARDS.forEach((card, i) => {
-            const el = document.getElementById(card.id);
-            if (el) {
-                const val = el.querySelector('.stat-card__value');
-                if (val) { val.classList.remove('skeleton'); val.style = ''; val.textContent = values[i]; }
-            }
-        });
-    }
-
-    /* ── Internal: fill recent reports table ────────────────── */
-    function populateRecentTable(reports) {
-        const tbody = document.getElementById('recent-tbody');
-        if (!tbody) return;
-
-        if (reports.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--clr-text-muted)">No reports yet.</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = reports.slice(0, 5).map(r => `
+    tbody.innerHTML = reports.slice(0, 5).map(r => `
       <tr>
         <td>${r.species_name || 'Unknown Species'}</td>
         <td>${r.region_id?.slice(0, 8) || '—'}</td>
@@ -163,7 +162,7 @@ const DashboardPage = (() => {
         <td><span class="badge badge--${(r.validation_status || 'pending').toLowerCase()}">${r.validation_status}</span></td>
       </tr>
     `).join('');
-    }
+  }
 
-    return { render };
+  return { render };
 })();

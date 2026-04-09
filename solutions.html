@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Terra Solutions – Conservation Intelligence as a Service for wildlife NGOs, government authorities, and community conservancies." />
+  <title>Terra – Solutions</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --lime: #c8ff00;
+      --green: #00c003;
+      --dark: #0e191e;
+      --black: #0a0a0a;
+      --panel-bg: #111519;
+      --border: rgba(255, 255, 255, 0.07);
+      --text-dim: rgba(255, 255, 255, 0.38);
+      --text-mid: rgba(255, 255, 255, 0.60);
+      --text-bright: rgba(255, 255, 255, 0.92);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background: var(--black);
+      color: var(--text-bright);
+      overflow: hidden;
+    }
+
+    /* ══════════════════════════════════════
+       SCROLL WRAPPER
+    ══════════════════════════════════════ */
+    .scroll-wrap {
+      height: calc(100vh - 60px);
+      margin-top: 60px;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+    }
+
+    /* ══════════════════════════════════════
+       NAV
+    ══════════════════════════════════════ */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: #0e191e;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      z-index: 1000;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .nav-logo {
+      background: var(--green);
+      color: #000;
+      padding: 5px 16px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    .nav-back {
+      color: var(--text-dim);
+      font-size: 12px;
+      text-decoration: none;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.2s;
+    }
+
+    .nav-back:hover {
+      color: var(--lime);
+    }
+
+    .nav-center {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .nav-pill {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      padding: 5px 14px;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .nav-pill:hover {
+      border-color: var(--lime);
+      color: var(--lime);
+    }
+
+    .nav-pill.primary {
+      background: var(--dark);
+      color: var(--text-bright);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* ══════════════════════════════════════
+       HERO  — opening 100vh block
+    ══════════════════════════════════════ */
+    .hero {
+      height: calc(100vh - 60px);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      scroll-snap-align: start;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-left {
+      background: var(--panel-bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 60px 56px;
+      position: relative;
+      border-right: 1px solid var(--border);
+    }
+
+    /* faint grid overlay */
+    .hero-left::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(200, 255, 0, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200, 255, 0, 0.04) 1px, transparent 1px);
+      background-size: 56px 56px;
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+    }
+
+    .hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(72px, 9vw, 130px);
+      line-height: 0.92;
+      letter-spacing: 2px;
+      color: #fff;
+      margin-bottom: 32px;
+    }
+
+    .hero-title span {
+      color: var(--lime);
+    }
+
+    .hero-tagline {
+      font-size: 13px;
+      color: var(--text-mid);
+      line-height: 1.8;
+      max-width: 380px;
+      letter-spacing: 0.3px;
+    }
+
+    /* Ghost number */
+    .hero-ghost {
+      position: absolute;
+      top: 30px;
+      right: 30px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 200px;
+      color: rgba(255, 255, 255, 0.04);
+      line-height: 1;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .hero-right {
+      position: relative;
+      background-image:
+        linear-gradient(rgba(10, 10, 10, 0.52), rgba(10, 10, 10, 0.52)),
+        url('https://i.pinimg.com/1200x/1c/81/15/1c8115d4d691e2db9a121a3233f02e59.jpg');
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 48px 48px 52px;
+    }
+
+    .hero-right-tag {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--lime);
+      margin-bottom: 14px;
+    }
+
+    .hero-right-heading {
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--text-bright);
+      line-height: 1.5;
+      max-width: 420px;
+      margin-bottom: 36px;
+    }
+
+    .scroll-cue {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .scroll-cue-line {
+      width: 40px;
+      height: 1px;
+      background: var(--text-dim);
+      animation: growLine 2s ease-in-out infinite;
+    }
+
+    @keyframes growLine {
+
+      0%,
+      100% {
+        width: 40px;
+        opacity: 0.4;
+      }
+
+      50% {
+        width: 70px;
+        opacity: 1;
+      }
+    }
+
+    /* section count badges */
+    .hero-badges {
+      position: absolute;
+      top: 40px;
+      right: 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .hero-badge {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+    }
+
+    /* ══════════════════════════════════════
+       MAIN SCROLL LAYOUT
+    ══════════════════════════════════════ */
+    .solutions-layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* ── LEFT SIDEBAR (sticky) ── */
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: calc(100vh - 60px);
+      background: var(--panel-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 56px;
+      overflow: hidden;
+    }
+
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(200, 255, 0, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200, 255, 0, 0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    .sidebar-top-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 48px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 20px 0;
+      border-top: 1px solid var(--border);
+      cursor: pointer;
+      transition: opacity 0.25s;
+      text-decoration: none;
+    }
+
+    .sidebar-item:last-child {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-item-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      flex-shrink: 0;
+      width: 28px;
+      transition: color 0.3s;
+    }
+
+    .sidebar-item-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(28px, 3.5vw, 44px);
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+      line-height: 1;
+      transition: color 0.35s, transform 0.35s;
+      transform-origin: left center;
+    }
+
+    .sidebar-item-bar {
+      position: absolute;
+      left: 0;
+      width: 3px;
+      height: 0;
+      background: var(--lime);
+      transition: height 0.35s ease;
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* Active state */
+    .sidebar-item.is-active .sidebar-item-title {
+      color: #fff;
+    }
+
+    .sidebar-item.is-active .sidebar-item-num {
+      color: var(--lime);
+    }
+
+    /* Ghost section number on sidebar */
+    .sidebar-ghost {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 180px;
+      color: rgba(255, 255, 255, 0.03);
+      line-height: 1;
+      user-select: none;
+      pointer-events: none;
+      transition: opacity 0.5s;
+    }
+
+    /* ── RIGHT CONTENT PANE ── */
+    .content-pane {
+      background: var(--black);
+    }
+
+    .content-section {
+      min-height: calc(100vh - 60px);
+      padding: 80px 72px 80px 64px;
+      scroll-snap-align: start;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    /* Running accent line on left edge of each section */
+    .content-section::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 15%;
+      bottom: 15%;
+      width: 2px;
+      background: linear-gradient(to bottom, transparent, var(--lime), transparent);
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    .content-section.in-view::before {
+      opacity: 1;
+    }
+
+    /* Section header */
+    .cs-header {
+      margin-bottom: 52px;
+    }
+
+    .cs-tag {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--lime);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .cs-tag::before {
+      content: '';
+      display: inline-block;
+      width: 18px;
+      height: 1px;
+      background: var(--lime);
+    }
+
+    .cs-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 6vw, 80px);
+      letter-spacing: 2px;
+      color: #fff;
+      line-height: 0.95;
+    }
+
+    /* Divider under title */
+    .cs-divider {
+      width: 60px;
+      height: 2px;
+      background: var(--lime);
+      margin-top: 20px;
+      transition: width 0.6s ease;
+    }
+
+    .content-section.in-view .cs-divider {
+      width: 120px;
+    }
+
+    /* ── TARGET CUSTOMERS section ── */
+    .customers-grid {
+      display: grid;
+      grid-template-columns: repeat(1, 1fr);
+      gap: 2px;
+    }
+
+    .customer-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      padding: 28px 28px 32px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .customer-card:hover {
+      border-color: rgba(200, 255, 0, 0.3);
+      transform: translateY(-3px);
+    }
+
+    .customer-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--lime), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .customer-card:hover::after {
+      opacity: 1;
+    }
+
+
+
+    .cc-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-bright);
+      margin-bottom: 10px;
+    }
+
+    .cc-desc {
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text-mid);
+    }
+
+    /* wide card spanning full row */
+    .customer-card.full {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .cc-need {
+      margin-top: 16px;
+    }
+
+    .cc-need-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--lime);
+      margin-bottom: 8px;
+    }
+
+    .cc-need-text {
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text-mid);
+    }
+
+    /* ── SOLUTION section ── */
+    .solution-intro {
+      font-size: 16px;
+      line-height: 1.9;
+      color: var(--text-mid);
+      max-width: 640px;
+      margin-bottom: 48px;
+    }
+
+    .solution-comparison {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      margin-bottom: 44px;
+    }
+
+    .comp-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      padding: 24px 22px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .comp-card.terra {
+      border-color: rgba(200, 255, 0, 0.35);
+      background: rgba(200, 255, 0, 0.03);
+    }
+
+    .comp-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 14px;
+    }
+
+    .comp-card.terra .comp-label {
+      color: var(--lime);
+    }
+
+    .comp-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin-bottom: 12px;
+    }
+
+    .comp-card.terra .comp-name {
+      color: #fff;
+    }
+
+    .comp-desc {
+      font-size: 12.5px;
+      line-height: 1.75;
+      color: var(--text-mid);
+    }
+
+    .comp-verdict {
+      margin-top: 14px;
+      font-size: 11px;
+      color: #e04545;
+      letter-spacing: 0.5px;
+    }
+
+    .comp-card.terra .comp-verdict {
+      color: var(--lime);
+    }
+
+    .solution-pillars {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .pillar {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      padding: 28px 28px 32px;
+      position: relative;
+      transition: border-color 0.3s;
+    }
+
+    .pillar:hover {
+      border-color: rgba(200, 255, 0, 0.25);
+    }
+
+    .pillar-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 48px;
+      font-weight: 600;
+      color: rgba(200, 255, 0, 0.12);
+      line-height: 1;
+      margin-bottom: 16px;
+      letter-spacing: 2px;
+    }
+
+    .pillar-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text-bright);
+      margin-bottom: 12px;
+    }
+
+    .pillar-desc {
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text-mid);
+    }
+
+    .pillar-tag {
+      display: inline-block;
+      margin-top: 16px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--lime);
+      border: 1px solid rgba(200, 255, 0, 0.25);
+      padding: 3px 10px;
+    }
+
+    /* ── PROTOTYPE EVOLUTION section ── */
+    .timeline {
+      position: relative;
+      padding-left: 48px;
+    }
+
+    /* Vertical stem */
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--lime), rgba(200, 255, 0, 0.08));
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 48px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    /* Dot on stem */
+    .timeline-dot {
+      position: absolute;
+      left: -52px;
+      top: 6px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--lime);
+      background: var(--black);
+    }
+
+    .timeline-item.active-phase .timeline-dot {
+      background: var(--lime);
+      box-shadow: 0 0 14px rgba(200, 255, 0, 0.6);
+    }
+
+    .ti-phase {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--lime);
+      margin-bottom: 10px;
+    }
+
+    .ti-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin-bottom: 14px;
+    }
+
+    .ti-desc {
+      font-size: 14px;
+      line-height: 1.85;
+      color: var(--text-mid);
+      max-width: 580px;
+    }
+
+    .ti-quote {
+      margin-top: 20px;
+      padding: 16px 20px;
+      border-left: 2px solid rgba(200, 255, 0, 0.35);
+      background: rgba(200, 255, 0, 0.03);
+      font-size: 13px;
+      font-style: italic;
+      color: var(--text-mid);
+      line-height: 1.7;
+    }
+
+    .ti-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .ti-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .ti-status.done .ti-status-dot {
+      background: #aaa;
+    }
+
+    .ti-status.done {
+      color: #666;
+    }
+
+    .ti-status.current .ti-status-dot {
+      background: var(--lime);
+      box-shadow: 0 0 8px rgba(200, 255, 0, 0.6);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .ti-status.current {
+      color: var(--lime);
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.6;
+        transform: scale(0.8);
+      }
+    }
+
+    .ti-status.next .ti-status-dot {
+      background: #333;
+      border: 1px solid #555;
+    }
+
+    .ti-status.next {
+      color: #555;
+    }
+
+    /* ══════════════════════════════════════
+       FOOTER CTA
+    ══════════════════════════════════════ */
+    .footer-cta {
+      scroll-snap-align: start;
+      background: var(--panel-bg);
+      border-top: 1px solid var(--border);
+      padding: 80px 72px 80px 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+    }
+
+    .footer-cta-left {
+      max-width: 520px;
+    }
+
+    .footer-cta-tag {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--lime);
+      margin-bottom: 16px;
+    }
+
+    .footer-cta-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 52px;
+      letter-spacing: 2px;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .footer-cta-sub {
+      margin-top: 14px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text-mid);
+    }
+
+    .footer-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 28px;
+      background: var(--lime);
+      color: #000;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 14px 28px;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .footer-cta-btn:hover {
+      background: #d9ff00;
+      transform: translateX(4px);
+    }
+
+    .footer-cta-right {
+      flex-shrink: 0;
+    }
+
+    .cta-stat-block {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .cta-stat {
+      text-align: right;
+    }
+
+    .cta-stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 52px;
+      letter-spacing: 2px;
+      color: var(--lime);
+      line-height: 1;
+    }
+
+    .cta-stat-label {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    /* Global footer bar */
+    .global-footer {
+      background: #080808;
+      border-top: 1px solid var(--border);
+      padding: 16px 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+
+    /* ══════════════════════════════════════
+       ENTRY ANIMATIONS
+    ══════════════════════════════════════ */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .fade-up:nth-child(2) {
+      transition-delay: 0.1s;
+    }
+
+    .fade-up:nth-child(3) {
+      transition-delay: 0.2s;
+    }
+
+    .fade-up:nth-child(4) {
+      transition-delay: 0.3s;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ══ NAV ══ -->
+  <nav id="main-nav">
+    <div class="nav-left">
+      <a href="home.html" class="nav-logo" id="nav-logo">TERRA</a>
+      <a href="home.html" class="nav-back" id="nav-back-link">← All Modules</a>
+    </div>
+    <div class="nav-center" id="nav-center-label">Solutions &nbsp;·&nbsp; Conservation Intelligence</div>
+    <div class="nav-right">
+      <a href="home.html" class="nav-pill" id="nav-home-btn">Home</a>
+      <a href="home.html" class="nav-pill primary" id="nav-get-started">Get Started →</a>
+    </div>
+  </nav>
+
+  <div class="scroll-wrap" id="scrollWrap">
+
+    <!-- ══ HERO ══ -->
+    <section class="hero" id="hero-section" aria-label="Solutions Hero">
+      <div class="hero-left">
+        <div class="hero-ghost">/></div>
+        <p class="hero-eyebrow">Terra · Conservation Intelligence as a Service</p>
+        <h1 class="hero-title">Our<br><span>Solutions</span></h1>
+        <p class="hero-tagline">
+          A real-time tactical intelligence platform that shifts conservation operations
+          from reactive blind patrols to proactive, mathematically-driven field strategy.
+        </p>
+      </div>
+
+      <div class="hero-right" aria-hidden="true">
+        <div class="hero-badges">
+          <div class="hero-badge">Target Customers</div>
+          <div class="hero-badge">Solution</div>
+          <div class="hero-badge">Prototype Evolution</div>
+        </div>
+        <p class="hero-right-tag">Scroll to Explore</p>
+        <p class="hero-right-heading">
+          Discover how Terra serves NGOs, government wildlife authorities, and
+          local conservancies with actionable intelligence — not just data.
+        </p>
+        <div class="scroll-cue">
+          <div class="scroll-cue-line"></div>
+          <span>Scroll</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SOLUTIONS LAYOUT ══ -->
+    <div class="solutions-layout" id="solutions-layout">
+
+      <!-- LEFT STICKY SIDEBAR -->
+      <aside class="sidebar" id="solutions-sidebar" aria-label="Section navigation">
+        <p class="sidebar-top-label">Terra&nbsp;·&nbsp;Solutions Overview</p>
+        <nav class="sidebar-nav" aria-label="Scroll sections">
+          <a class="sidebar-item is-active" href="#sec-customers" id="link-customers"
+            aria-label="Target Customers section">
+            <span class="sidebar-item-num">01</span>
+            <span class="sidebar-item-title">Target<br>Customers</span>
+          </a>
+          <a class="sidebar-item" href="#sec-solution" id="link-solution" aria-label="Solution section">
+            <span class="sidebar-item-num">02</span>
+            <span class="sidebar-item-title">Solution</span>
+          </a>
+          <a class="sidebar-item" href="#sec-evolution" id="link-evolution" aria-label="Prototype Evolution section">
+            <span class="sidebar-item-num">03</span>
+            <span class="sidebar-item-title">Prototype<br>Evolution</span>
+          </a>
+        </nav>
+        <div class="sidebar-ghost" id="sidebar-ghost-num">01</div>
+      </aside>
+
+      <!-- RIGHT SCROLLABLE CONTENT -->
+      <main class="content-pane" id="content-pane">
+
+        <!-- ══ SECTION 1: TARGET CUSTOMERS ══ -->
+        <section class="content-section" id="sec-customers" aria-labelledby="customers-title">
+          <header class="cs-header">
+            <p class="cs-tag">Section 01</p>
+            <h2 class="cs-title" id="customers-title">Target<br>Customers</h2>
+            <div class="cs-divider"></div>
+          </header>
+
+          <div class="customers-grid">
+            <!-- Card: Conservation NGOs -->
+            <div class="customer-card fade-up" id="card-ngos">
+
+              <div class="cc-title">Large-Scale Conservation NGOs</div>
+              <div class="cc-desc">
+                Organisations like Save the Elephants managing vast protected territories that span
+                hundreds of thousands of hectares, operating with limited ranger coverage and disconnected
+                field data systems.
+              </div>
+              <div class="cc-need">
+                <div class="cc-need-label">Core Need</div>
+                <div class="cc-need-text">
+                  Real-time, AI-verified intelligence to eliminate fragmented data silos and
+                  enable non-technical teams to make instant, evidence-backed field decisions.
+                </div>
+              </div>
+            </div>
+
+            <!-- Card: Government Wildlife Authorities -->
+            <div class="customer-card fade-up" id="card-govt">
+
+              <div class="cc-title">Government Wildlife Authorities</div>
+              <div class="cc-desc">
+                National parks agencies and wildlife services responsible for enforcing conservation
+                law across protected areas — often burdened by analog VHF radio systems and
+                spreadsheet-era reporting workflows.
+              </div>
+              <div class="cc-need">
+                <div class="cc-need-label">Core Need</div>
+                <div class="cc-need-text">
+                  Drastically reduced response times to poaching and HWC incidents, replacing hours
+                  of latency with seconds-level situational awareness.
+                </div>
+              </div>
+            </div>
+
+            <!-- Full-width card: Community Conservancies -->
+            <div class="customer-card full fade-up" id="card-community">
+              <div>
+
+                <div class="cc-title">Local &amp; Private Conservancies</div>
+                <div class="cc-desc">
+                  Community conservancies and private reserves managing human-wildlife boundaries —
+                  where livestock losses, crop destruction, and human casualties from preventable
+                  conflict erode community support for conservation.
+                </div>
+              </div>
+              <div class="cc-need">
+                <div class="cc-need-label">Why Terra Matters Here</div>
+                <div class="cc-need-text">
+                  Terra converts communities from passive bystanders into active intelligence contributors.
+                  Farmers and village leaders submit real-time sightings, receive early-warning alerts,
+                  and gain a direct stake in conservation outcomes — dramatically reducing conflict
+                  and building long-term buy-in.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ SECTION 2: SOLUTION ══ -->
+        <section class="content-section" id="sec-solution" aria-labelledby="solution-title">
+          <header class="cs-header">
+            <p class="cs-tag">Section 02</p>
+            <h2 class="cs-title" id="solution-title">Solution</h2>
+            <div class="cs-divider"></div>
+          </header>
+
+          <p class="solution-intro fade-up" id="solution-intro-text">
+            Terra provides <strong style="color:#fff;">Conservation Intelligence as a Service</strong> —
+            combining dedicated organisational deployment with a real-time tactical platform accessible
+            to both conservation bodies and the communities living alongside wildlife.
+          </p>
+
+          <!-- Comparison table -->
+          <div class="solution-comparison fade-up" id="solution-comparison-grid">
+            <div class="comp-card" id="comp-earthranger">
+              <div class="comp-label">Competitor</div>
+              <div class="comp-name">EarthRanger</div>
+              <div class="comp-desc">
+                A passive data aggregator that collects telemetry and sightings but requires
+                extensive GIS expertise to extract actionable insight from the data.
+              </div>
+              <div class="comp-verdict">⚠ Reactive — insight buried in data</div>
+            </div>
+            <div class="comp-card" id="comp-vhf">
+              <div class="comp-label">Legacy System</div>
+              <div class="comp-name">Analog VHF Radio</div>
+              <div class="comp-desc">
+                Traditional radio-based field reporting that suffers from critical response
+                latency, data fragmentation, and zero spatial analytical capability.
+              </div>
+              <div class="comp-verdict">⚠ Hours of latency, zero structure</div>
+            </div>
+            <div class="comp-card terra" id="comp-terra">
+              <div class="comp-label">Terra</div>
+              <div class="comp-name">Terra Platform</div>
+              <div class="comp-desc">
+                Proactive intelligence processing embedded directly into frontline operations —
+                automatic confidence scoring, on-the-fly spatial analytics, and community-level
+                early-warning alerts.
+              </div>
+              <div class="comp-verdict">✦ Seconds-level response · Zero GIS expertise needed</div>
+            </div>
+          </div>
+
+          <!-- Two pillars -->
+          <div class="solution-pillars">
+            <div class="pillar fade-up" id="pillar-orgs">
+              <div class="pillar-num">01</div>
+              <div class="pillar-title">For Conservation Organisations</div>
+              <div class="pillar-desc">
+                Our <strong style="color:#fff;">Intelligent Confidence Engine</strong> automatically
+                scores incoming threats and enables non-technical teams to trigger on-the-fly
+                spatial analytics. Response time drops from hours to seconds. Reserves shift
+                from blind patrols to predictive, mathematically-driven operations.
+              </div>
+              <span class="pillar-tag">Rangers · NGOs · Authorities</span>
+            </div>
+            <div class="pillar fade-up" id="pillar-communities">
+              <div class="pillar-num">02</div>
+              <div class="pillar-title">For Local Communities</div>
+              <div class="pillar-desc">
+                Farmers and village leaders submit wildlife sightings directly through Terra's
+                simplified field interface, receiving early-warning alerts when high-confidence
+                animal movement is detected near settlements or farmland — reducing crop destruction,
+                livestock losses, and human casualties from preventable conflict.
+              </div>
+              <span class="pillar-tag">Communities · Farmers · Leaders</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ SECTION 3: PROTOTYPE EVOLUTION ══ -->
+        <section class="content-section" id="sec-evolution" aria-labelledby="evolution-title">
+          <header class="cs-header">
+            <p class="cs-tag">Section 03</p>
+            <h2 class="cs-title" id="evolution-title">Prototype<br>Evolution</h2>
+            <div class="cs-divider"></div>
+          </header>
+
+          <div class="timeline" id="evolution-timeline">
+
+            <!-- Early Prototype -->
+            <div class="timeline-item fade-up" id="timeline-early">
+              <div class="timeline-dot"></div>
+              <div class="ti-phase">Early Prototype</div>
+              <div class="ti-title">Data Dashboard &amp; API Aggregation</div>
+              <div class="ti-desc">
+                Terra's early prototype was a simple dashboard aggregating wildlife sightings and
+                migration data from open APIs. The focus was proving that data could be collected,
+                structured, and displayed in a unified geographic interface.
+              </div>
+              <div class="ti-status done">
+                <div class="ti-status-dot"></div>
+                Completed
+              </div>
+            </div>
+
+            <!-- Version 1 -->
+            <div class="timeline-item fade-up" id="timeline-v1">
+              <div class="timeline-dot"></div>
+              <div class="ti-phase">Version 1</div>
+              <div class="ti-title">Data Visualisation &amp; Pattern Mapping</div>
+              <div class="ti-desc">
+                Version 1 tested data visualisation and pattern mapping but lacked real-time
+                relevance and field usability. The key lesson: visual insight without immediate
+                tactical action has limited value on the ground.
+              </div>
+              <div class="ti-quote" id="v1-ranger-quote">
+                "It looks good, but how does this help me respond on the ground?" — Field Ranger
+              </div>
+              <div class="ti-status done">
+                <div class="ti-status-dot"></div>
+                Completed
+              </div>
+            </div>
+
+            <!-- Version 2 (Current) -->
+            <div class="timeline-item active-phase fade-up" id="timeline-v2">
+              <div class="timeline-dot"></div>
+              <div class="ti-phase">Version 2 — Current</div>
+              <div class="ti-title">Structured Reporting, Alert Layers &amp; Confidence Scoring</div>
+              <div class="ti-desc">
+                Version 2 introduced structured reporting and alert layers, integrating direct
+                ranger inputs alongside basic anomaly detection. This drastically improved
+                situational awareness and made outputs immediately actionable for field decisions.
+                We are now refining real-time alerts, confidence scoring, and site analysis tools.
+              </div>
+              <div class="ti-status current">
+                <div class="ti-status-dot"></div>
+                In Active Development
+              </div>
+            </div>
+
+            <!-- Next Phase -->
+            <div class="timeline-item fade-up" id="timeline-next">
+              <div class="timeline-dot"></div>
+              <div class="ti-phase">Next Phase</div>
+              <div class="ti-title">Live Operations Validation</div>
+              <div class="ti-desc">
+                We still need to validate long-term platform adoption with rangers and local
+                authorities during live operations in bandwidth-constrained conservation environments —
+                the true proving ground for sustainable field deployment.
+              </div>
+              <div class="ti-status next">
+                <div class="ti-status-dot"></div>
+                Planned — Field Trials
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ══ FOOTER CTA ══ -->
+        <div class="footer-cta" id="footer-cta-block">
+          <div class="footer-cta-left">
+            <p class="footer-cta-tag">Explore Terra</p>
+            <h2 class="footer-cta-title">Ready to Explore the Platform?</h2>
+            <p class="footer-cta-sub">
+              Dive into Terra's four intelligence modules — from field poaching reports to
+              species population analytics — all built on the same real-time confidence engine.
+            </p>
+            <a href="home.html" class="footer-cta-btn" id="footer-explore-btn">Explore Modules →</a>
+          </div>
+          <div class="footer-cta-right">
+            <div class="cta-stat-block">
+              <div class="cta-stat" id="stat-incidents">
+                <div class="cta-stat-num">38K+</div>
+                <div class="cta-stat-label">Incidents Logged</div>
+              </div>
+              <div class="cta-stat" id="stat-latency">
+                <div class="cta-stat-num">–96%</div>
+                <div class="cta-stat-label">Response Latency</div>
+              </div>
+              <div class="cta-stat" id="stat-modules">
+                <div class="cta-stat-num">4</div>
+                <div class="cta-stat-label">Intelligence Modules</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="global-footer" id="global-footer">
+          <span>© Terra 2025</span>
+          <span>conservation.intelligence@terra.app</span>
+          <span>Sub-Saharan Africa · Field Operations</span>
+        </footer>
+
+      </main>
+    </div>
+  </div> <!-- .scroll-wrap -->
+
+  <script>
+    // ── Scroll-spy: highlight active sidebar item ──
+    const sections = [
+      document.getElementById('sec-customers'),
+      document.getElementById('sec-solution'),
+      document.getElementById('sec-evolution'),
+    ];
+
+    const sidebarLinks = [
+      document.getElementById('link-customers'),
+      document.getElementById('link-solution'),
+      document.getElementById('link-evolution'),
+    ];
+
+    const ghostNum = document.getElementById('sidebar-ghost-num');
+    const ghostLabels = ['01', '02', '03'];
+    const scrollWrap = document.getElementById('scrollWrap');
+
+    function updateActive(index) {
+      sidebarLinks.forEach((link, i) => {
+        link.classList.toggle('is-active', i === index);
+      });
+      ghostNum.textContent = ghostLabels[index] || '01';
+    }
+
+    // IntersectionObserver for sidebar spy
+    const spyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const idx = sections.indexOf(entry.target);
+          if (idx !== -1) updateActive(idx);
+        }
+      });
+    }, {
+      root: scrollWrap,
+      threshold: 0.35,
+    });
+
+    sections.forEach(sec => spyObserver.observe(sec));
+
+    // ── IntersectionObserver for fade-up + section accent line ──
+    const fadeObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { root: scrollWrap, threshold: 0.12 });
+
+    document.querySelectorAll('.fade-up').forEach(el => fadeObserver.observe(el));
+
+    const accentObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        entry.target.classList.toggle('in-view', entry.isIntersecting);
+      });
+    }, { root: scrollWrap, threshold: 0.2 });
+
+    document.querySelectorAll('.content-section').forEach(sec => accentObserver.observe(sec));
+
+    // ── Smooth scroll for sidebar nav links ──
+    sidebarLinks.forEach((link, i) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Scroll into view on the container or element
+        sections[i].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  </script>
+
+</body>
+
+</html>

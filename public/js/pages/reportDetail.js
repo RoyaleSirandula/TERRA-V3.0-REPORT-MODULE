@@ -41,7 +41,7 @@ const ReportDetailPage = (() => {
     {
       id: 'raw',
       label: 'Raw Data',
-      defaultWidgets: [],  // Special: renders JSON viewer
+      defaultWidgets: [],  // Special: renders JSON viewer.
     },
   ];
 
@@ -66,14 +66,14 @@ const ReportDetailPage = (() => {
             <span class="badge badge--${status.toLowerCase()}">${status}</span>
             <span class="badge badge--${tierClasses[tier]}">Tier ${tier} – ${tierLabels[tier]}</span>
             <span class="report-detail-header__meta-item">
-              🗓 ${new Date(report.created_at).toLocaleDateString()}
+              ${new Date(report.created_at).toLocaleDateString()}
             </span>
             <span class="report-detail-header__meta-item">
-              📍 ${Number(report.latitude || 0).toFixed(4)},
+              ${Number(report.latitude || 0).toFixed(4)},
                  ${Number(report.longitude || 0).toFixed(4)}
             </span>
             <span class="report-detail-header__meta-item">
-              🎯 ${Number(report.ai_confidence_score || 0).toFixed(1)}% AI confidence
+              ${Number(report.ai_confidence_score || 0).toFixed(1)}% AI confidence
             </span>
           </div>
 
@@ -95,7 +95,7 @@ const ReportDetailPage = (() => {
                     animation-delay: ${0.3 + (idx * 0.1)}s;
                   ">
                     <span style="font-size:var(--text-xs); color:var(--clr-text)">
-                      <span style="color:var(--clr-brand); margin-right:var(--sp-2)">✔</span> ${item.label}
+                      <span style="color:var(--clr-brand); margin-right:var(--sp-2)">+</span> ${item.label}
                     </span>
                     <span style="font-family:var(--font-mono); font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--clr-brand)">
                       ${item.boost}
@@ -131,19 +131,22 @@ const ReportDetailPage = (() => {
         <div class="report-detail-header__actions">
           ${canValidate ? `
             <button class="btn btn--primary" id="btn-validate-report" data-id="${report.report_id}">
-              ✔ Validate
+              VALIDATE
             </button>
             <button class="btn btn--danger" id="btn-reject-report" data-id="${report.report_id}">
-              ✘ Reject
+              REJECT
             </button>
           ` : ''}
           ${Auth.hasPermission('export_data') ? `
             <button class="btn btn--secondary" id="btn-export-report">
-              ⬇ Export
+              EXPORT
             </button>
           ` : ''}
+          <button class="btn btn--secondary" id="btn-analyse-site" title="Open this location in Site Analysis">
+            ANALYSE SITE
+          </button>
           <button class="btn btn--secondary" id="btn-back-reports">
-            ← Back
+            BACK
           </button>
         </div>
       </div>
@@ -175,7 +178,7 @@ const ReportDetailPage = (() => {
     container.innerHTML = `
       <div class="card" style="grid-column: 1 / -1; width: 100%;">
         <div class="card__header">
-          <div class="card__title">📄 Raw Report Data</div>
+          <div class="card__title">Raw Report Data</div>
           <div class="card__subtitle">Sanitized JSON (geometry field excluded)</div>
         </div>
         <pre style="
@@ -223,9 +226,17 @@ const ReportDetailPage = (() => {
       Router.navigate('my-reports');
     });
 
+    document.getElementById('btn-analyse-site')?.addEventListener('click', () => {
+      Router.navigate('site-analysis', {
+        lat: report.latitude,
+        lng: report.longitude,
+        reportId: report.report_id
+      });
+    });
+
     document.getElementById('btn-validate-report')?.addEventListener('click', () => {
       Modal.open({
-        title: '✔ Validate Report',
+        title: 'Validate Report',
         body: `<p>Confirm validation of this report? This will feed data into the AI model.</p>`,
         confirmLabel: 'Validate',
         onConfirm: async () => {
@@ -242,7 +253,7 @@ const ReportDetailPage = (() => {
 
     document.getElementById('btn-reject-report')?.addEventListener('click', () => {
       Modal.open({
-        title: '✘ Reject Report',
+        title: 'Reject Report',
         body: `<p>Are you sure you want to reject this report? This action will be logged.</p>`,
         confirmLabel: 'Reject',
         onConfirm: async () => {

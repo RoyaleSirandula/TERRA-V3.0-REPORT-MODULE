@@ -1,0 +1,155 @@
+const express = require('express');
+const router = express.Router();
+const { pool } = require('../config/db');
+const { authenticate } = require('../middleware/auth');
+
+// Apply minimal auth to all analysis queries (could refine with granular permissions later)
+router.use(authenticate);
+
+/* ── 1. Advanced Sighting Filter (Spatiotemporal) ────────────── */
+router.get('/sightings', async (req, res) => {
+    try {
+        const { start_date, end_date, species_id, north, south, east, west } = req.query;
+        let query = `
+            SELECT report_id, species_id,
+                   validation_status, sensitivity_tier,
+                   sighting_timestamp as created_at,
+                   ST_X(geom) as longitude, ST_Y(geom) as latitude
+            FROM reports
+            WHERE validation_status = 'VALIDATED'
+        `;
+        const values = [];
+        let paramIdx = 1;
+
+        if (start_date && end_date) {
+            query += ` AND sighting_timestamp BETWEEN $${paramIdx++} AND $${paramIdx++}`;
+            values.push(start_date, end_date);
+        }
+
+        if (species_id) {
+            query += ` AND species_id = $${paramIdx++}`;
+            values.push(species_id);
+        }
+
+        if (north && south && east && west) {
+            query += ` AND ST_Within(geom, ST_MakeEnvelope($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, 4326))`;
+            values.push(west, south, east, north);
+        }
+
+        query += ` ORDER BY sighting_timestamp DESC LIMIT 1000`; // safeguard limit
+
+        const result = await pool.query(query, values);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('[API] Enhanced sightings error:', err);
+        res.status(500).json({ error: 'Failed to fetch analytical sightings' });
+    }
+});
+
+/* ── 2. User Map Objects (CRUD for User Scoped Drawings) ────── */
+router.get('/user-objects', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT object_id, type, ST_AsGeoJSON(geometry)::json as geometry, meta_data, created_at
+            FROM user_map_objects
+            WHERE user_id = $1
+            ORDER BY created_at ASC
+        `, [req.user.user_id]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('[API] Fetch objects error:', err);
+        res.status(500).json({ error: 'Failed to fetch user objects' });
+    }
+});
+
+router.post('/user-objects', async (req, res) => {
+    try {
+        const { type, geometry, meta_data } = req.body;
+        // geometry is coming as a GeoJSON string/object
+        const geomStr = typeof geometry === 'string' ? geometry : JSON.stringify(geometry);
+
+        const result = await pool.query(`
+            INSERT INTO user_map_objects (user_id, type, geometry, meta_data)
+            VALUES ($1, $2, ST_GeomFromGeoJSON($3), $4)
+            RETURNING object_id, type, ST_AsGeoJSON(geometry)::json as geometry, meta_data
+        `, [req.user.user_id, type, geomStr, meta_data || {}]);
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('[API] Create object error:', err);
+        res.status(500).json({ error: 'Failed to save map object' });
+    }
+});
+
+router.delete('/user-objects/:id', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM user_map_objects WHERE object_id = $1 AND user_id = $2 RETURNING object_id',
+            [req.params.id, req.user.user_id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Object not found' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[API] Delete object error:', err);
+        res.status(500).json({ error: 'Failed to delete object' });
+    }
+});
+
+/* ── 3. NDVI Zonal Statistics (MOCK) ───────────────────────── */
+router.post('/ndvi-zonal', async (req, res) => {
+    // Phase 1: Mocked response. In production, this would use ST_SummaryStatsAgg(ST_Clip(raster, geometry))
+    try {
+        const { polygon } = req.body;
+
+        // Pretend calculation taking 600ms
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        // Generate semi-random realistic looking data
+        const mean = 0.4 + (Math.random() * 0.3);
+        const min = mean - 0.2;
+        const max = mean + 0.2;
+
+        // Mock time-series trend
+        const trend = Array.from({ length: 6 }).map((_, i) => ({
+            date: new Date(Date.now() - (5 - i) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            value: mean + (Math.random() * 0.1 - 0.05)
+        }));
+
+        res.json({
+            mean: mean.toFixed(3),
+            min: min.toFixed(3),
+            max: max.toFixed(3),
+            change_30_days: (Math.random() * 0.05 - 0.02).toFixed(3),
+            trend: trend
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to compute NDVI stats' });
+    }
+});
+
+/* ── 4. Buffer & Proximity Analysis ────────────────────────── */
+router.post('/buffer', async (req, res) => {
+    try {
+        const { geometry, radius_meters } = req.body;
+        const geomStr = typeof geometry === 'string' ? geometry : JSON.stringify(geometry);
+
+        // Find sightings within this buffer
+        // Note: Using ST_Buffer with geography is generally better for meters, 
+        // but we'll use a rough degree approximation or ST_DWithin for performance.
+
+        const query = `
+            SELECT COUNT(*) as total_sightings, 
+                   json_agg(json_build_object('species_id', species_id, 'date', sighting_timestamp)) as sightings_list
+            FROM reports
+            WHERE validation_status = 'VALIDATED'
+            AND ST_DWithin(geom::geography, ST_GeomFromGeoJSON($1)::geography, $2)
+        `;
+
+        const result = await pool.query(query, [geomStr, radius_meters || 5000]);
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('[API] Buffer error:', err);
+        res.status(500).json({ error: 'Buffer analysis failed' });
+    }
+});
+
+module.exports = router;

@@ -37,7 +37,7 @@ const SubmitReportPage = (() => {
         <!-- Section: Species & Description -->
         <div class="card mb-6">
           <div class="card__header">
-            <div class="card__title">🦁 Sighting Details</div>
+            <div class="card__title">Sighting Details</div>
           </div>
 
           <div class="grid-2" style="gap:var(--sp-5)">
@@ -82,7 +82,7 @@ const SubmitReportPage = (() => {
         <!-- Section: Location / Map Pin -->
         <div class="card mb-6">
           <div class="card__header">
-            <div class="card__title">📍 Pin Location</div>
+            <div class="card__title">Pin Location</div>
             <div class="card__subtitle">Search for a place or click the map</div>
           </div>
 
@@ -97,7 +97,7 @@ const SubmitReportPage = (() => {
             
             <!-- Floating controls on map -->
             <button type="button" class="btn btn--secondary btn--sm btn--floating" id="btn-use-gps" title="Use my current location">
-              📡 Use My Location
+              USE GPS
             </button>
           </div>
 
@@ -124,12 +124,12 @@ const SubmitReportPage = (() => {
         <!-- Section: Media Upload -->
         <div class="card mb-6">
           <div class="card__header">
-            <div class="card__title">📷 Attach Evidence</div>
+            <div class="card__title">Attach Evidence</div>
             <div class="card__subtitle">Photo or audio (max 10 MB)</div>
           </div>
 
           <div class="drop-zone" id="drop-zone">
-            <div class="drop-zone__icon">📁</div>
+            <div class="drop-zone__icon">::</div>
             <p class="drop-zone__text">Drag & drop a photo/audio, or <strong>browse files</strong></p>
             <input type="file" id="media-input" name="media" accept="image/*,audio/*" style="display:none" />
           </div>
@@ -141,7 +141,7 @@ const SubmitReportPage = (() => {
         <!-- Form Actions -->
         <div style="display:flex;gap:var(--sp-4);justify-content:flex-end;">
           <button type="button" class="btn btn--secondary" id="btn-cancel-report">Cancel</button>
-          <button type="submit" class="btn btn--primary" id="btn-submit-report">🚀 Submit Report</button>
+          <button type="submit" class="btn btn--primary" id="btn-submit-report">SUBMIT REPORT</button>
         </div>
 
         <p id="form-error-msg" class="form-error" style="text-align:right;margin-top:var(--sp-2);display:none"></p>
@@ -376,7 +376,7 @@ const SubmitReportPage = (() => {
       Toast.error(err.message || 'Submission failed.');
     } finally {
       btn.disabled = false;
-      btn.textContent = '🚀 Submit Report';
+      btn.textContent = 'SUBMIT REPORT';
     }
   }
 

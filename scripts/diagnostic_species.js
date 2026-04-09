@@ -10,7 +10,7 @@ async function diagnostic() {
         const report = await Report.create({
             user_id,
             species_id: null,
-            species_name_custom: 'DIAGNOSTIC_CHEETAH',
+            species_name_custom: 'DIAGNOSTIC_CHEETAH_VALUE_TEST',
             latitude: -1.304,
             longitude: 36.824,
             sighting_timestamp: new Date(),

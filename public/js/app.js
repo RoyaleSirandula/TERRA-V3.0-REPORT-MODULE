@@ -25,6 +25,7 @@ const Router = (() => {
         },
         'validated': { title: 'Validated Reports', render: (c) => ReportsPage.render(c, 'validated') },
         'report-detail': { title: 'Report Detail', render: (c, opts) => ReportDetailPage.render(c, opts || {}) },
+        'site-analysis': { title: 'Site Analysis', render: (c, opts) => SiteAnalysisPage.render(c, opts || {}) },
         // Sidebar nav targets
         'map': { title: 'Live Map', render: (c) => renderPlaceholder(c, '🗺️', 'Live Geospatial Map', 'Leaflet.js integration coming soon.') },
         'analytics': { title: 'Analytics', render: (c) => renderPlaceholder(c, '📊', 'Analytics & Trends', 'Chart.js visualisations coming soon.') },
@@ -66,9 +67,14 @@ const Router = (() => {
         container.scrollTo(0, 0);
 
         // Update URL hash (for bookmarking / back-button)
-        const newHash = (pageId === 'report-detail' && options.reportId)
-            ? `#/${pageId}/${options.reportId}`
-            : `#/${pageId}`;
+        let hashSuffix = '';
+        if (pageId === 'report-detail' && options.reportId) {
+            hashSuffix = `/${options.reportId}`;
+        } else if (pageId === 'site-analysis' && options.lat != null && options.lng != null) {
+            hashSuffix = `/${options.lat}/${options.lng}${options.reportId ? `/${options.reportId}` : ''}`;
+        }
+
+        const newHash = `#/${pageId}${hashSuffix}`;
 
         if (window.location.hash !== newHash) {
             console.log(`[ROUTER] Updating hash to ${newHash}`);
@@ -107,6 +113,10 @@ const Router = (() => {
         const options = {};
         if (pageId === 'report-detail' && segments[1]) {
             options.reportId = segments[1];
+        } else if (pageId === 'site-analysis' && segments[1] && segments[2]) {
+            options.lat = segments[1];
+            options.lng = segments[2];
+            if (segments[3]) options.reportId = segments[3];
         }
 
         navigate(pageId, options);
@@ -129,6 +139,10 @@ const Router = (() => {
         const options = {};
         if (pageId === 'report-detail' && segments[1]) {
             options.reportId = segments[1];
+        } else if (pageId === 'site-analysis' && segments[1] && segments[2]) {
+            options.lat = segments[1];
+            options.lng = segments[2];
+            if (segments[3]) options.reportId = segments[3];
         }
 
         // Update active nav state without full page re-render

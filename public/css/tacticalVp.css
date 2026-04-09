@@ -1,0 +1,73 @@
+/* ============================================================ 
+   TERRA – Tactical UI Extensions
+   High-contrast components for GIS & Site Analysis views.
+   ============================================================ */
+
+.table-tactical {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table-tactical thead th {
+    background: var(--clr-surface) !important;
+    border-bottom: 2px solid var(--clr-brand) !important;
+    color: var(--clr-brand) !important;
+    font-family: var(--font-mono) !important;
+    font-weight: var(--fw-bold) !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase;
+}
+
+.table-tactical tbody tr:hover {
+    background: var(--clr-brand-glow) !important;
+}
+
+.table-tactical td {
+    border-top: 1px solid var(--clr-border) !important;
+}
+
+.tech-header {
+    font-family: var(--font-mono) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.15em !important;
+    border-left: 4px solid var(--clr-brand);
+    padding-left: var(--sp-4);
+}
+
+.tech-label {
+    font-weight: var(--fw-bold) !important;
+    letter-spacing: 0.02em !important;
+}
+
+.tech-meta {
+    font-family: var(--font-mono) !important;
+    color: var(--clr-text-muted) !important;
+    font-size: var(--text-xs) !important;
+    text-transform: uppercase;
+}
+
+.tech-value {
+    font-family: var(--font-mono) !important;
+    font-weight: var(--fw-bold) !important;
+}
+
+.tech-value--brand {
+    color: var(--clr-brand) !important;
+}
+
+.tech-input {
+    font-family: var(--font-mono) !important;
+    border: 1.5px solid var(--clr-border) !important;
+}
+
+.tech-btn {
+    font-family: var(--font-mono) !important;
+    text-transform: uppercase;
+    font-weight: var(--fw-bold) !important;
+    letter-spacing: 0.05em !important;
+}
+
+.table-tactical-controls {
+    border-radius: 0 !important;
+    border-left: 4px solid var(--clr-brand) !important;
+}

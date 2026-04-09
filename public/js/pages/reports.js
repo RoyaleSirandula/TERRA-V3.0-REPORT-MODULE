@@ -7,27 +7,30 @@
 const ReportsPage = (() => {
 
   /* ── Column Configuration ────────────────────────────────── */
-  /* Edit columns centrally here. No HTML edits needed. */
-  const COLUMNS = ['Species', 'Region', 'Date', 'Confidence', 'Status', 'Actions'];
+  const COLUMNS = ['Species', 'Region', 'Tier', 'Date', 'Confidence', 'Status', 'Actions'];
 
   /* ── Internal: column cells for a single row ─────────────── */
   function buildRowCells(report, mode) {
     const date = new Date(report.created_at).toLocaleDateString();
     const status = report.validation_status || 'PENDING';
+    const tier = report.sensitivity_tier || 1;
+
+    // Technical Confidence Score
     const score = report.ai_confidence_score != null
-      ? `<span style="font-family:var(--font-mono);color:var(--clr-brand);">${Number(report.ai_confidence_score).toFixed(1)}%</span>`
+      ? `<span class="tech-value tech-value--brand">${Number(report.ai_confidence_score).toFixed(1)}%</span>`
       : '—';
 
     // Show validate/reject buttons only in pending mode
     const actions = (mode === 'pending' && Auth.hasPermission('validate_report'))
-      ? `<button class="btn btn--primary btn--sm" data-action="validate" data-id="${report.report_id}">✔ Validate</button>
-         <button class="btn btn--danger btn--sm" data-action="reject"   data-id="${report.report_id}">✘ Reject</button>`
+      ? `<button class="btn btn--primary btn--sm" data-action="validate" data-id="${report.report_id}">VALIDATE</button>
+         <button class="btn btn--danger btn--sm" data-action="reject"   data-id="${report.report_id}">REJECT</button>`
       : `<button class="btn btn--secondary btn--sm" data-action="view" data-id="${report.report_id}">View</button>`;
 
     return `
-      <td>${report.species_name || 'Unknown Species'}</td>
-      <td class="text-muted" style="font-family:var(--font-mono);font-size:var(--text-xs);">${report.region_id?.slice(0, 8) || '—'}</td>
-      <td class="text-muted">${date}</td>
+      <td class="tech-label">${report.species_name || 'Unknown Species'}</td>
+      <td class="tech-meta">${report.region_id || 'Global Sector'}</td>
+      <td><span class="badge badge--tier-${tier}">Tier ${tier}</span></td>
+      <td class="tech-meta">${date}</td>
       <td>${score}</td>
       <td><span class="badge badge--${status.toLowerCase()}">${status}</span></td>
       <td style="display:flex;gap:var(--sp-2);">${actions}</td>
@@ -44,16 +47,16 @@ const ReportsPage = (() => {
 
     return `
       <div class="page-header anim-fade-in">
-        <h1>${titles[mode] || 'Reports'}</h1>
+        <h1 class="tech-header">${titles[mode] || 'Reports'}</h1>
         <p>${subtitles[mode] || ''}</p>
       </div>
 
       <!-- Filters Bar -->
-      <div class="card mb-6 anim-fade-in-up">
+      <div class="card mb-6 anim-fade-in-up table-tactical-controls">
         <div style="display:flex;gap:var(--sp-4);align-items:center;flex-wrap:wrap;">
           <div class="form-group" style="flex:1;min-width:180px;">
             <label class="form-label" for="filter-status">Filter by Status</label>
-            <select class="form-select" id="filter-status">
+            <select class="form-select tech-input" id="filter-status">
               <option value="">All</option>
               <option value="PENDING">Pending</option>
               <option value="VALIDATED">Validated</option>
@@ -62,17 +65,17 @@ const ReportsPage = (() => {
           </div>
           <div class="form-group" style="flex:1;min-width:180px;">
             <label class="form-label" for="filter-search">Search Species</label>
-            <input class="form-input" id="filter-search" type="text" placeholder="e.g. Lion, Elephant…" />
+            <input class="form-input tech-input" id="filter-search" type="text" placeholder="e.g. Lion, Elephant…" />
           </div>
-          <button class="btn btn--secondary btn--sm" id="btn-refresh-reports" style="margin-top:auto;">
-            🔄 Refresh
+          <button class="btn btn--secondary btn--sm tech-btn" id="btn-refresh-reports" style="margin-top:auto;">
+            REFRESH
           </button>
         </div>
       </div>
 
       <!-- Reports Table -->
-      <div class="table-wrap anim-fade-in-up" style="animation-delay:0.1s">
-        <table class="data-table" id="reports-table">
+      <div class="table-wrap anim-fade-in-up" style="animation-delay:0.1s; border: 2px solid var(--clr-border);">
+        <table class="data-table table-tactical" id="reports-table">
           <thead><tr>${colHeaders}</tr></thead>
           <tbody id="reports-tbody">${skeleton}</tbody>
         </table>
@@ -129,7 +132,7 @@ const ReportsPage = (() => {
           Modal.open({
             title: `${action === 'validate' ? 'Validate' : 'Reject'} Report`,
             body: `<p>Are you sure you want to <strong>${action}</strong> this report?</p>`,
-            confirmLabel: action === 'validate' ? '✔ Validate' : '✘ Reject',
+            confirmLabel: action === 'validate' ? 'VALIDATE' : 'REJECT',
             onConfirm: async () => {
               try {
                 await API.patch(`/reports/${id}/validate`, { status });

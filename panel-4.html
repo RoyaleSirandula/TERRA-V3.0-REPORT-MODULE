@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Terra Species Intelligence – Biodiversity Loss & Wildlife Population Analytics" />
+  <title>Terra – Species Intelligence & Biodiversity</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Open Sans', sans-serif;
+    }
+
+    /* ── FIXED NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      z-index: 999;
+      border-bottom: 1px solid #222;
+    }
+
+    .nav-back {
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 13px;
+      text-decoration: none;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.2s;
+    }
+
+    .nav-back:hover {
+      color: #00c003;
+    }
+
+    .nav-logo {
+      background: #00c003;
+      color: black;
+      padding: 5px 16px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      font-size: 14px;
+    }
+
+    .nav-center {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .nav-dots {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .nav-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .nav-dot.active {
+      background: #00c003;
+    }
+
+    /* ── SCROLL CONTAINER ── */
+    .scroll-wrap {
+      height: calc(100vh - 60px);
+      margin-top: 60px;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+    }
+
+    .scroll-wrap::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* ───────────────────────────────── */
+    /*  SECTION 1 — HERO                 */
+    /* ───────────────────────────────── */
+    .s-hero {
+      height: calc(100vh - 60px);
+      scroll-snap-align: start;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero-upper {
+      flex: 0 0 60%;
+      background-image: url("assets/card_evidence.png");
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Cool cyan-blue grid: scientific, precise */
+    .hero-upper::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(0, 180, 216, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 180, 216, 0.07) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    .hero-upper::after {
+      content: '04';
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 220px;
+      color: rgba(255, 255, 255, 0.07);
+      position: absolute;
+      top: 20px;
+      right: 40px;
+      line-height: 1;
+      letter-spacing: 4px;
+      user-select: none;
+    }
+
+    .hero-upper-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0,10,20,0.3) 0%, rgba(0,15,30,0.72) 100%);
+    }
+
+    .hero-lower {
+      flex: 1;
+      background: #efefed;
+      display: flex;
+      align-items: flex-end;
+      padding: 36px 48px 40px;
+      position: relative;
+    }
+
+    .hero-title-block {
+      flex: 1;
+    }
+
+    .hero-eyebrow {
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 14px;
+    }
+
+    .hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(56px, 8vw, 126px);
+      line-height: 0.9;
+      color: #111;
+      letter-spacing: 2px;
+    }
+
+    .hero-info {
+      width: 500px;
+      padding-left: 18px;
+      flex-shrink: 0;
+    }
+
+    .hero-dot {
+      width: 20px;
+      height: 20px;
+      background: #d9ff00;
+      border-radius: 50%;
+      margin-bottom: 16px;
+      box-shadow: 0 0 12px rgba(217, 255, 0, 0.6);
+    }
+
+    .hero-desc {
+      font-size: 18px;
+      line-height: 1.85;
+      color: #666;
+    }
+
+    .hero-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 30px;
+      border-top: 1px solid #303030;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      font-size: 11px;
+      color: #aaa;
+    }
+
+    .hero-footer a {
+      color: #888;
+      text-decoration: none;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-footer a:hover {
+      color: #111;
+    }
+
+    /* ───────────────────────────────── */
+    /*  SECTION 2 — STATS               */
+    /* ───────────────────────────────── */
+    .s-stats {
+      height: calc(100vh - 60px);
+      scroll-snap-align: start;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      padding: 0 48px;
+      overflow: hidden;
+    }
+
+    .stats-topnav {
+      height: 52px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #bbb;
+      flex-shrink: 0;
+    }
+
+    .stats-topnav .t-active { color: #111; }
+
+    .stats-topnav .t-active-bar {
+      position: relative;
+      padding-bottom: 4px;
+    }
+
+    .stats-topnav .t-active-bar::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #d9ff00;
+    }
+
+    .stats-topnav .t-pagenum {
+      margin-left: auto;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      color: #e0e0e0;
+      letter-spacing: 3px;
+    }
+
+    .stats-intro-label {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #7aaa00;
+      margin: 28px 0 20px;
+      flex-shrink: 0;
+    }
+
+    .stats-body {
+      display: flex;
+      gap: 56px;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .stats-nums {
+      flex: 0 0 46%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-row {
+      padding: 22px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .stat-row:first-child { padding-top: 0; }
+
+    .stat-num {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', monospace;
+      font-size: clamp(70px, 10vw, 140px);
+      line-height: 0.88;
+      color: #111;
+      letter-spacing: 3px;
+    }
+
+    .stat-lbl {
+      font-size: 18px;
+      color: #777;
+      margin-top: 9px;
+      max-width: 360px;
+      line-height: 1.5;
+    }
+
+    .stats-text {
+      flex: 1;
+      display: flex;
+      gap: 36px;
+      padding-top: 2px;
+      overflow: hidden;
+    }
+
+    .stats-col {
+      flex: 1;
+      font-size: 15px;
+      line-height: 1.5;
+      color: #555;
+      overflow: hidden;
+    }
+
+    .stats-footnote {
+      font-size: 10px;
+      color: #ccc;
+      padding: 12px 0;
+      border-top: 1px solid #f0f0f0;
+      flex-shrink: 0;
+    }
+
+    /* ───────────────────────────────── */
+    /*  SECTION 3 — FLEX CARDS          */
+    /* ───────────────────────────────── */
+    .s-cards {
+      height: calc(100vh - 60px);
+      scroll-snap-align: start;
+      background: #f5f5f3;
+      display: flex;
+      flex-direction: column;
+      padding: 48px 48px 44px;
+    }
+
+    .cards-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 28px;
+      flex-shrink: 0;
+    }
+
+    .cards-tag {
+      font-family: 'Lexend Deca', sans-serif;
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .cards-heading {
+      font-family: 'Lexend Deca', sans-serif;
+      font-size: clamp(16px, 2vw, 26px);
+      font-weight: 300;
+      color: #111;
+      line-height: 1.35;
+      max-width: 520px;
+    }
+
+    .cards-arrows {
+      display: flex;
+      gap: 10px;
+    }
+
+    .c-arrow {
+      width: 42px;
+      height: 42px;
+      border: 1px solid #ddd;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 17px;
+      transition: background 0.2s, color 0.2s;
+      border-radius: 2px;
+    }
+
+    .c-arrow:hover {
+      background: #111;
+      color: white;
+    }
+
+    .cards-row {
+      display: flex;
+      gap: 5px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .card {
+      flex: 0.55;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      transition: flex 0.52s cubic-bezier(0.4, 0, 0.2, 1);
+      background: #1e2a1e;
+    }
+
+    .card.c-active { flex: 3; }
+
+    .card-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      transition: transform 0.5s ease;
+    }
+
+    .card:hover .card-bg { transform: scale(1.04); }
+
+    .card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top,
+          rgba(0, 0, 0, 0.88) 0%,
+          rgba(0, 0, 0, 0.25) 55%,
+          transparent 100%);
+    }
+
+    .card-body {
+      position: absolute;
+      bottom: 26px;
+      left: 26px;
+      right: 26px;
+      color: white;
+    }
+
+    .card-icon {
+      font-size: 16px;
+      margin-bottom: 8px;
+      opacity: 0.75;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      margin-bottom: 4px;
+    }
+
+    .card-desc {
+      font-size: 11.5px;
+      line-height: 1.7;
+      color: rgba(255, 255, 255, 0.65);
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.5s ease, opacity 0.45s ease;
+    }
+
+    .card.c-active .card-desc {
+      max-height: 80px;
+      opacity: 1;
+    }
+
+    /* Vertical label for collapsed cards */
+    .card-vlabel {
+      position: absolute;
+      bottom: 26px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-90deg);
+      white-space: nowrap;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.4);
+      opacity: 1;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .card.c-active .card-vlabel { opacity: 0; }
+
+    /* ───────────────────────────────── */
+    /*  SECTIONS 4 & 5 — BENTO GRIDS   */
+    /* ───────────────────────────────── */
+    .s-bento {
+      height: calc(100vh - 60px);
+      scroll-snap-align: start;
+      background: #000000;
+      display: flex;
+      padding: 24px 0px;
+    }
+
+    .bento-container {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 600px 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .bento-left {
+      grid-row: 1 / -1;
+      background: #0f0f0f;
+      border-radius: 2px;
+      padding: 20px 40px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bento-left-2 {
+      grid-row: 1 / -1;
+      background-image: url("assets/card_geo_reporting.png");
+      background-size: cover;
+      background-position: center;
+      border-radius: 2px;
+      padding: 20px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .bento-left-2::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0,10,20,0.55) 0%, rgba(0,0,0,0.80) 100%);
+      border-radius: 2px;
+    }
+
+    .bento-left-2 > * {
+      position: relative;
+      z-index: 2;
+    }
+
+    .bento-left-subtitle {
+      font-size: 20px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #777;
+      margin-bottom: 12px;
+    }
+
+    .bento-left-2-subtitle-2 {
+      font-size: 20px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #616161;
+      margin-bottom: 12px;
+    }
+
+    .bento-left h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 100px;
+      letter-spacing: 1px;
+      line-height: 1.1;
+      margin-bottom: 40px;
+      color: #fff;
+    }
+
+    .bento-left-2 h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 100px;
+      letter-spacing: 1px;
+      line-height: 1.1;
+      margin-bottom: 40px;
+      color: #000000;
+    }
+
+    .bento-tab {
+      background: #1c1c1c;
+      border-radius: 1px;
+      padding: 20px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bento-tab-title {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 4px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .bento-tab-sub {
+      font-size: 11px;
+      color: #373737;
+      position: relative;
+      z-index: 2;
+    }
+
+    .bento-tab-sub-2 {
+      font-size: 11px;
+      color: #c4c4c4;
+      position: relative;
+      z-index: 2;
+    }
+
+    .bento-tab.active-yellow::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(200, 255, 0, 0.849);
+      z-index: 1;
+    }
+
+    .bento-tab.active-yellow .bento-tab-title {
+      color: #000000;
+    }
+
+    .bento-tab.active-blue::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.923);
+      z-index: 1;
+    }
+
+    .bento-tab.active-blue .bento-tab-title {
+      color: #00aaff;
+    }
+
+    .bento-top-right {
+      background: rgb(0, 0, 0);
+      border-radius: 2px;
+      padding: 32px 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      position: relative;
+    }
+
+    .bento-bottom-right {
+      background: #000000;
+      border-radius: 2px;
+      padding: 32px 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      position: relative;
+    }
+
+    .bento-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bento-badge {
+      width: 50px;
+      height: 50px;
+      border: 1px solid #c3ff00;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #555;
+    }
+
+    .bento-heading {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #ffffff;
+      line-height: 1.4;
+    }
+
+    .bento-text {
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: #666;
+    }
+
+    .bento-arrow {
+      position: absolute;
+      bottom: 20px;
+      right: 24px;
+      font-size: 100px;
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── FIXED NAV ── -->
+  <nav>
+    <div style="display:flex;align-items:center;gap:20px;">
+      <div class="nav-logo">TERRA</div>
+      <a href="home.html" class="nav-back">← All Issues</a>
+    </div>
+    <div class="nav-center">Species Intelligence &nbsp;·&nbsp; Biodiversity Loss</div>
+    <div class="nav-dots">
+      <div class="nav-dot active" id="dot-0" title="Overview" onclick="goTo(0)"></div>
+      <div class="nav-dot" id="dot-1" title="Statistics" onclick="goTo(1)"></div>
+      <div class="nav-dot" id="dot-2" title="How Terra Responds" onclick="goTo(2)"></div>
+      <div class="nav-dot" id="dot-3" title="The Crisis" onclick="goTo(3)"></div>
+      <div class="nav-dot" id="dot-4" title="Intelligence Lifecycle" onclick="goTo(4)"></div>
+    </div>
+  </nav>
+
+  <!-- ── SCROLL WRAPPER ── -->
+  <div class="scroll-wrap" id="scrollWrap">
+
+    <!-- ══ SECTION 1: HERO ══ -->
+    <section class="s-hero" id="sec-0">
+      <div class="hero-upper">
+        <div class="hero-upper-overlay"></div>
+      </div>
+      <div class="hero-lower">
+        <div class="hero-title-block">
+          <p class="hero-eyebrow">Terra · Field Intelligence Module 04</p>
+          <h1 class="hero-title">Species Intelligence<br>& Biodiversity</h1>
+        </div>
+        <div class="hero-info">
+          <div class="hero-dot"></div>
+          <p class="hero-desc">
+            Terra aggregates species sighting records, camera trap identifications,
+            and collared-animal telemetry into a single verified intelligence layer —
+            giving researchers, rangers, and policymakers a continuously updated,
+            data-driven picture of population health across every monitored species
+            in a reserve.
+          </p>
+        </div>
+        <div class="hero-footer">
+          <span>© Terra 2025</span>
+          <span>intelligence@terra.app</span>
+          <span>Species tracking across 14 biomes</span>
+          <a href="#sec-1">Scroll for data ↓</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 2: STATS ══ -->
+    <section class="s-stats" id="sec-1">
+
+      <div class="stats-topnav">
+        <span class="t-active t-active-bar">Intro</span>
+        <span>Targets</span>
+        <span>Tracking</span>
+        <span>Impact</span>
+        <span>Approach</span>
+        <span class="t-pagenum">04</span>
+      </div>
+
+      <div class="stats-intro-label">Introduction</div>
+
+      <div class="stats-body">
+        <div class="stats-nums">
+          <div class="stat-row">
+            <div class="stat-num">1M+</div>
+            <div class="stat-lbl">plant and animal species currently threatened with extinction — the largest mass die-off since the dinosaurs</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-num">68%</div>
+            <div class="stat-lbl">average decline in monitored vertebrate populations between 1970 and 2018, per WWF Living Planet Report</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-num">83%</div>
+            <div class="stat-lbl">of freshwater species populations have collapsed — the most severe biodiversity contraction of any habitat type</div>
+          </div>
+        </div>
+
+        <div class="stats-text">
+          <div class="stats-col">
+            <p>Species population decline is the defining ecological crisis of this century. Unlike deforestation or fire damage,
+              it is largely invisible — occurring gradually across vast landscapes in the form of reduced breeding frequency,
+              range contraction, and genetic isolation. By the time a collapse becomes visible to conventional monitoring,
+              the recovery intervention window has often already closed.</p>
+          </div>
+          <div class="stats-col">
+            <p>Terra's Species Intelligence module aggregates and cross-validates sighting data from multiple field sources —
+              ranger-logged GPS observations, AI-processed camera trap identifications, satellite-linked collar telemetry,
+              and community-reported encounters — into a unified species record. Population trend models, confidence-scored
+              sighting databases, and genetic diversity flags give conservationists the earliest possible warning when a
+              species in their reserve enters a trajectory toward local extinction.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-footnote">
+        * Population figures sourced from IUCN Red List, WWF Living Planet Report 2022, and IPBES Global Assessment. Terra species data cross-validated with field records.
+      </div>
+    </section>
+
+    <!-- ══ SECTION 3: FLEX CARDS ══ -->
+    <section class="s-cards" id="sec-2">
+
+      <div class="cards-header">
+        <div>
+          <span class="cards-tag">• How Terra Responds</span>
+          <h2 class="cards-heading">Four pillars of species intelligence<br>for biodiversity conservation</h2>
+        </div>
+        <div class="cards-arrows">
+          <div class="c-arrow" id="prev-btn">←</div>
+          <div class="c-arrow" id="next-btn">→</div>
+        </div>
+      </div>
+
+      <div class="cards-row" id="cardsRow">
+
+        <div class="card c-active" id="c0" onclick="activateCard(0)">
+          <div class="card-bg" style="background-image:url('assets/card_evidence.png'); background-color:#001a24;"></div>
+          <div class="card-overlay"></div>
+          <div class="card-body">
+            <div class="card-icon">📷</div>
+            <div class="card-title">AI Camera Trap Identification</div>
+            <div class="card-desc">Camera trap images are processed by Terra's computer vision layer to automatically
+              identify species, count individuals, and log sightings to the correct species profile — without requiring
+              manual review for the vast majority of captures. Rare or ambiguous identifications are flagged for
+              expert validation.</div>
+          </div>
+          <div class="card-vlabel">Camera AI</div>
+        </div>
+
+        <div class="card" id="c1" onclick="activateCard(1)">
+          <div class="card-bg" style="background-image:url('assets/card_geo_reporting.png'); background-color:#001020;"></div>
+          <div class="card-overlay"></div>
+          <div class="card-body">
+            <div class="card-icon">📡</div>
+            <div class="card-title">Collar Telemetry Integration</div>
+            <div class="card-desc">GPS collar data from tagged individuals is ingested directly into Terra's
+              mapping layer — displaying real-time animal positions, historical movement paths, territory range
+              estimates, and proximity alerts when collared animals approach reserve boundaries or community zones.</div>
+          </div>
+          <div class="card-vlabel">Collar Data</div>
+        </div>
+
+        <div class="card" id="c2" onclick="activateCard(2)">
+          <div class="card-bg" style="background-image:url('assets/card_hotspot.png'); background-color:#00101a;"></div>
+          <div class="card-overlay"></div>
+          <div class="card-body">
+            <div class="card-icon">📈</div>
+            <div class="card-title">Population Trend Modelling</div>
+            <div class="card-desc">Verified sighting records are aggregated into species-specific population
+              trend models — flagging statistically significant declines in encounter rates, range contraction
+              signals, and breeding season anomalies. Early warning indicators are surfaced to reserve analysts
+              before a population enters critical status.</div>
+          </div>
+          <div class="card-vlabel">Trend Model</div>
+        </div>
+
+        <div class="card" id="c3" onclick="activateCard(3)">
+          <div class="card-bg" style="background-image:url('assets/card_alert.png'); background-color:#001018;"></div>
+          <div class="card-overlay"></div>
+          <div class="card-body">
+            <div class="card-icon">🧬</div>
+            <div class="card-title">Genetic Diversity & HWI Flags</div>
+            <div class="card-desc">Spatial density analytics identify populations exhibiting range isolation
+              indicators — flagging communities at risk of inbreeding. Human-Wildlife Interaction events are
+              automatically overlaid against species movement maps to identify escalating HWC flashpoints
+              before they become lethal for animals or people.</div>
+          </div>
+          <div class="card-vlabel">Diversity + HWI</div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══ SECTION 4: THE DATA BEHIND THE CRISIS ══ -->
+    <section class="s-bento" id="sec-3">
+      <div class="bento-container">
+
+        <div class="bento-left">
+          <div class="bento-left-subtitle">The Crisis</div>
+          <h2>Invisible<br>Collapse</h2>
+
+          <div class="bento-tab active-yellow">
+            <div class="bento-tab-title">Fragmented Data, Missing Picture</div>
+            <div class="bento-tab-sub">Siloed records, no population view</div>
+          </div>
+          <div class="bento-tab">
+            <div class="bento-tab-title">Validation Gaps & Alert Fatigue</div>
+            <div class="bento-tab-sub-2">Unscored sightings undermine decisions</div>
+          </div>
+        </div>
+
+        <div class="bento-top-right">
+          <div class="bento-item">
+            <div class="bento-badge">01</div>
+            <div class="bento-heading">Sighting Data Is Fatally Fragmented</div>
+            <div class="bento-text">
+              Ranger sighting logs, camera trap databases, NGO research records, and
+              university field study data are almost never held in a unified system.
+              A single lion pride may be observed by four separate entities within
+              the same reserve, with no mechanism to cross-reference the data — making
+              any population estimate structurally unreliable from the outset.
+            </div>
+          </div>
+          <div class="bento-item">
+            <div class="bento-badge">02</div>
+            <div class="bento-heading">Unvalidated Records Drive Bad Decisions</div>
+            <div class="bento-text">
+              Without a confidence scoring system, all sightings are treated equally.
+              An experienced ecologist's GPS-verified observation carries the same
+              evidential weight as an unverified community report. In aggregate, this
+              creates population estimates with massive uncertainty bands — making
+              intervention decisions politically and scientifically defensible only
+              on paper.
+            </div>
+          </div>
+          <div class="bento-arrow">↗</div>
+        </div>
+
+        <div class="bento-bottom-right">
+          <div class="bento-item">
+            <div class="bento-badge">03</div>
+            <div class="bento-heading">Collar Data Is Underutilised</div>
+            <div class="bento-text">
+              GPS collar programmes in large terrestrial species represent enormous
+              financial investment — yet in the majority of reserves, collar telemetry
+              feeds into standalone proprietary platforms that have no integration with
+              patrol operations, incident management, or HWC early warning systems.
+              The data exists but cannot be acted upon operationally.
+            </div>
+          </div>
+          <div class="bento-item">
+            <div class="bento-badge">04</div>
+            <div class="bento-heading">Research Inaccessibility</div>
+            <div class="bento-text">
+              Decades of ecological field research remain locked in institutional
+              databases, inaccessible to the rangers and wardens who need it most.
+              When a student researcher completes a multi-year HWI study in Amboseli,
+              no mechanism exists to push those findings back into the operational
+              intelligence layer of the ecosystem managers responsible for the same
+              animals years later.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══ SECTION 5: THE INTELLIGENCE LIFECYCLE ══ -->
+    <section class="s-bento" id="sec-4">
+      <div class="bento-container">
+
+        <div class="bento-left-2">
+          <div class="bento-left-2-subtitle-2">How it Works</div>
+          <h2>The Species<br>Record</h2>
+
+          <div class="bento-tab active-yellow">
+            <div class="bento-tab-title">Data Collection & Scoring</div>
+            <div class="bento-tab-sub">Multi-source, confidence-graded</div>
+          </div>
+          <div class="bento-tab">
+            <div class="bento-tab-title">Analysis & Research Output</div>
+            <div class="bento-tab-sub-2">From field data to published insight</div>
+          </div>
+        </div>
+
+        <div class="bento-top-right">
+          <div class="bento-item">
+            <div class="bento-badge">1</div>
+            <div class="bento-heading">Multi-Source Sighting Ingestion</div>
+            <div class="bento-text">
+              Ranger field observations, community sighting reports, camera trap AI
+              detections, and collar telemetry pings are all ingested into a unified
+              species record. Each data point is tagged with its source type, reporter
+              ID, GPS coordinates, and timestamp — forming a complete, auditable
+              sighting history per individual species and population cluster.
+            </div>
+          </div>
+          <div class="bento-item">
+            <div class="bento-badge">2</div>
+            <div class="bento-heading">Confidence Engine Scoring</div>
+            <div class="bento-text">
+              Terra's Confidence Engine assigns a validity score to every sighting
+              based on reporter track record, corroborating evidence, proximity to
+              known range, and cross-reference with recent collar data. High-confidence
+              sightings immediately update the live species map. Low-confidence reports
+              are queued for expert analyst review before inclusion in trend models.
+            </div>
+          </div>
+          <div class="bento-arrow">↗</div>
+        </div>
+
+        <div class="bento-bottom-right">
+          <div class="bento-item">
+            <div class="bento-badge">3</div>
+            <div class="bento-heading">Population Intelligence & HWI Alerts</div>
+            <div class="bento-text">
+              Validated sightings feed directly into population trend analytics.
+              Declining encounter rates, narrowing range data, and breeding anomalies
+              trigger automated conservation alerts to wardens. Simultaneously, species
+              movement proximity to community boundaries triggers HWI early warnings —
+              allowing preventive intervention before a conflict event occurs.
+            </div>
+          </div>
+          <div class="bento-item">
+            <div class="bento-badge">4</div>
+            <div class="bento-heading">Research & Case Study Export</div>
+            <div class="bento-text">
+              Anonymised, aggregated species records are accessible to registered
+              university researchers and ecology students through a read-only case study
+              interface. Multi-year population snapshots, biome health indices, and
+              HWI interaction maps become the foundation for published research —
+              feeding scientific knowledge back into the conservation ecosystem that
+              generated it.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div><!-- end scroll-wrap -->
+
+  <script>
+    /* ── Scroll-snap section tracking → update nav dots ── */
+    const wrap = document.getElementById('scrollWrap');
+    const sections = [
+      document.getElementById('sec-0'),
+      document.getElementById('sec-1'),
+      document.getElementById('sec-2'),
+      document.getElementById('sec-3'),
+      document.getElementById('sec-4'),
+    ];
+    const dots = [
+      document.getElementById('dot-0'),
+      document.getElementById('dot-1'),
+      document.getElementById('dot-2'),
+      document.getElementById('dot-3'),
+      document.getElementById('dot-4'),
+    ];
+
+    function setActiveDot(idx) {
+      dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const idx = sections.indexOf(e.target);
+          if (idx !== -1) setActiveDot(idx);
+        }
+      });
+    }, { root: wrap, threshold: 0.5 });
+
+    sections.forEach(s => observer.observe(s));
+
+    function goTo(idx) {
+      sections[idx].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    /* ── Expanding card logic ── */
+    let activeCard = 0;
+
+    function activateCard(idx) {
+      document.querySelectorAll('.card').forEach((c, i) => {
+        c.classList.toggle('c-active', i === idx);
+      });
+      activeCard = idx;
+    }
+
+    document.getElementById('next-btn').addEventListener('click', () => {
+      activateCard((activeCard + 1) % 4);
+    });
+    document.getElementById('prev-btn').addEventListener('click', () => {
+      activateCard((activeCard + 3) % 4);
+    });
+  </script>
+
+</body>
+
+</html>

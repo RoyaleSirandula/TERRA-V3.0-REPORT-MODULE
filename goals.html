@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terra – Goals Roadmap</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --lime: #c8ff00;
+      --dark: #000000;
+      --panel-dark: #111111;
+      --panel-mid: #1a1a1a;
+      --panel-light: #222222;
+      --border: rgba(255, 255, 255, 0.07);
+      --text-dim: rgba(255, 255, 255, 0.4);
+      --text-bright: #ffffff;
+    }
+
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background: var(--dark);
+      color: var(--text-bright);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      z-index: 1000;
+      background: rgba(10, 10, 10, 0.9);
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-logo {
+      background: #00c003;
+      color: #000;
+      padding: 5px 16px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    .nav-back {
+      color: var(--text-dim);
+      font-size: 12px;
+      text-decoration: none;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-left: 24px;
+      transition: color 0.2s;
+    }
+
+    .nav-back:hover {
+      color: var(--lime);
+    }
+
+    /* ── MAIN CONTENT ── */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 120px 60px;
+      position: relative;
+    }
+
+    .page-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(60px, 8vw, 100px);
+      letter-spacing: 2px;
+      margin-bottom: 80px;
+    }
+
+    /* ── TIMELINE CONTAINER ── */
+    .timeline-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 400px;
+    }
+
+    /* The thick bar segments */
+    .timeline-bar {
+      display: flex;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      left: 0;
+      width: 100%;
+      height: 60px;
+      z-index: 1;
+    }
+
+    .tb-segment {
+      flex: 1;
+      cursor: pointer;
+      transition: background 0.4s ease, transform 0.4s ease;
+      position: relative;
+    }
+
+    .tb-segment[data-index="0"] {
+      background: var(--panel-dark);
+      flex: 3;
+    }
+
+    .tb-segment[data-index="1"] {
+      background: var(--panel-mid);
+      flex: 2;
+    }
+
+    .tb-segment[data-index="2"] {
+      background: var(--panel-light);
+      flex: 2;
+    }
+
+    .tb-segment[data-index="3"] {
+      background: #2a2a2a;
+      flex: 3;
+    }
+
+    /* Hover effect */
+    .tb-segment:hover,
+    .tb-segment.active {
+      background: var(--lime);
+      transform: scaleY(1.05);
+      z-index: 2;
+    }
+
+    /* Target lines extending up/down */
+    .t-stem {
+      position: absolute;
+      width: 1px;
+      background: rgba(255, 255, 255, 0.2);
+      transition: background 0.3s;
+    }
+
+    /* Bottom nodes (evens) */
+    .node-bottom .t-stem {
+      top: 100%;
+      height: 80px;
+      left: 0.1%;
+    }
+
+    /* Top nodes (odds) */
+    .node-top .t-stem {
+      bottom: 100%;
+      height: 80px;
+      left: 0.1%;
+    }
+
+    .tb-segment:hover .t-stem,
+    .tb-segment.active .t-stem {
+      background: var(--lime);
+    }
+
+    /* Labels above/below */
+    .t-label-container {
+      position: absolute;
+      left: 0.1%;
+      width: 300px;
+      pointer-events: none;
+      opacity: 0.6;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .node-bottom .t-label-container {
+      top: calc(100% + 90px);
+      transform: translateY(-10px);
+    }
+
+    .node-top .t-label-container {
+      bottom: calc(100% + 90px);
+      transform: translateY(10px);
+    }
+
+    .tb-segment:hover .t-label-container,
+    .tb-segment.active .t-label-container {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .t-phase {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--lime);
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .t-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .t-metric {
+      font-size: 12px;
+      color: var(--text-dim);
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    /* ── MODAL / EXPLANATION PANEL ── */
+    .details-panel {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      width: 450px;
+      height: 100vh;
+      background: rgba(14, 25, 30, 0.98);
+      border-left: 1px solid var(--border);
+      padding: 80px 48px;
+      transform: translateX(100%);
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .details-panel.open {
+      transform: translateX(0);
+    }
+
+    .dp-close {
+      position: absolute;
+      top: 40px;
+      right: 48px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 24px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .dp-close:hover {
+      color: var(--lime);
+    }
+
+    .dp-phase {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--lime);
+      margin-bottom: 20px;
+    }
+
+    .dp-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 42px;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+
+    .dp-metric-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px;
+      margin-bottom: 32px;
+    }
+
+    .dp-metric-val {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--lime);
+      margin-bottom: 4px;
+    }
+
+    .dp-metric-lbl {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      line-height: 1.5;
+    }
+
+    .dp-desc {
+      font-size: 14px;
+      line-height: 1.8;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Overlay for modal */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      z-index: 1500;
+    }
+
+    .overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <div style="display: flex; align-items: center;">
+      <a href="home.html" class="nav-logo">TERRA</a>
+      <a href="solutions.html" class="nav-back">← Back to Solutions</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1 class="page-title">Roadmap Goals</h1>
+
+    <div class="timeline-wrapper">
+      <div class="timeline-bar">
+
+        <!-- Segment 1 -->
+        <div class="tb-segment node-bottom" data-index="0" onclick="openDetails(0)">
+          <div class="t-stem"></div>
+          <div class="t-label-container">
+            <div class="t-phase">(Months 1–3)</div>
+            <div class="t-title">01. Launch Mobile Application</div>
+          </div>
+        </div>
+
+        <!-- Segment 2 -->
+        <div class="tb-segment node-top" data-index="1" onclick="openDetails(1)">
+          <div class="t-stem"></div>
+          <div class="t-label-container">
+            <div class="t-phase">(Months 4 & 5)</div>
+            <div class="t-title">02. Secure Formal Pilots</div>
+          </div>
+        </div>
+
+        <!-- Segment 3 -->
+        <div class="tb-segment node-bottom" data-index="2" onclick="openDetails(2)">
+          <div class="t-stem"></div>
+          <div class="t-label-container">
+            <div class="t-phase">(Months 6 & 7)</div>
+            <div class="t-title">03. Train Frontline Rangers</div>
+          </div>
+        </div>
+
+        <!-- Segment 4 -->
+        <div class="tb-segment node-top" data-index="3" onclick="openDetails(3)">
+          <div class="t-stem"></div>
+          <div class="t-label-container">
+            <div class="t-phase">(Months 10–12)</div>
+            <div class="t-title">04. Protect Wildlife Habitat</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay" onclick="closeDetails()"></div>
+
+  <div class="details-panel" id="details-panel">
+    <button class="dp-close" onclick="closeDetails()">×</button>
+    <div id="dp-content">
+      <!-- Dynamic content injected here -->
+    </div>
+  </div>
+
+  <script>
+    const goalsData = [
+      {
+        phase: "Months 1–3",
+        title: "Launch Mobile Application",
+        metricVal: "1",
+        metricLbl: "# of digital platforms launched",
+        desc: "The mobile application is the foundational dependency that gates every other goal — without it, rangers in cellular dead zones cannot contribute intelligence, breaking the data pipeline at its most critical point. It is therefore the first priority: months 1–3 are dedicated to completing development, conducting internal offline sync testing using the rugged field tablet in simulated dead-zone conditions, and validating payload compression before any ranger is asked to use it. By month 4, the application is production-ready and deployed ahead of the first ranger training cohort. This sequencing ensures the tool is proven before humans depend on it operationally, eliminating the risk of a failed live demo destroying NGO trust at the most sensitive stage of the partnership."
+      },
+      {
+        phase: "Months 4 & 5",
+        title: "Secure Formal Operational Pilots",
+        metricVal: "2",
+        metricLbl: "# of formal external partnerships established",
+        desc: "Partnership acquisition is the critical first unlock, and everything else depends on it. In months 1–3, outreach targets one primary organization, culminating in a signed pilot agreement and data integration setup. This first partnership validates the 'Intelligence as a Service' model and provides the real telemetry needed to optimize Terra's Confidence Engine. In months 6–9, with a live pilot already demonstrating measurable operational improvement, the second partnership becomes a credibility-driven conversion rather than a cold pitch, the first organization effectively becomes a reference case. Sequencing partnerships this way ensures the second is secured on the strength of demonstrated results, not promises."
+      },
+      {
+        phase: "Months 6 & 7",
+        title: "Train Frontline Rangers",
+        metricVal: "40",
+        metricLbl: "# of people trained or upskilled",
+        desc: "Ranger onboarding is deliberately sequenced after platform deployment stabilizes. In months 4–6, the first structured training cohort of approximately 20 rangers is conducted at the first partner organization's field station, with direct usability feedback immediately informing interface refinements. In months 7–9, the second cohort of 20 rangers is onboarded at the second partner site, now benefiting from a UI already stress-tested in real operational conditions. Training 40 rangers is not just an adoption metric — it is the ultimate usability test, proving that Terra reduces cognitive load for non-technical operators in genuinely demanding field environments."
+      },
+      {
+        phase: "Months 10–12",
+        title: "Protect Wildlife Habitat",
+        metricVal: "15,000",
+        metricLbl: "# of hectares of ecodiverse land protected",
+        desc: "This goal is the cumulative outcome of everything that precedes it. In months 4–7, active ranger deployments begin over a defined pilot sector, with Terra's Site Analysis workspace directing patrols toward mathematically verified hotspots rather than generic routes. By months 8–10, a second partner expands active coverage to validate the 15,000-hectare threshold. This figure is deliberately grounded: Kenya's Lewa Conservancy alone covers 25,000 hectares, making 15,000 achievable under a single expanded pilot. Hectares under active intelligence-targeted surveillance is the most direct environmental measure of whether Terra's patrol optimization actually translates into protected landscape."
+      }
+    ];
+
+    const overlay = document.getElementById('overlay');
+    const panel = document.getElementById('details-panel');
+    const dpContent = document.getElementById('dp-content');
+    const segments = document.querySelectorAll('.tb-segment');
+
+    function openDetails(index) {
+      const data = goalsData[index];
+
+      dpContent.innerHTML = `
+        <div class="dp-phase">${data.phase}</div>
+        <div class="dp-title">${data.title}</div>
+        <div class="dp-metric-box">
+          <div class="dp-metric-val">${data.metricVal}</div>
+          <div class="dp-metric-lbl">${data.metricLbl}</div>
+        </div>
+        <div class="dp-desc">${data.desc}</div>
+      `;
+
+      segments.forEach(seg => seg.classList.remove('active'));
+      document.querySelector(`.tb-segment[data-index="${index}"]`).classList.add('active');
+
+      overlay.classList.add('open');
+      panel.classList.add('open');
+    }
+
+    function closeDetails() {
+      overlay.classList.remove('open');
+      panel.classList.remove('open');
+      segments.forEach(seg => seg.classList.remove('active'));
+    }
+  </script>
+</body>
+
+</html>
