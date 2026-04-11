@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terra Labs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --cream: #0E191E;
+            --off-white: #050a0c;
+            --ink: #ffffff;
+            --mid: #abaeb0;
+            --light: #808b96;
+            --rule: rgba(255, 255, 255, 0.1);
+            --accent: #c8ff00;
+            --tag-bg: #152228;
+            --nav-h: 64px;
+            --gutter: clamp(24px, 5vw, 72px);
+            --max-w: 1100px;
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            background: var(--off-white);
+            color: var(--ink);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
+            overflow-x: hidden
+        }
+
+        img {
+            display: block;
+            max-width: 100%
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23fff' opacity='0.015'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 9999
+        }
+
+        .container {
+            width: 100%;
+            max-width: var(--max-w);
+            margin: 0 auto;
+            padding: 0 var(--gutter)
+        }
+
+        .rule {
+            border: none;
+            border-top: 1px solid var(--rule)
+        }
+
+        /* NAV */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--nav-h);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            padding: 0 var(--gutter);
+            transition: background .4s, backdrop-filter .4s
+        }
+
+        nav.scrolled {
+            background: rgba(14, 25, 30, .88);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--rule)
+        }
+
+        .nav-inner {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .logo-mark {
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px
+        }
+
+        .nav-links a {
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .82);
+            transition: color .2s
+        }
+
+        .nav-links a:hover {
+            color: #fff
+        }
+
+        .nav-cta {
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 255, 255, .6);
+            padding: 8px 20px;
+            color: rgba(255, 255, 255, .82);
+            transition: background .2s, color .2s, border-color .2s
+        }
+
+        .nav-cta:hover {
+            background: #fff;
+            color: var(--ink);
+            border-color: #fff
+        }
+
+        nav.scrolled .nav-links a {
+            color: var(--light)
+        }
+
+        nav.scrolled .nav-links a:hover {
+            color: var(--ink)
+        }
+
+        nav.scrolled .nav-cta {
+            border-color: var(--ink);
+            color: var(--ink)
+        }
+
+        nav.scrolled .nav-cta:hover {
+            background: var(--ink);
+            color: var(--cream)
+        }
+
+        nav.scrolled .logo-mark circle,
+        nav.scrolled .logo-mark ellipse,
+        nav.scrolled .logo-mark line,
+        nav.scrolled .logo-mark path {
+            stroke: #ffffff !important
+        }
+
+        /* HERO */
+        .hero {
+            position: relative;
+            height: 100svh;
+            min-height: 560px;
+            overflow: hidden
+        }
+
+        .hero-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 30%;
+            filter: brightness(.7) saturate(.85);
+            transform: scale(1.06);
+            animation: heroZoom 14s var(--ease) forwards
+        }
+
+        @keyframes heroZoom {
+            to {
+                transform: scale(1)
+            }
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, .06) 0%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, .55) 100%)
+        }
+
+        .hero-grid {
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(255, 255, 255, .028) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .028) 1px, transparent 1px);
+            background-size: 64px 64px;
+            pointer-events: none;
+            z-index: 1
+        }
+
+        .hero-tagline {
+            position: absolute;
+            top: calc(var(--nav-h) + 28px);
+            right: var(--gutter);
+            z-index: 2;
+            text-align: right;
+            color: rgba(255, 255, 255, .86);
+            font-size: 13px;
+            line-height: 1.6;
+            max-width: 260px;
+            font-weight: 300;
+            opacity: 0;
+            animation: fadeUp .9s .7s var(--ease) forwards
+        }
+
+        .hero-wordmark {
+            position: absolute;
+            bottom: clamp(40px, 8vh, 96px);
+            left: var(--gutter);
+            z-index: 2;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(72px, 16vw, 200px);
+            color: #fff;
+            letter-spacing: -.01em;
+            line-height: .9;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 1s .3s var(--ease) forwards
+        }
+
+        .hero-wordmark sup {
+            font-family: 'Syne', sans-serif;
+            font-size: .11em;
+            vertical-align: super;
+            letter-spacing: .05em;
+            opacity: .7
+        }
+
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        /* SECTION LABEL */
+        .section-label {
+            font-family: 'Syne', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--light);
+            margin-bottom: 0
+        }
+
+        /* FOCUS */
+        .focus {
+            padding: 88px 0 80px;
+            background: var(--off-white)
+        }
+
+        .focus-inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            align-items: start
+        }
+
+        .focus-left h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(22px, 2.8vw, 32px);
+            font-weight: 700;
+            line-height: 1.3;
+            letter-spacing: -.02em;
+            max-width: 340px
+        }
+
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 24px
+        }
+
+        .tag {
+            display: inline-block;
+            background: var(--tag-bg);
+            color: var(--mid);
+            font-family: 'Syne', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border: 1px solid var(--rule);
+            transition: background .2s, color .2s
+        }
+
+        .tag:hover {
+            background: var(--ink);
+            color: var(--cream)
+        }
+
+        .focus-right p {
+            font-size: 13.5px;
+            color: var(--mid);
+            line-height: 1.8
+        }
+
+        /* HIGHLIGHTS */
+        .highlights {
+            background: var(--cream);
+            padding: 80px 0 96px;
+            border-top: 1px solid var(--rule);
+            border-bottom: 1px solid var(--rule)
+        }
+
+        .highlights-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 48px;
+            margin-bottom: 56px
+        }
+
+        .highlights-header p {
+            max-width: 360px;
+            font-size: 13.5px;
+            color: var(--mid);
+            line-height: 1.8
+        }
+
+        .logos-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            border: 1px solid var(--rule)
+        }
+
+        .logo-cell {
+            padding: 32px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid var(--rule);
+            transition: background .2s;
+            cursor: default
+        }
+
+        .logo-cell:last-child {
+            border-right: none
+        }
+
+        .logo-cell:hover {
+            background: var(--tag-bg)
+        }
+
+        .logo-cell span {
+            font-family: 'Syne', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--mid);
+            text-align: center;
+            line-height: 1.3
+        }
+
+        .l-sweetgreen {
+            font-style: italic !important;
+            font-weight: 400 !important;
+            font-family: 'DM Sans', sans-serif !important;
+            font-size: 13px !important;
+            letter-spacing: -.01em !important
+        }
+
+        .l-traba {
+            background: var(--ink) !important;
+            color: #fff !important;
+            padding: 4px 10px !important;
+            font-size: 10px !important;
+            display: inline-block
+        }
+
+        .l-monumental {
+            font-size: 8.5px !important;
+            letter-spacing: .18em !important
+        }
+
+        /* APPROACH */
+        .approach {
+            padding: 96px 0
+        }
+
+        .approach-intro {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(22px, 3.2vw, 36px);
+            font-weight: 700;
+            line-height: 1.25;
+            letter-spacing: -.025em;
+            max-width: 680px;
+            margin-bottom: 64px
+        }
+
+        .approach-intro em {
+            font-style: normal;
+            color: var(--accent)
+        }
+
+        .pillars {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--rule);
+            border: 1px solid var(--rule);
+            margin-bottom: 56px
+        }
+
+        .pillar {
+            background: var(--off-white);
+            padding: 40px 32px;
+            transition: background .25s
+        }
+
+        .pillar:hover {
+            background: var(--cream)
+        }
+
+        .pillar-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 44px;
+            color: var(--rule);
+            line-height: 1;
+            margin-bottom: 16px
+        }
+
+        .pillar h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: -.01em;
+            margin-bottom: 12px
+        }
+
+        .pillar p {
+            font-size: 13.5px;
+            color: var(--mid);
+            line-height: 1.72
+        }
+
+        .img-strip {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px
+        }
+
+        .img-strip img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover
+        }
+
+        /* CTA */
+        .cta-band {
+            background: var(--ink);
+            padding: 80px var(--gutter);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 48px
+        }
+
+        .cta-band h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(20px, 3vw, 32px);
+            font-weight: 700;
+            color: var(--off-white);
+            letter-spacing: -.02em;
+            max-width: 420px
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--cream);
+            color: var(--ink);
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            padding: 14px 28px;
+            flex-shrink: 0;
+            transition: background .2s, gap .2s
+        }
+
+        .btn-primary:hover {
+            background: #757575;
+            gap: 16px
+        }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid var(--rule);
+            padding: 40px var(--gutter);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            background: var(--off-white)
+        }
+
+        .footer-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 22px;
+            letter-spacing: .08em
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 28px
+        }
+
+        .footer-links a {
+            font-family: 'Syne', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--light);
+            transition: color .2s
+        }
+
+        .footer-links a:hover {
+            color: var(--ink)
+        }
+
+        .footer-copy {
+            font-size: 11px;
+            color: var(--light);
+            letter-spacing: .04em
+        }
+
+        /* REVEAL */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity .8s var(--ease), transform .8s var(--ease)
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: none
+        }
+
+        .d1 {
+            transition-delay: .1s
+        }
+
+        .d2 {
+            transition-delay: .2s
+        }
+
+        .d3 {
+            transition-delay: .3s
+        }
+
+        .d4 {
+            transition-delay: .4s
+        }
+
+        @media(max-width:768px) {
+            .nav-links {
+                display: none
+            }
+
+            .focus-inner {
+                grid-template-columns: 1fr;
+                gap: 40px
+            }
+
+            .highlights-header {
+                flex-direction: column
+            }
+
+            .logos-grid {
+                grid-template-columns: repeat(3, 1fr)
+            }
+
+            .logo-cell:nth-child(3) {
+                border-right: none
+            }
+
+            .logo-cell:nth-child(4) {
+                border-top: 1px solid var(--rule)
+            }
+
+            .pillars {
+                grid-template-columns: 1fr
+            }
+
+            .cta-band {
+                flex-direction: column;
+                align-items: flex-start
+            }
+
+            .img-strip {
+                grid-template-columns: 1fr
+            }
+
+            footer {
+                flex-direction: column;
+                align-items: flex-start
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav id="nav">
+        <div class="nav-inner">
+            <img src="assets/MINI TERRA LOGO.png" alt="logo" style="width: 9%;
+      height: 9%;
+      object-fit: contain;
+      z-index: 2;
+      transition: filter 0.3s ease, transform 0.3s ease;">
+            <div class="nav-links">
+                <a href="#focus">Modules</a>
+                <a href="#highlights">Partners</a>
+                <a href="#approach">Capabilities</a>
+                <a href="home.html" class="nav-cta">System Access</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <img class="hero-img" src="https://i.pinimg.com/1200x/65/bb/d4/65bbd4bf8e82ca4801910016442b9475.jpg"
+            alt="Tactical map landscape" />
+        <div class="hero-grid"></div>
+        <p class="hero-tagline">Terra is an AI-powered tactical platform.<br />We equip frontline rangers to protect
+            ecodiverse habitats.</p>
+        <h1 class="hero-wordmark">TERRA<sup>™</sup></h1>
+    </section>
+
+    <section class="focus" id="focus">
+        <div class="container">
+            <hr class="rule" style="margin-bottom:36px" />
+            <p class="section-label reveal">Platform Focus</p>
+            <hr class="rule" style="margin:20px 0 56px" />
+            <div class="focus-inner">
+                <div class="focus-left reveal d1">
+                    <h2>We provide Conservation Intelligence as a Service, shifting field operations from reactive to
+                        mathematically-driven defenses.
+                    </h2>
+                </div>
+                <div class="focus-right reveal d2">
+                    <div class="tag-row">
+                        <span class="tag">Field Reporting</span>
+                        <span class="tag">Site Analysis</span>
+                        <span class="tag">Fire Monitoring</span>
+                        <span class="tag">Species Tracking</span>
+                        <span class="tag">Offline Mobile Tech</span>
+                        <span class="tag">Tactical Aviation</span>
+                    </div>
+                    <p>At Terra, we're committed to supporting large-scale conservation NGOs, government wildlife
+                        authorities, and local community conservancies managing vast protected areas. By overcoming
+                        fragmented data silos and severe deployment latency, we utilize real-time, AI-verified
+                        intelligence to drastically reduce response times to poaching threats.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="highlights" id="highlights">
+        <div class="container">
+            <div class="highlights-header">
+                <p class="section-label reveal">Deployment Network</p>
+                <p class="reveal d1">Partnering with the world's most capable conservation organizations to scale our
+                    platform's footprint across critical ecosystems in Sub-Saharan Africa.</p>
+            </div>
+            <div class="logos-grid reveal d2">
+                <div class="logo-cell"><span class="l-sweetgreen">The Mercedes-Benz Fellowship</span></div>
+                <div class="logo-cell"><span class="l-traba">Lewa</span></div>
+                <div class="logo-cell"><span class="l-monumental">EU LIFE<br>GRANT</span></div>
+                <div class="logo-cell"><span>Microsoft AI</span></div>
+                <div class="logo-cell"><span>▶ UNREASONABLE</span></div>
+                <div class="logo-cell"><span>↗ Conservancy</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="approach" id="approach">
+        <div class="container">
+            <p class="section-label reveal">Core Capabilities</p>
+            <hr class="rule" style="margin:20px 0 48px" />
+            <p class="approach-intro reveal d1">At Terra, we believe in the power of <em>real-time intelligence</em>
+                to preserve biodiversity. We don't just supply software — we upgrade conservation.</p>
+            <div class="pillars">
+                <div class="pillar reveal">
+                    <div class="pillar-num">01</div>
+                    <h3>Offline-First Infrastructure</h3>
+                    <p>Built for severe cellular dead zones. Our rugged field applications ensure frontline rangers can
+                        sync critical intelligence payloads without connectivity disruptions.</p>
+                </div>
+                <div class="pillar reveal d1">
+                    <div class="pillar-num">02</div>
+                    <h3>Targeted Deployments</h3>
+                    <p>Patrol optimization driven by mathematically verified hotspots rather than generic routes. We
+                        enable sector commanders to focus aviation and resources actively.</p>
+                </div>
+                <div class="pillar reveal d2">
+                    <div class="pillar-num">03</div>
+                    <h3>Intelligence as a Service</h3>
+                    <p>End-to-end mission integration. From migrating historical data telemetry to configuring custom AI
+                        rules, we fit our platform to your operational reality.</p>
+                </div>
+            </div>
+            <div class="img-strip reveal d1">
+                <img src="https://placehold.co/600x340/152228/ffffff?text=Tactical+Grid" alt="Tactical UI grid" />
+                <img src="https://placehold.co/600x340/0a1114/c8ff00?text=Field+Tablet+Sync"
+                    alt="Offline mobile sync" />
+            </div>
+        </div>
+    </section>
+
+    <div class="cta-band" id="contact">
+        <h2>Ready to optimize limited operational field resources?</h2>
+        <a href="mailto:deployments@terra.org" class="btn-primary">Initialize Deployment &nbsp;→</a>
+    </div>
+
+    <footer>
+        <span class="footer-logo">TERRA</span>
+        <div class="footer-links">
+            <a href="#focus">Modules</a>
+            <a href="#highlights">Partners</a>
+            <a href="#approach">Capabilities</a>
+            <a href="#contact">Contact</a>
+        </div>
+        <span class="footer-copy">© 2024 Terra Conservation Intelligence</span>
+    </footer>
+
+    <script>
+        const nav = document.getElementById('nav');
+        const heroEl = document.querySelector('.hero');
+
+        window.addEventListener('scroll', () => {
+            const past = window.scrollY > 40;
+            nav.classList.toggle('scrolled', past);
+        }, { passive: true });
+
+        // Reveal observer
+        const obs = new IntersectionObserver(entries => {
+            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+    </script>
+</body>
+
+</html>

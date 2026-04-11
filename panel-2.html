@@ -147,7 +147,7 @@
     .hero-upper-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.6) 100%);
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.6) 100%);
     }
 
     .hero-lower {
@@ -557,11 +557,11 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.7) 100%);
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.7) 100%);
       border-radius: 2px;
     }
 
-    .bento-left-2 > * {
+    .bento-left-2>* {
       position: relative;
       z-index: 2;
     }
@@ -725,8 +725,9 @@
   <!-- ── FIXED NAV ── -->
   <nav>
     <div style="display:flex;align-items:center;gap:20px;">
-      <div class="nav-logo">TERRA</div>
-      <a href="home.html" class="nav-back">← All Issues</a>
+      <img src="assets/MINI TERRA LOGO.png" alt="logo"
+        style="width: 25%; height: 25%; object-fit: contain; z-index: 2; transition: filter 0.3s ease, transform 0.3s ease; margin-left: -10px;">
+      <a href="testing2.html#modules" class="nav-back">← All Issues</a>
     </div>
     <div class="nav-center">Site Analysis &nbsp;·&nbsp; Habitat Degradation</div>
     <div class="nav-dots">
@@ -787,35 +788,45 @@
         <div class="stats-nums">
           <div class="stat-row">
             <div class="stat-num">10M</div>
-            <div class="stat-lbl">hectares of critical wildlife habitat lost annually to illegal logging and agricultural encroachment</div>
+            <div class="stat-lbl">hectares of critical wildlife habitat lost annually to illegal logging and
+              agricultural encroachment</div>
           </div>
           <div class="stat-row">
             <div class="stat-num">80%</div>
-            <div class="stat-lbl">of terrestrial biodiversity depends on forests experiencing rapid fragmentation and corridor severance</div>
+            <div class="stat-lbl">of terrestrial biodiversity depends on forests experiencing rapid fragmentation and
+              corridor severance</div>
           </div>
           <div class="stat-row">
             <div class="stat-num">$15B</div>
-            <div class="stat-lbl">estimated annual value lost to illegal timber harvesting in Sub-Saharan Africa and Southeastern Asia</div>
+            <div class="stat-lbl">estimated annual value lost to illegal timber harvesting in Sub-Saharan Africa and
+              Southeastern Asia</div>
           </div>
         </div>
 
         <div class="stats-text">
           <div class="stats-col">
-            <p>Habitat loss is the leading driver of species extinction globally — outpacing even direct poaching in its long-term impact.
-              Vast protected areas are frequently "paper parks" in practice: gazetted in law, but actively degraded by illegal logging,
-              charcoal burning, and agricultural expansion that goes undetected for months because no spatial monitoring infrastructure exists
+            <p>Habitat loss is the leading driver of species extinction globally — outpacing even direct poaching in its
+              long-term impact.
+              Vast protected areas are frequently "paper parks" in practice: gazetted in law, but actively degraded by
+              illegal logging,
+              charcoal burning, and agricultural expansion that goes undetected for months because no spatial monitoring
+              infrastructure exists
               at the reserve level.</p>
           </div>
           <div class="stats-col">
-            <p>Terra's Site Analysis module provides rangers, wardens, and regional analysts with a continuous, layered spatial view of their
-              protected areas — integrating satellite-derived change detection, decentralised ground-truthing by field teams, and version-controlled
-              collaborative mapping. Complex spatial queries that once required dedicated GIS analysts can now be answered in seconds from the field.</p>
+            <p>Terra's Site Analysis module provides rangers, wardens, and regional analysts with a continuous, layered
+              spatial view of their
+              protected areas — integrating satellite-derived change detection, decentralised ground-truthing by field
+              teams, and version-controlled
+              collaborative mapping. Complex spatial queries that once required dedicated GIS analysts can now be
+              answered in seconds from the field.</p>
           </div>
         </div>
       </div>
 
       <div class="stats-footnote">
-        * Habitat figures based on Global Forest Watch, FAO, and IUCN assessments cross-referenced with Terra's reserve monitoring dataset.
+        * Habitat figures based on Global Forest Watch, FAO, and IUCN assessments cross-referenced with Terra's reserve
+        monitoring dataset.
       </div>
     </section>
 
@@ -842,13 +853,15 @@
             <div class="card-icon">🛰️</div>
             <div class="card-title">Satellite Imagery Integration</div>
             <div class="card-desc">Automated ingestion of multispectral imagery from Sentinel-2 and Landsat
-              to continuously monitor canopy density, land use change, and soil moisture across reserve boundaries.</div>
+              to continuously monitor canopy density, land use change, and soil moisture across reserve boundaries.
+            </div>
           </div>
           <div class="card-vlabel">Satellite Layer</div>
         </div>
 
         <div class="card" id="c1" onclick="activateCard(1)">
-          <div class="card-bg" style="background-image:url('assets/card_evidence.png'); background-color:#1a1e2a;"></div>
+          <div class="card-bg" style="background-image:url('assets/card_evidence.png'); background-color:#1a1e2a;">
+          </div>
           <div class="card-overlay"></div>
           <div class="card-body">
             <div class="card-icon">🔍</div>
@@ -861,7 +874,8 @@
         </div>
 
         <div class="card" id="c2" onclick="activateCard(2)">
-          <div class="card-bg" style="background-image:url('assets/card_geo_reporting.png'); background-color:#1e2a1a;"></div>
+          <div class="card-bg" style="background-image:url('assets/card_geo_reporting.png'); background-color:#1e2a1a;">
+          </div>
           <div class="card-overlay"></div>
           <div class="card-body">
             <div class="card-icon">🗺️</div>

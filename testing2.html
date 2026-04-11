@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terra Labs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --cream: #0E191E;
+            --off-white: #050a0c;
+            --ink: #ffffff;
+            --mid: #abaeb0;
+            --light: #808b96;
+            --rule: rgba(255, 255, 255, 0.1);
+            --accent: #c8ff00;
+            --tag-bg: #152228;
+            --copper: #00ffd5;
+            --nav-h: 64px;
+            --gutter: clamp(24px, 5vw, 72px);
+            --max-w: 1100px;
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            background: var(--off-white);
+            color: var(--ink);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
+            overflow-x: hidden
+        }
+
+        img {
+            display: block;
+            max-width: 100%
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23fff' opacity='0.015'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 9999
+        }
+
+        .container {
+            width: 100%;
+            max-width: var(--max-w);
+            margin: 0 auto;
+            padding: 0 var(--gutter)
+        }
+
+        .rule {
+            border: none;
+            border-top: 1px solid var(--rule)
+        }
+
+        /* NAV */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--nav-h);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            padding: 0 var(--gutter);
+            transition: background .4s, backdrop-filter .4s
+        }
+
+        nav.scrolled {
+            background: rgba(14, 25, 30, .88);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--rule)
+        }
+
+        .nav-inner {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px
+        }
+
+        .nav-links a {
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .82);
+            transition: color .2s
+        }
+
+        .nav-links a:hover {
+            color: #fff
+        }
+
+        .nav-cta {
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 255, 255, .6);
+            padding: 8px 20px;
+            color: rgba(255, 255, 255, .82);
+            transition: background .2s, color .2s, border-color .2s
+        }
+
+        .nav-cta:hover {
+            background: #fff;
+            color: var(--off-white);
+            border-color: #fff
+        }
+
+        nav.scrolled .nav-links a {
+            color: var(--light)
+        }
+
+        nav.scrolled .nav-links a:hover {
+            color: var(--ink)
+        }
+
+        nav.scrolled .nav-cta {
+            border-color: rgba(255, 255, 255, .4);
+            color: rgba(255, 255, 255, .8)
+        }
+
+        nav.scrolled .nav-cta:hover {
+            background: var(--ink);
+            color: var(--cream)
+        }
+
+        /* ── BUTTON ── */
+        .enter-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 8px 20px;
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .enter-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--accent);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: -1;
+        }
+
+        .enter-btn:hover {
+            color: #000000;
+        }
+
+        .enter-btn:hover::before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        /* HERO */
+        .hero {
+            position: relative;
+            height: 100svh;
+            min-height: 560px;
+            overflow: hidden
+        }
+
+        .hero-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 30%;
+            filter: brightness(.7) saturate(.85);
+            transform: scale(1.06);
+            animation: heroZoom 14s var(--ease) forwards
+        }
+
+        @keyframes heroZoom {
+            to {
+                transform: scale(1)
+            }
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, .06) 0%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, .55) 100%)
+        }
+
+        .hero-grid {
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(255, 255, 255, .028) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .028) 1px, transparent 1px);
+            background-size: 64px 64px;
+            pointer-events: none;
+            z-index: 1
+        }
+
+        .hero-tagline {
+            position: absolute;
+            top: calc(var(--nav-h) + 28px);
+            right: var(--gutter);
+            z-index: 2;
+            text-align: right;
+            color: rgba(255, 255, 255, .86);
+            font-size: 13px;
+            line-height: 1.6;
+            max-width: 260px;
+            font-weight: 300;
+            opacity: 0;
+            animation: fadeUp .9s .7s var(--ease) forwards
+        }
+
+        .hero-wordmark {
+            position: absolute;
+            bottom: clamp(40px, 8vh, 96px);
+            left: var(--gutter);
+            z-index: 2;
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(72px, 16vw, 200px);
+            color: #fff;
+            letter-spacing: -.01em;
+            line-height: .9;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 1s .3s var(--ease) forwards
+        }
+
+        .hero-wordmark sup {
+            font-family: 'Syne', sans-serif;
+            font-size: .11em;
+            vertical-align: super;
+            letter-spacing: .05em;
+            opacity: .7
+        }
+
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        /* SECTION LABEL */
+        .section-label {
+            font-family: 'Syne', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--light)
+        }
+
+        /* FOCUS */
+        .focus {
+            padding: 88px 0 80px;
+            background: var(--off-white)
+        }
+
+        .focus-inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            align-items: start
+        }
+
+        .focus-left h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(22px, 2.8vw, 32px);
+            font-weight: 700;
+            line-height: 1.3;
+            letter-spacing: -.02em;
+            max-width: 340px
+        }
+
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 24px
+        }
+
+        .tag {
+            display: inline-block;
+            background: var(--tag-bg);
+            color: var(--mid);
+            font-family: 'Syne', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border: 1px solid var(--rule);
+            transition: background .2s, color .2s
+        }
+
+        .tag:hover {
+            background: var(--ink);
+            color: var(--cream)
+        }
+
+        .focus-right p {
+            font-size: 13.5px;
+            color: var(--mid);
+            line-height: 1.8
+        }
+
+        /* HIGHLIGHTS */
+        .highlights {
+            background: var(--cream);
+            padding: 80px 0 96px;
+            border-top: 1px solid var(--rule);
+            border-bottom: 1px solid var(--rule)
+        }
+
+        .highlights-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 48px;
+            margin-bottom: 56px
+        }
+
+        .highlights-header p {
+            max-width: 360px;
+            font-size: 13.5px;
+            color: var(--mid);
+            line-height: 1.8
+        }
+
+        .logos-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            border: 1px solid var(--rule)
+        }
+
+        .logo-cell {
+            padding: 32px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid var(--rule);
+            transition: background .2s;
+            cursor: default
+        }
+
+        .logo-cell:last-child {
+            border-right: none
+        }
+
+        .logo-cell:hover {
+            background: var(--tag-bg)
+        }
+
+        .logo-cell span {
+            font-family: 'Syne', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--mid);
+            text-align: center;
+            line-height: 1.3
+        }
+
+        .l-sweetgreen {
+            font-style: italic !important;
+            font-weight: 400 !important;
+            font-family: 'DM Sans', sans-serif !important;
+            font-size: 13px !important;
+            letter-spacing: -.01em !important
+        }
+
+        .l-traba {
+            background: var(--ink) !important;
+            color: #000 !important;
+            padding: 4px 10px !important;
+            font-size: 10px !important;
+            display: inline-block
+        }
+
+        .l-monumental {
+            font-size: 8.5px !important;
+            letter-spacing: .18em !important
+        }
+
+        /* APPROACH */
+        .approach {
+            padding: 96px 0
+        }
+
+        .approach-intro {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(22px, 3.2vw, 36px);
+            font-weight: 700;
+            line-height: 1.25;
+            letter-spacing: -.025em;
+            max-width: 680px;
+            margin-bottom: 64px
+        }
+
+        .approach-continuation {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(22px, 3.2vw, 36px);
+            font-weight: 700;
+            line-height: 1.25;
+            letter-spacing: -.025em;
+            max-width: 680px;
+            margin-bottom: 64px
+        }
+
+        .approach-intro em {
+            font-style: normal;
+            color: var(--accent)
+        }
+
+        .approach-continuation em {
+            font-style: normal;
+            color: var(--ink)
+        }
+
+        .pillars {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--rule);
+            border: 1px solid var(--rule);
+            margin-bottom: 56px
+        }
+
+        .pillar {
+            background: var(--off-white);
+            padding: 40px 32px;
+            transition: background .25s
+        }
+
+        .pillar:hover {
+            background: var(--cream)
+        }
+
+        .pillar-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 44px;
+            color: var(--rule);
+            line-height: 1;
+            margin-bottom: 16px
+        }
+
+        .pillar h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: -.01em;
+            margin-bottom: 12px
+        }
+
+        .pillar p {
+            font-size: 13.5px;
+            color: var(--mid);
+            line-height: 1.72
+        }
+
+        .img-strip {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px
+        }
+
+        .img-strip img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover
+        }
+
+        /* ═══════════════════════════════════════════
+           MODULES SECTION (4 expandable panels)
+        ═══════════════════════════════════════════ */
+        .modules-section {
+            border-top: 1px solid var(--rule);
+        }
+
+        .modules-header {
+            padding: 64px var(--gutter) 48px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 40px;
+            max-width: calc(var(--max-w) + var(--gutter) * 2);
+            margin: 0 auto;
+        }
+
+        .modules-header h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(22px, 3vw, 34px);
+            font-weight: 700;
+            letter-spacing: -.025em;
+            max-width: 400px;
+        }
+
+        .modules-header p {
+            max-width: 320px;
+            font-size: 13px;
+            color: var(--mid);
+            line-height: 1.8;
+        }
+
+        .panels-strip {
+            display: flex;
+            height: 580px;
+            border-top: 1px solid var(--rule);
+            border-bottom: 1px solid var(--rule);
+        }
+
+        .mpanel {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-right: 1px solid var(--rule);
+            background-color: var(--cream);
+            color: rgba(255, 255, 255, .5);
+            cursor: pointer;
+            overflow: hidden;
+            transition: flex 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+                background 0.45s ease,
+                color 0.4s ease;
+        }
+
+        .mpanel:last-child {
+            border-right: none
+        }
+
+        .mpanel:hover,
+        .mpanel.active {
+            flex: 1.6;
+            color: white;
+        }
+
+        #mp-1:hover,
+        #mp-1.active {
+            background-image: linear-gradient(rgba(5, 10, 12, .55), rgba(5, 10, 12, .55)), url(https://i.pinimg.com/1200x/51/88/a1/5188a125b5d9d66e2b5bac42fb53b97f.jpg);
+            background-size: cover;
+            background-position: center;
+        }
+
+        #mp-2:hover,
+        #mp-2.active {
+            background-image: linear-gradient(rgba(5, 10, 12, .55), rgba(5, 10, 12, .55)), url(https://i.pinimg.com/1200x/d5/f0/a6/d5f0a6415775acbbf1e47c2f24eddc2c.jpg);
+            background-size: cover;
+            background-position: center;
+        }
+
+        #mp-3:hover,
+        #mp-3.active {
+            background-image: linear-gradient(rgba(5, 10, 12, .55), rgba(5, 10, 12, .55)), url(https://i.pinimg.com/736x/cc/5b/0f/cc5b0f0d47b1b8c208fee3e2e6b5d906.jpg);
+            background-size: cover;
+            background-position: center;
+        }
+
+        #mp-4:hover,
+        #mp-4.active {
+            background-image: linear-gradient(rgba(5, 10, 12, .55), rgba(5, 10, 12, .55)), url(https://i.pinimg.com/1200x/a9/04/42/a90442d7f1c697831aa070cf5cc6bba0.jpg);
+            background-size: cover;
+            background-position: center;
+        }
+
+        .mp-number {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(160px, 22vw, 300px);
+            letter-spacing: 2px;
+            user-select: none;
+            color: currentColor;
+            line-height: 1;
+            transition: opacity 0.35s ease;
+        }
+
+        .mpanel:hover .mp-number,
+        .mpanel.active .mp-number {
+            opacity: 0.35
+        }
+
+        .mp-vtag {
+            position: absolute;
+            left: 14px;
+            bottom: 400px;
+            transform: rotate(-90deg);
+            font-family: 'Syne', sans-serif;
+            font-size: 11px;
+            letter-spacing: .16em;
+            font-weight: 600;
+            white-space: nowrap;
+            text-transform: uppercase;
+            color: var(--mid);
+            transition: color 0.4s ease;
+        }
+
+        .mpanel:hover .mp-vtag,
+        .mpanel.active .mp-vtag {
+            color: #fff
+        }
+
+        .mp-badge {
+            position: absolute;
+            bottom: 20%;
+            left: 28px;
+            display: inline-block;
+            padding: 4px 14px;
+            border: 1px solid currentColor;
+            font-family: 'Syne', sans-serif;
+            font-size: 10px;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .mpanel:hover .mp-badge,
+        .mpanel.active .mp-badge {
+            opacity: 1
+        }
+
+        .mp-detail {
+            position: absolute;
+            bottom: 10%;
+            left: 28px;
+            right: 28px;
+            font-size: 12.5px;
+            line-height: 1.8;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+            color: rgba(255, 255, 255, .65);
+        }
+
+        .mpanel:hover .mp-detail,
+        .mpanel.active .mp-detail {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .mp-arrow {
+            position: absolute;
+            bottom: 22px;
+            right: 22px;
+            font-size: 18px;
+            opacity: 0;
+            color: var(--accent);
+            transform: translateX(-10px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+            font-family: 'Syne', sans-serif;
+        }
+
+        .mpanel:hover .mp-arrow,
+        .mpanel.active .mp-arrow {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* ═══════════════════════════════════════════
+           ROADMAP SECTION
+        ═══════════════════════════════════════════ */
+        .roadmap-section {
+            background: var(--off-white);
+            padding: 96px 0 112px;
+            border-top: 1px solid var(--rule);
+            overflow: hidden;
+        }
+
+        .roadmap-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(56px, 9vw, 100px);
+            letter-spacing: .02em;
+            line-height: .9;
+            margin-bottom: 80px;
+        }
+
+        .timeline-wrapper {
+            position: relative;
+            width: 100%;
+            height: 380px;
+        }
+
+        .timeline-bar {
+            display: flex;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: -25%;
+            width: 150%;
+            height: 36px;
+            z-index: 1;
+        }
+
+        .tb-seg {
+            cursor: pointer;
+            transition: background 0.4s ease, transform 0.35s ease;
+            position: relative;
+            flex: 1;
+        }
+
+        .tb-seg:nth-child(1) {
+            background: #0e191e;
+            flex: 3
+        }
+
+        .tb-seg:nth-child(2) {
+            background: #121f25;
+            flex: 2
+        }
+
+        .tb-seg:nth-child(3) {
+            background: #162228;
+            flex: 2
+        }
+
+        .tb-seg:nth-child(4) {
+            background: #1a272e;
+            flex: 3
+        }
+
+        .tb-seg:hover,
+        .tb-seg.rm-active {
+            background: var(--accent);
+            transform: scaleY(1.08);
+            z-index: 2;
+        }
+
+        .t-stem {
+            position: absolute;
+            width: 1px;
+            background: rgba(255, 255, 255, .15);
+            transition: background 0.3s;
+            left: 1px;
+        }
+
+        .tb-seg.node-down .t-stem {
+            top: 100%;
+            height: 72px
+        }
+
+        .tb-seg.node-up .t-stem {
+            bottom: 100%;
+            height: 72px
+        }
+
+        .tb-seg:hover .t-stem,
+        .tb-seg.rm-active .t-stem {
+            background: var(--accent)
+        }
+
+        .t-label {
+            position: absolute;
+            left: 1px;
+            width: 280px;
+            opacity: .55;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        .tb-seg.node-down .t-label {
+            top: calc(100% + 80px);
+            transform: translateY(-8px)
+        }
+
+        .tb-seg.node-up .t-label {
+            bottom: calc(100% + 80px);
+            transform: translateY(8px)
+        }
+
+        .tb-seg:hover .t-label,
+        .tb-seg.rm-active .t-label {
+            opacity: 1;
+            transform: translateY(0)
+        }
+
+        .t-phase {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--accent);
+            margin-bottom: 8px;
+            letter-spacing: .06em;
+        }
+
+        .t-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.4;
+        }
+
+        /* DETAILS PANEL */
+        .dp-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .55);
+            backdrop-filter: blur(5px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            z-index: 1500;
+        }
+
+        .dp-overlay.open {
+            opacity: 1;
+            pointer-events: auto
+        }
+
+        .dp-panel {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 440px;
+            height: 100vh;
+            background: #0e191e;
+            border-left: 1px solid var(--rule);
+            padding: 80px 44px;
+            transform: translateX(100%);
+            transition: transform 0.6s var(--ease);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .dp-panel.open {
+            transform: translateX(0)
+        }
+
+        .dp-close {
+            position: absolute;
+            top: 36px;
+            right: 44px;
+            background: none;
+            border: none;
+            color: var(--light);
+            font-size: 22px;
+            cursor: pointer;
+            transition: color .2s;
+            font-family: 'Syne', sans-serif;
+        }
+
+        .dp-close:hover {
+            color: var(--accent)
+        }
+
+        .dp-mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--accent);
+            letter-spacing: .08em;
+            margin-bottom: 18px;
+        }
+
+        .dp-heading {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 40px;
+            line-height: 1.05;
+            margin-bottom: 28px;
+            letter-spacing: .01em;
+        }
+
+        .dp-metric {
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid var(--rule);
+            padding: 18px 20px;
+            margin-bottom: 32px;
+        }
+
+        .dp-metric-val {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .dp-metric-lbl {
+            font-family: 'Syne', sans-serif;
+            font-size: 10px;
+            color: var(--light);
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            line-height: 1.6;
+        }
+
+        .dp-desc {
+            font-size: 13px;
+            color: var(--mid);
+            line-height: 1.85;
+        }
+
+        /* ═══════════════════════════════════════════
+           FUNDING SECTION
+        ═══════════════════════════════════════════ */
+        .funding-section {
+            background: var(--cream);
+            padding: 96px 0 112px;
+            border-top: 1px solid var(--rule);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .funding-glow {
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(200, 255, 0, .07) 0%, rgba(0, 0, 0, 0) 60%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .funding-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(52px, 8vw, 96px);
+            letter-spacing: .02em;
+            line-height: .9;
+            margin-bottom: 72px;
+            position: relative;
+        }
+
+        .funding-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--rule);
+            border: 1px solid var(--rule);
+            position: relative;
+        }
+
+        .fcard {
+            background: var(--off-white);
+            padding: 44px 36px;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.4s ease;
+        }
+
+        .fcard:hover {
+            background: #0a1418
+        }
+
+        .fcard-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 52px;
+            color: rgba(255, 255, 255, .07);
+            line-height: 1;
+            margin-bottom: 20px;
+        }
+
+        .fcard-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -.01em;
+            margin-bottom: 16px;
+        }
+
+        .fcard-amount {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 22px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 24px;
+            letter-spacing: -.01em;
+        }
+
+        .fcard-desc {
+            font-size: 13.5px;
+            color: var(--mid);
+            line-height: 1.8;
+            flex-grow: 1;
+        }
+
+        .funding-cta {
+            margin-top: 64px;
+            position: relative;
+        }
+
+        .btn-accent {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--accent);
+            color: #000;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            padding: 16px 44px;
+            font-size: 13px;
+            transition: background .3s ease, gap .25s ease;
+        }
+
+        .btn-accent:hover {
+            background: #b3e600;
+            gap: 18px
+        }
+
+        /* CTA */
+        .cta-band {
+            background-image: linear-gradient(rgba(10, 10, 10, 0.52), rgba(10, 10, 10, 0.52)), url("https://i.pinimg.com/1200x/ce/44/e4/ce44e474134883a1ef2e0400ea38cbbc.jpg");
+            background-size: cover;
+            background-position: center;
+            padding: 80px var(--gutter);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 48px
+        }
+
+        .cta-band h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(20px, 3vw, 32px);
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -.02em;
+            max-width: 420px
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--cream);
+            color: var(--ink);
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            padding: 14px 28px;
+            flex-shrink: 0;
+            transition: background .2s, gap .2s
+        }
+
+        .btn-primary:hover {
+            background: #757575;
+            gap: 16px
+        }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid var(--rule);
+            padding: 40px var(--gutter);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            background: var(--off-white)
+        }
+
+        .footer-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 22px;
+            letter-spacing: .08em
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 28px
+        }
+
+        .footer-links a {
+            font-family: 'Syne', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--light);
+            transition: color .2s
+        }
+
+        .footer-links a:hover {
+            color: var(--ink)
+        }
+
+        .footer-copy {
+            font-size: 11px;
+            color: var(--light);
+            letter-spacing: .04em
+        }
+
+        /* REVEAL */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity .8s var(--ease), transform .8s var(--ease)
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: none
+        }
+
+        .d1 {
+            transition-delay: .1s
+        }
+
+        .d2 {
+            transition-delay: .2s
+        }
+
+        .d3 {
+            transition-delay: .3s
+        }
+
+        .d4 {
+            transition-delay: .4s
+        }
+
+        @media(max-width:768px) {
+            .nav-links {
+                display: none
+            }
+
+            .focus-inner {
+                grid-template-columns: 1fr;
+                gap: 40px
+            }
+
+            .highlights-header {
+                flex-direction: column
+            }
+
+            .logos-grid {
+                grid-template-columns: repeat(3, 1fr)
+            }
+
+            .logo-cell:nth-child(3) {
+                border-right: none
+            }
+
+            .logo-cell:nth-child(4) {
+                border-top: 1px solid var(--rule)
+            }
+
+            .pillars {
+                grid-template-columns: 1fr
+            }
+
+            .cta-band {
+                flex-direction: column;
+                align-items: flex-start
+            }
+
+            .img-strip {
+                grid-template-columns: 1fr
+            }
+
+            footer {
+                flex-direction: column;
+                align-items: flex-start
+            }
+
+            .panels-strip {
+                flex-direction: column;
+                height: auto
+            }
+
+            .mpanel {
+                height: 200px;
+                flex: unset !important
+            }
+
+            .mp-number {
+                font-size: 100px
+            }
+
+            .funding-cards {
+                grid-template-columns: 1fr
+            }
+
+            .modules-header {
+                flex-direction: column
+            }
+
+            .timeline-wrapper {
+                height: 280px
+            }
+
+            .dp-panel {
+                width: 100%
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav id="nav">
+        <div class="nav-inner">
+            <img src="assets/MINI TERRA LOGO.png" alt="logo"
+                style="width: 9%; height: 9%; object-fit: contain; z-index: 2; transition: filter 0.3s ease, transform 0.3s ease;">
+            <div class="nav-links">
+                <a href="#focus">Modules</a>
+                <a href="#highlights">Partners</a>
+                <a href="#approach">Capabilities</a>
+                <a href="#modules">Platform</a>
+                <a href="#roadmap">Roadmap</a>
+                <a href="http://localhost:3000/login.html" class="nav-cta">System Access</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── HERO ── -->
+    <section class="hero">
+        <img class="hero-img" src="https://i.pinimg.com/1200x/db/99/55/db99555f3375768daa808540e1271dae.jpg"
+            alt="Tactical map landscape" />
+        <div class="hero-grid"></div>
+        <p class="hero-tagline">Terra is an AI-powered tactical platform.<br />We equip frontline rangers to protect
+            ecodiverse habitats.</p>
+        <h1 class="hero-wordmark">TERRA<sup>™</sup></h1>
+    </section>
+
+    <!-- ── PLATFORM FOCUS ── -->
+    <section class="focus" id="focus">
+        <div class="container">
+            <hr class="rule" style="margin-bottom:36px" />
+            <p class="section-label reveal">Platform Focus</p>
+            <hr class="rule" style="margin:20px 0 56px" />
+            <div class="focus-inner">
+                <div class="focus-left reveal d1">
+                    <h2>We provide Conservation Intelligence as a Service, shifting field operations from reactive to
+                        mathematically-driven defenses.</h2>
+                </div>
+                <div class="focus-right reveal d2">
+                    <div class="tag-row">
+                        <span class="tag">Field Reporting</span>
+                        <span class="tag">Site Analysis</span>
+                        <span class="tag">Fire Monitoring</span>
+                        <span class="tag">Species Tracking</span>
+                        <span class="tag">Offline Mobile Tech</span>
+                        <span class="tag">Tactical Aviation</span>
+                    </div>
+                    <p>At Terra, we're committed to supporting large-scale conservation NGOs, government wildlife
+                        authorities, and local community conservancies managing vast protected areas. By overcoming
+                        fragmented data silos and severe deployment latency, we utilize real-time, AI-verified
+                        intelligence to drastically reduce response times to poaching threats.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── DEPLOYMENT NETWORK ── -->
+    <section class="highlights" id="highlights">
+        <div class="container">
+            <div class="highlights-header">
+                <p class="section-label reveal">Deployment Network</p>
+                <p class="reveal d1">Partnering with the world's most capable conservation organizations to scale our
+                    platform's footprint across critical ecosystems in Sub-Saharan Africa.</p>
+            </div>
+            <div class="logos-grid reveal d2">
+                <div class="logo-cell"><span class="l-sweetgreen">The Mercedes-Benz Fellowship</span></div>
+                <div class="logo-cell"><span class="l-traba">Lewa</span></div>
+                <div class="logo-cell"><span class="l-monumental">EU LIFE<br>GRANT</span></div>
+                <div class="logo-cell"><span>Microsoft AI</span></div>
+                <div class="logo-cell"><span>▶ UNREASONABLE</span></div>
+                <div class="logo-cell"><span>↗ Conservancy</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CORE CAPABILITIES ── -->
+    <section class="approach" id="approach">
+        <div class="container">
+            <p class="section-label reveal">Core Capabilities & Solutions</p>
+            <hr class="rule" style="margin:20px 0 48px" />
+            <p class="approach-intro reveal d1">At Terra, we believe in the power of
+                <em class="approach-intro">real-time
+                    intelligence</em> to
+                preserve biodiversity. We don't just supply software — we upgrade conservation.
+                <span style="color: var(--copper);"><br>Explore our Target Clients, Solutions, and Prototype Evolution
+                    below.</span>
+            </p>
+            <div class="pillars">
+                <div class="pillar reveal">
+                    <div class="pillar-num">01</div>
+                    <h3>Offline-First Infrastructure</h3>
+                    <p>Built for severe cellular dead zones. Our rugged field applications ensure frontline rangers can
+                        sync critical intelligence payloads without connectivity disruptions.</p>
+                </div>
+                <div class="pillar reveal d1">
+                    <div class="pillar-num">02</div>
+                    <h3>Targeted Deployments</h3>
+                    <p>Patrol optimization driven by mathematically verified hotspots rather than generic routes. We
+                        enable sector commanders to focus aviation and resources actively.</p>
+                </div>
+                <div class="pillar reveal d2">
+                    <div class="pillar-num">03</div>
+                    <h3>Intelligence as a Service</h3>
+                    <p>End-to-end mission integration. From migrating historical data telemetry to configuring custom AI
+                        rules, we fit our platform to your operational reality.</p>
+                </div>
+            </div>
+            <a href="solutions.html" class="enter-btn">
+                Explore Solutions
+            </a>
+
+        </div>
+    </section>
+
+    <!-- ── PLATFORM MODULES ── -->
+    <section class="modules-section" id="modules">
+        <div class="modules-header reveal">
+            <div>
+                <p class="section-label" style="margin-bottom:20px">Platform Modules</p>
+                <h2>Four integrated intelligence layers. One unified field system.</h2>
+            </div>
+            <p>Hover each module to explore its function. Click to access the full capability workspace.</p>
+        </div>
+
+        <div class="panels-strip">
+
+            <div class="mpanel" id="mp-1" onclick="window.location.href='panel-1.html'">
+                <div class="mp-number">1</div>
+                <div class="mp-vtag">Field Reporting</div>
+                <div class="mp-badge">Rangers · NGOs</div>
+                <div class="mp-detail">
+                    Community members submit geo-tagged incident reports in real time — snares, carcasses, illegal trade
+                    — building an evidence base for enforcement.
+                </div>
+                <div class="mp-arrow">→</div>
+            </div>
+
+            <div class="mpanel" id="mp-2" onclick="window.location.href='panel-2.html'">
+                <div class="mp-number">2</div>
+                <div class="mp-vtag">Site Analysis</div>
+                <div class="mp-badge">Community · Stakeholders</div>
+                <div class="mp-detail">
+                    Geospatial analysis maps sector boundaries, vegetation change, and encroachment zones to inform
+                    protected-area planning.
+                </div>
+                <div class="mp-arrow">→</div>
+            </div>
+
+            <div class="mpanel" id="mp-3" onclick="window.location.href='panel-3.html'">
+                <div class="mp-number">3</div>
+                <div class="mp-vtag">Fire Monitoring</div>
+                <div class="mp-badge">Disaster Response</div>
+                <div class="mp-detail">
+                    NASA FIRMS fire data overlaid on protected habitats in real time — enabling rapid response and
+                    seasonal risk modeling.
+                </div>
+                <div class="mp-arrow">→</div>
+            </div>
+
+            <div class="mpanel" id="mp-4" onclick="window.location.href='panel-4.html'">
+                <div class="mp-number">4</div>
+                <div class="mp-vtag">Species Intelligence</div>
+                <div class="mp-badge">Research</div>
+                <div class="mp-detail">
+                    Verified sighting records, confidence scoring, and population trend analytics give stakeholders a
+                    data-driven picture of biodiversity health.
+                </div>
+                <div class="mp-arrow">→</div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ── ROADMAP ── -->
+    <section class="roadmap-section" id="roadmap">
+        <div class="container">
+            <p class="section-label reveal" style="margin-bottom:24px">Execution Roadmap</p>
+            <h2 class="roadmap-title reveal d1">Roadmap<br>Goals</h2>
+            <p class="section-label reveal" style="margin-bottom:14px">HOVER & CLICK ON TIMELINE</p>
+
+            <div class="timeline-wrapper reveal d2">
+                <div class="timeline-bar">
+
+                    <div class="tb-seg node-down" data-rm="0" onclick="openRM(0)">
+                        <div class="t-stem"></div>
+                        <div class="t-label">
+                            <div class="t-phase">Months 1–3</div>
+                            <div class="t-title">01. Develop Prototypes</div>
+                        </div>
+                    </div>
+
+                    <div class="tb-seg node-up" data-rm="1" onclick="openRM(1)">
+                        <div class="t-stem"></div>
+                        <div class="t-label">
+                            <div class="t-phase">Months 4 &amp; 5</div>
+                            <div class="t-title">02. Secure Formal Pilots &amp; Refine</div>
+                        </div>
+                    </div>
+
+                    <div class="tb-seg node-down" data-rm="2" onclick="openRM(2)">
+                        <div class="t-stem"></div>
+                        <div class="t-label">
+                            <div class="t-phase">Months 6 &amp; 7</div>
+                            <div class="t-title">03. Train Frontline Rangers</div>
+                        </div>
+                    </div>
+
+                    <div class="tb-seg node-up" data-rm="3" onclick="openRM(3)">
+                        <div class="t-stem"></div>
+                        <div class="t-label">
+                            <div class="t-phase">Months 10–12</div>
+                            <div class="t-title">04. Protect Wildlife Habitat</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── FINANCIAL SUSTAINABILITY ── -->
+    <section class="funding-section" id="funding">
+        <div class="funding-glow"></div>
+        <div class="container">
+            <p class="section-label reveal" style="margin-bottom:24px; position:relative">Path to Sustainability</p>
+            <h2 class="funding-title reveal d1">Financial<br>Sustainability</h2>
+
+            <div class="funding-cards reveal d2">
+                <div class="fcard">
+                    <div class="fcard-num">01</div>
+                    <div class="fcard-title">Bootstrapping</div>
+                    <div class="fcard-amount">€13,000 EUR</div>
+                    <div class="fcard-desc">Deploy Terra to 2 NGO pilot clients at a $2,500 implementation fee plus a
+                        $5,000 annual Command Tier license, generating approximately $15,000 USD (~€13,000 EUR) in Year
+                        1 revenue.</div>
+                </div>
+                <div class="fcard">
+                    <div class="fcard-num">02</div>
+                    <div class="fcard-title">Follow-up Grants</div>
+                    <div class="fcard-amount">€30,000 EUR</div>
+                    <div class="fcard-desc">Tier-1 AI and conservation grants to subsidize cloud infrastructure costs
+                        and co-fund further NGO pilot deployments across Sub-Saharan Africa.</div>
+                </div>
+                <div class="fcard">
+                    <div class="fcard-num">03</div>
+                    <div class="fcard-title">Investment</div>
+                    <div class="fcard-amount">€50,000 EUR</div>
+                    <div class="fcard-desc">We are actively pitching to East Africa-focused impact investors and
+                        conservation technology accelerators for an initial seed round.</div>
+                </div>
+            </div>
+
+            <div class="funding-cta reveal d3">
+                <a href="mailto:partnerships@terra.org" class="btn-accent">Partner With Us &nbsp;→</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CTA BAND ── -->
+    <div class="cta-band" id="contact">
+        <h2>Ready to optimize limited operational field resources?</h2>
+        <a href="mailto:deployments@terra.org" class="btn-primary">Initialize Deployment &nbsp;→</a>
+    </div>
+
+    <!-- ── FOOTER ── -->
+    <footer>
+        <img src="assets/MINI TERRA LOGO.png" alt="logo"
+            style="width: 9%; height: 9%; object-fit: contain; z-index: 2; transition: filter 0.3s ease, transform 0.3s ease;">
+        <div class="footer-links">
+            <a href="#focus">Modules</a>
+            <a href="#highlights">Partners</a>
+            <a href="#approach">Capabilities</a>
+            <a href="#modules">Platform</a>
+            <a href="#roadmap">Roadmap</a>
+            <a href="#contact">Contact</a>
+        </div>
+        <span class="footer-copy">© 2026 Terra Labs</span>
+    </footer>
+
+    <!-- ── ROADMAP DETAIL PANEL ── -->
+    <div class="dp-overlay" id="dp-overlay" onclick="closeRM()"></div>
+    <div class="dp-panel" id="dp-panel">
+        <button class="dp-close" onclick="closeRM()">×</button>
+        <div id="dp-body"></div>
+    </div>
+
+    <script>
+        /* ── Nav scroll ── */
+        const nav = document.getElementById('nav');
+        window.addEventListener('scroll', () => {
+            nav.classList.toggle('scrolled', window.scrollY > 40);
+        }, { passive: true });
+
+        /* ── Reveal observer ── */
+        const obs = new IntersectionObserver(entries => {
+            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+        /* ── Roadmap data ── */
+        const rmData = [
+            {
+                phase: 'Months 1–3',
+                title: 'Launch Mobile Application',
+                metricVal: '1',
+                metricLbl: '# of digital platforms launched',
+                desc: 'The mobile application is the foundational dependency that gates every other goal — without it, rangers in cellular dead zones cannot contribute intelligence, breaking the data pipeline at its most critical point. It is therefore the first priority: months 1–3 are dedicated to completing development, conducting internal offline sync testing using the rugged field tablet in simulated dead-zone conditions, and validating payload compression before any ranger is asked to use it. By month 4, the application is production-ready and deployed ahead of the first ranger training cohort.'
+            },
+            {
+                phase: 'Months 4 & 5',
+                title: 'Secure Formal Operational Pilots',
+                metricVal: '2',
+                metricLbl: '# of formal external partnerships established',
+                desc: 'Partnership acquisition is the critical first unlock, and everything else depends on it. In months 1–3, outreach targets one primary organization, culminating in a signed pilot agreement and data integration setup. This first partnership validates the "Intelligence as a Service" model and provides the real telemetry needed to optimize Terra\'s Confidence Engine. In months 6–9, with a live pilot already demonstrating measurable operational improvement, the second partnership becomes a credibility-driven conversion rather than a cold pitch.'
+            },
+            {
+                phase: 'Months 6 & 7',
+                title: 'Train Frontline Rangers',
+                metricVal: '40',
+                metricLbl: '# of people trained or upskilled',
+                desc: 'Ranger onboarding is deliberately sequenced after platform deployment stabilizes. In months 4–6, the first structured training cohort of approximately 20 rangers is conducted at the first partner organization\'s field station, with direct usability feedback immediately informing interface refinements. In months 7–9, the second cohort of 20 rangers is onboarded at the second partner site, now benefiting from a UI already stress-tested in real operational conditions. Training 40 rangers is not just an adoption metric — it is the ultimate usability test.'
+            },
+            {
+                phase: 'Months 10–12',
+                title: 'Protect Wildlife Habitat',
+                metricVal: '15,000',
+                metricLbl: '# of hectares of ecodiverse land protected',
+                desc: 'This goal is the cumulative outcome of everything that precedes it. In months 4–7, active ranger deployments begin over a defined pilot sector, with Terra\'s Site Analysis workspace directing patrols toward mathematically verified hotspots rather than generic routes. By months 8–10, a second partner expands active coverage to validate the 15,000-hectare threshold. This figure is deliberately grounded: Kenya\'s Lewa Conservancy alone covers 25,000 hectares, making 15,000 achievable under a single expanded pilot.'
+            }
+        ];
+
+        const dpOverlay = document.getElementById('dp-overlay');
+        const dpPanel = document.getElementById('dp-panel');
+        const dpBody = document.getElementById('dp-body');
+        const rmSegs = document.querySelectorAll('.tb-seg');
+
+        function openRM(i) {
+            const d = rmData[i];
+            dpBody.innerHTML = `
+                <div class="dp-mono">${d.phase}</div>
+                <div class="dp-heading">${d.title}</div>
+                <div class="dp-metric">
+                    <div class="dp-metric-val">${d.metricVal}</div>
+                    <div class="dp-metric-lbl">${d.metricLbl}</div>
+                </div>
+                <div class="dp-desc">${d.desc}</div>
+            `;
+            rmSegs.forEach(s => s.classList.remove('rm-active'));
+            document.querySelector(`.tb-seg[data-rm="${i}"]`).classList.add('rm-active');
+            dpOverlay.classList.add('open');
+            dpPanel.classList.add('open');
+        }
+
+        function closeRM() {
+            dpOverlay.classList.remove('open');
+            dpPanel.classList.remove('open');
+            rmSegs.forEach(s => s.classList.remove('rm-active'));
+        }
+    </script>
+</body>
+
+</html>

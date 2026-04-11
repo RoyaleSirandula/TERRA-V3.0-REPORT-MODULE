@@ -146,7 +146,7 @@
     .hero-upper-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(to bottom, rgba(0,10,20,0.3) 0%, rgba(0,15,30,0.72) 100%);
+      background: linear-gradient(to bottom, rgba(0, 10, 20, 0.3) 0%, rgba(0, 15, 30, 0.72) 100%);
     }
 
     .hero-lower {
@@ -250,7 +250,9 @@
       flex-shrink: 0;
     }
 
-    .stats-topnav .t-active { color: #111; }
+    .stats-topnav .t-active {
+      color: #111;
+    }
 
     .stats-topnav .t-active-bar {
       position: relative;
@@ -304,7 +306,9 @@
       border-bottom: 1px solid #eee;
     }
 
-    .stat-row:first-child { padding-top: 0; }
+    .stat-row:first-child {
+      padding-top: 0;
+    }
 
     .stat-num {
       font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', monospace;
@@ -426,7 +430,9 @@
       background: #1e2a1e;
     }
 
-    .card.c-active { flex: 3; }
+    .card.c-active {
+      flex: 3;
+    }
 
     .card-bg {
       position: absolute;
@@ -436,7 +442,9 @@
       transition: transform 0.5s ease;
     }
 
-    .card:hover .card-bg { transform: scale(1.04); }
+    .card:hover .card-bg {
+      transform: scale(1.04);
+    }
 
     .card-overlay {
       position: absolute;
@@ -499,7 +507,9 @@
       pointer-events: none;
     }
 
-    .card.c-active .card-vlabel { opacity: 0; }
+    .card.c-active .card-vlabel {
+      opacity: 0;
+    }
 
     /* ───────────────────────────────── */
     /*  SECTIONS 4 & 5 — BENTO GRIDS   */
@@ -548,11 +558,11 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(to bottom, rgba(0,10,20,0.55) 0%, rgba(0,0,0,0.80) 100%);
+      background: linear-gradient(to bottom, rgba(0, 10, 20, 0.55) 0%, rgba(0, 0, 0, 0.80) 100%);
       border-radius: 2px;
     }
 
-    .bento-left-2 > * {
+    .bento-left-2>* {
       position: relative;
       z-index: 2;
     }
@@ -716,8 +726,9 @@
   <!-- ── FIXED NAV ── -->
   <nav>
     <div style="display:flex;align-items:center;gap:20px;">
-      <div class="nav-logo">TERRA</div>
-      <a href="home.html" class="nav-back">← All Issues</a>
+      <img src="assets/MINI TERRA LOGO.png" alt="logo"
+        style="width: 25%; height: 25%; object-fit: contain; z-index: 2; transition: filter 0.3s ease, transform 0.3s ease; margin-left: -10px;">
+      <a href="testing2.html#modules" class="nav-back">← All Issues</a>
     </div>
     <div class="nav-center">Species Intelligence &nbsp;·&nbsp; Biodiversity Loss</div>
     <div class="nav-dots">
@@ -779,29 +790,38 @@
         <div class="stats-nums">
           <div class="stat-row">
             <div class="stat-num">1M+</div>
-            <div class="stat-lbl">plant and animal species currently threatened with extinction — the largest mass die-off since the dinosaurs</div>
+            <div class="stat-lbl">plant and animal species currently threatened with extinction — the largest mass
+              die-off since the dinosaurs</div>
           </div>
           <div class="stat-row">
             <div class="stat-num">68%</div>
-            <div class="stat-lbl">average decline in monitored vertebrate populations between 1970 and 2018, per WWF Living Planet Report</div>
+            <div class="stat-lbl">average decline in monitored vertebrate populations between 1970 and 2018, per WWF
+              Living Planet Report</div>
           </div>
           <div class="stat-row">
             <div class="stat-num">83%</div>
-            <div class="stat-lbl">of freshwater species populations have collapsed — the most severe biodiversity contraction of any habitat type</div>
+            <div class="stat-lbl">of freshwater species populations have collapsed — the most severe biodiversity
+              contraction of any habitat type</div>
           </div>
         </div>
 
         <div class="stats-text">
           <div class="stats-col">
-            <p>Species population decline is the defining ecological crisis of this century. Unlike deforestation or fire damage,
-              it is largely invisible — occurring gradually across vast landscapes in the form of reduced breeding frequency,
-              range contraction, and genetic isolation. By the time a collapse becomes visible to conventional monitoring,
+            <p>Species population decline is the defining ecological crisis of this century. Unlike deforestation or
+              fire damage,
+              it is largely invisible — occurring gradually across vast landscapes in the form of reduced breeding
+              frequency,
+              range contraction, and genetic isolation. By the time a collapse becomes visible to conventional
+              monitoring,
               the recovery intervention window has often already closed.</p>
           </div>
           <div class="stats-col">
-            <p>Terra's Species Intelligence module aggregates and cross-validates sighting data from multiple field sources —
-              ranger-logged GPS observations, AI-processed camera trap identifications, satellite-linked collar telemetry,
-              and community-reported encounters — into a unified species record. Population trend models, confidence-scored
+            <p>Terra's Species Intelligence module aggregates and cross-validates sighting data from multiple field
+              sources —
+              ranger-logged GPS observations, AI-processed camera trap identifications, satellite-linked collar
+              telemetry,
+              and community-reported encounters — into a unified species record. Population trend models,
+              confidence-scored
               sighting databases, and genetic diversity flags give conservationists the earliest possible warning when a
               species in their reserve enters a trajectory toward local extinction.</p>
           </div>
@@ -809,7 +829,8 @@
       </div>
 
       <div class="stats-footnote">
-        * Population figures sourced from IUCN Red List, WWF Living Planet Report 2022, and IPBES Global Assessment. Terra species data cross-validated with field records.
+        * Population figures sourced from IUCN Red List, WWF Living Planet Report 2022, and IPBES Global Assessment.
+        Terra species data cross-validated with field records.
       </div>
     </section>
 
@@ -830,7 +851,8 @@
       <div class="cards-row" id="cardsRow">
 
         <div class="card c-active" id="c0" onclick="activateCard(0)">
-          <div class="card-bg" style="background-image:url('assets/card_evidence.png'); background-color:#001a24;"></div>
+          <div class="card-bg" style="background-image:url('assets/card_evidence.png'); background-color:#001a24;">
+          </div>
           <div class="card-overlay"></div>
           <div class="card-body">
             <div class="card-icon">📷</div>
@@ -844,14 +866,16 @@
         </div>
 
         <div class="card" id="c1" onclick="activateCard(1)">
-          <div class="card-bg" style="background-image:url('assets/card_geo_reporting.png'); background-color:#001020;"></div>
+          <div class="card-bg" style="background-image:url('assets/card_geo_reporting.png'); background-color:#001020;">
+          </div>
           <div class="card-overlay"></div>
           <div class="card-body">
             <div class="card-icon">📡</div>
             <div class="card-title">Collar Telemetry Integration</div>
             <div class="card-desc">GPS collar data from tagged individuals is ingested directly into Terra's
               mapping layer — displaying real-time animal positions, historical movement paths, territory range
-              estimates, and proximity alerts when collared animals approach reserve boundaries or community zones.</div>
+              estimates, and proximity alerts when collared animals approach reserve boundaries or community zones.
+            </div>
           </div>
           <div class="card-vlabel">Collar Data</div>
         </div>
