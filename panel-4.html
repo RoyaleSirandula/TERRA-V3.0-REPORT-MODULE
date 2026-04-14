@@ -322,7 +322,7 @@
       font-size: 18px;
       color: #777;
       margin-top: 9px;
-      max-width: 360px;
+      max-width: 400px;
       line-height: 1.5;
     }
 
@@ -718,6 +718,505 @@
       font-size: 100px;
       color: #aaa;
     }
+
+    /* ══════════════════════════════════
+       TABLET  769px – 1024px
+    ══════════════════════════════════ */
+    @media (min-width: 769px) and (max-width: 1024px) {
+
+      nav {
+        padding: 0 24px;
+      }
+
+      .nav-center {
+        font-size: 9px;
+        letter-spacing: 2px;
+      }
+
+      .hero-lower {
+        padding: 28px 32px 40px;
+      }
+
+      .hero-info {
+        width: 340px;
+      }
+
+      .hero-desc {
+        font-size: 16px;
+      }
+
+      .hero-footer {
+        padding: 0 32px;
+      }
+
+      .s-stats {
+        padding: 0 32px;
+      }
+
+      .stats-topnav {
+        gap: 20px;
+      }
+
+      .stats-body {
+        gap: 32px;
+      }
+
+      .stats-nums {
+        flex: 0 0 44%;
+      }
+
+      .stat-num {
+        font-size: clamp(56px, 8vw, 110px);
+      }
+
+      .stat-lbl {
+        font-size: 15px;
+      }
+
+      .stats-col {
+        font-size: 14px;
+      }
+
+      .s-cards {
+        padding: 36px 32px 32px;
+      }
+
+      .bento-container {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .bento-left,
+      .bento-left-2 {
+        padding: 20px 28px;
+      }
+
+      .bento-left h2,
+      .bento-left-2 h2 {
+        font-size: 72px;
+        margin-bottom: 24px;
+      }
+
+      .bento-left-subtitle,
+      .bento-left-2-subtitle-2 {
+        font-size: 16px;
+      }
+
+      .bento-top-right,
+      .bento-bottom-right {
+        padding: 24px 28px;
+        gap: 20px;
+      }
+
+      .bento-heading {
+        font-size: 17px;
+      }
+
+      .bento-text {
+        font-size: 13px;
+      }
+    }
+
+    /* ══════════════════════════════════
+       MOBILE  ≤ 768px
+    ══════════════════════════════════ */
+    @media (max-width: 768px) {
+
+      nav {
+        padding: 0 16px;
+      }
+
+      nav img {
+        width: auto !important;
+        height: 26px !important;
+        margin-left: 0 !important;
+      }
+
+      .nav-center {
+        display: none;
+      }
+
+      .scroll-wrap {
+        scroll-snap-type: none;
+        height: auto;
+        min-height: calc(100vh - 60px);
+        overflow-y: auto;
+      }
+
+      .s-hero,
+      .s-stats,
+      .s-cards,
+      .s-bento {
+        height: auto;
+        scroll-snap-align: none;
+      }
+
+      .s-hero {
+        min-height: 0;
+      }
+
+      .hero-upper {
+        flex: 0 0 38vh;
+      }
+
+      .hero-upper::after {
+        font-size: 90px;
+        right: 12px;
+        top: 12px;
+      }
+
+      .hero-lower {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 24px 20px 52px;
+        gap: 18px;
+      }
+
+      .hero-eyebrow {
+        font-size: 9px;
+        letter-spacing: 2px;
+        margin-bottom: 10px;
+      }
+
+      .hero-title {
+        font-size: clamp(48px, 12vw, 80px);
+      }
+
+      .hero-info {
+        width: 100%;
+        padding-left: 0;
+      }
+
+      .hero-dot {
+        width: 14px;
+        height: 14px;
+        margin-bottom: 12px;
+      }
+
+      .hero-desc {
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .hero-footer {
+        padding: 6px 20px;
+        height: auto;
+        flex-wrap: wrap;
+        gap: 4px;
+        font-size: 10px;
+      }
+
+      .s-stats {
+        padding: 0 20px;
+        overflow: visible;
+        height: auto;
+        min-height: auto;
+      }
+
+      .stats-topnav {
+        gap: 10px;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .stats-topnav span {
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .stats-intro-label {
+        font-size: 16px;
+        letter-spacing: 1.5px;
+        margin: 20px 0 14px;
+      }
+
+      .stats-body {
+        flex-direction: column;
+        gap: 20px;
+        overflow: visible;
+        min-height: 0;
+      }
+
+      .stats-nums {
+        flex: none;
+        width: 100%;
+      }
+
+      .stat-num {
+        font-size: clamp(46px, 13vw, 80px);
+        letter-spacing: 2px;
+      }
+
+      .stat-lbl {
+        font-size: 13px;
+        max-width: 100%;
+        margin-top: 6px;
+        line-height: 1.5;
+      }
+
+      .stat-row {
+        padding: 16px 0;
+      }
+
+      .stats-text {
+        flex-direction: column;
+        gap: 14px;
+        overflow: visible;
+        padding-top: 0;
+      }
+
+      .stats-col {
+        overflow: visible;
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .stats-footnote {
+        font-size: 9px;
+        padding: 10px 0;
+      }
+
+      .s-cards {
+        padding: 24px 16px 20px;
+        height: auto;
+        min-height: auto;
+      }
+
+      .cards-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .cards-tag {
+        font-size: 9px;
+        margin-bottom: 6px;
+      }
+
+      .cards-heading {
+        font-size: 15px;
+        line-height: 1.35;
+      }
+
+      .c-arrow {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
+      }
+
+      .cards-row {
+        flex-direction: column;
+        gap: 5px;
+        flex: none;
+        min-height: 0;
+      }
+
+      .card {
+        flex: none !important;
+        height: 108px;
+        border-radius: 4px;
+      }
+
+      .card.c-active {
+        height: 196px;
+      }
+
+      .card.c-active .card-desc {
+        max-height: 110px;
+        font-size: 11px;
+      }
+
+      .card-icon {
+        font-size: 14px;
+        margin-bottom: 5px;
+      }
+
+      .card-title {
+        font-size: 12px;
+      }
+
+      .card-vlabel {
+        display: none;
+      }
+
+      .s-bento {
+        padding: 10px;
+        height: auto;
+        min-height: auto;
+      }
+
+      .bento-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        height: auto;
+        gap: 10px;
+      }
+
+      .bento-left,
+      .bento-left-2 {
+        grid-row: auto;
+        padding: 20px 18px;
+        min-height: 176px;
+      }
+
+      .bento-left-subtitle,
+      .bento-left-2-subtitle-2 {
+        font-size: 12px;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+      }
+
+      .bento-left h2,
+      .bento-left-2 h2 {
+        font-size: 46px;
+        letter-spacing: 0.5px;
+        margin-bottom: 14px;
+      }
+
+      .bento-tab {
+        padding: 14px 16px;
+        margin-bottom: 8px;
+      }
+
+      .bento-tab-title {
+        font-size: 12px;
+      }
+
+      .bento-tab-sub,
+      .bento-tab-sub-2 {
+        font-size: 10px;
+      }
+
+      .bento-top-right,
+      .bento-bottom-right {
+        grid-template-columns: 1fr;
+        padding: 18px 16px;
+        gap: 18px;
+      }
+
+      .bento-badge {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+
+      .bento-heading {
+        font-size: 14px;
+        margin-bottom: 6px;
+        line-height: 1.35;
+      }
+
+      .bento-text {
+        font-size: 12.5px;
+        line-height: 1.65;
+      }
+
+      .bento-arrow {
+        display: none;
+      }
+    }
+
+    /* ══════════════════════════════════
+       SMALL PHONE  ≤ 480px
+    ══════════════════════════════════ */
+    @media (max-width: 480px) {
+
+      .hero-upper {
+        flex: 0 0 34vh;
+      }
+
+      .hero-upper::after {
+        font-size: 68px;
+      }
+
+      .hero-title {
+        font-size: clamp(40px, 11vw, 64px);
+      }
+
+      .hero-lower {
+        padding: 20px 14px 48px;
+        gap: 14px;
+      }
+
+      .hero-desc {
+        font-size: 13.5px;
+      }
+
+      .hero-footer {
+        padding: 6px 14px;
+        font-size: 9.5px;
+      }
+
+      .s-stats {
+        padding: 0 14px;
+      }
+
+      .stats-topnav {
+        font-size: 9px;
+        gap: 8px;
+      }
+
+      .stat-num {
+        font-size: clamp(40px, 11vw, 64px);
+      }
+
+      .stat-lbl {
+        font-size: 12px;
+      }
+
+      .stats-col {
+        font-size: 12.5px;
+      }
+
+      .s-cards {
+        padding: 20px 12px 16px;
+      }
+
+      .cards-heading {
+        font-size: 14px;
+      }
+
+      .card {
+        height: 96px;
+      }
+
+      .card.c-active {
+        height: 180px;
+      }
+
+      .s-bento {
+        padding: 8px;
+      }
+
+      .bento-left,
+      .bento-left-2 {
+        padding: 16px 14px;
+        min-height: 160px;
+      }
+
+      .bento-left h2,
+      .bento-left-2 h2 {
+        font-size: 38px;
+        margin-bottom: 10px;
+      }
+
+      .bento-heading {
+        font-size: 13px;
+      }
+
+      .bento-text {
+        font-size: 12px;
+      }
+
+      .bento-badge {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+      }
+    }
   </style>
 </head>
 
@@ -1057,6 +1556,132 @@
 
       </div>
     </section>
+    <!-- ── FOOTER ── -->
+    <style>
+      .t2-footer {
+        background: #050a0c;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 48px 48px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 32px;
+        flex-wrap: wrap;
+      }
+
+      .t2-footer-left {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .t2-footer-wordmark {
+        font-family: 'Syne', 'Open Sans', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.35);
+      }
+
+      .t2-footer-label {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        color: rgba(255, 255, 255, 0.18);
+        text-transform: uppercase;
+      }
+
+      .t2-footer-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid #c8ff00;
+        color: #c8ff00;
+        padding: 10px 24px;
+        font-family: 'Syne', 'Open Sans', sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        text-decoration: none;
+        position: relative;
+        overflow: hidden;
+        transition: color 0.4s ease;
+      }
+
+      .t2-footer-back::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #c8ff00;
+        transform: scaleX(0);
+        transform-origin: right;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 0;
+      }
+
+      .t2-footer-back:hover {
+        color: #000;
+      }
+
+      .t2-footer-back:hover::before {
+        transform: scaleX(1);
+        transform-origin: left;
+      }
+
+      .t2-footer-back span {
+        position: relative;
+        z-index: 1;
+      }
+
+      .t2-footer-arrow {
+        position: relative;
+        z-index: 1;
+        font-size: 14px;
+        transition: transform 0.3s ease;
+      }
+
+      .t2-footer-back:hover .t2-footer-arrow {
+        transform: translateX(-4px);
+      }
+
+      .t2-footer-copy {
+        font-family: 'Syne', 'Open Sans', sans-serif;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        color: rgba(255, 255, 255, 0.18);
+        text-transform: uppercase;
+        padding-top: 24px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        margin-top: 8px;
+      }
+
+      .t2-footer-wrap {
+        background: #050a0c;
+        scroll-snap-align: end;
+      }
+    </style>
+
+    <footer class="t2-footer-wrap">
+      <div class="t2-footer">
+        <div class="t2-footer-left">
+          <div class="t2-footer-wordmark">Terra Labs</div>
+          <div class="t2-footer-label">Module 01 — Poaching & Wildlife Crime</div>
+        </div>
+        <a class="t2-footer-back" href="testing2.html#modules">
+          <span class="t2-footer-arrow">&#8592;</span>
+          <span>Back to All Modules</span>
+        </a>
+      </div>
+      <div style="padding: 0 48px 28px; background: #050a0c;">
+        <div class="t2-footer-copy">Terra &copy; 2026 &mdash; Conservation Intelligence Platform</div>
+      </div>
+    </footer>
+
 
   </div><!-- end scroll-wrap -->
 

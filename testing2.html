@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Terra Labs</title>
+    <title>Terra – Terra Labs</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -218,7 +218,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: center 30%;
+            object-position: center 100%;
             filter: brightness(.7) saturate(.85);
             transform: scale(1.06);
             animation: heroZoom 14s var(--ease) forwards
@@ -475,7 +475,7 @@
             gap: 1px;
             background: var(--rule);
             border: 1px solid var(--rule);
-            margin-bottom: 56px
+            margin-top: 56px
         }
 
         .pillar {
@@ -1166,18 +1166,168 @@
             transition-delay: .4s
         }
 
-        @media(max-width:768px) {
+        /* ── HAMBURGER & MOBILE NAV ── */
+        .nav-hamburger {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            flex-direction: column;
+            justify-content: center;
+            gap: 5px;
+            z-index: 101;
+        }
+
+        .nav-hamburger span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: rgba(255, 255, 255, .8);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            transform-origin: center;
+        }
+
+        .nav-hamburger.open span:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+
+        .nav-hamburger.open span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .nav-hamburger.open span:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: var(--nav-h);
+            left: 0;
+            right: 0;
+            background: rgba(5, 10, 12, .97);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--rule);
+            flex-direction: column;
+            padding: 8px var(--gutter) 24px;
+            z-index: 98;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-8px);
+            transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+        }
+
+        .mobile-nav.open {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .mobile-nav a {
+            font-family: 'Syne', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .65);
+            padding: 16px 0;
+            border-bottom: 1px solid var(--rule);
+            transition: color 0.2s;
+            display: block;
+        }
+
+        .mobile-nav a:last-child {
+            border-bottom: none;
+            color: var(--accent);
+        }
+
+        .mobile-nav a:hover {
+            color: var(--accent);
+        }
+
+        /* ─────────────────────────────────────
+           TABLET  769px – 1024px
+        ───────────────────────────────────── */
+        @media (min-width: 769px) and (max-width: 1024px) {
             .nav-links {
-                display: none
+                gap: 20px
             }
 
             .focus-inner {
-                grid-template-columns: 1fr;
                 gap: 40px
             }
 
             .highlights-header {
-                flex-direction: column
+                gap: 32px
+            }
+
+            .modules-header {
+                padding: 48px var(--gutter) 36px
+            }
+
+            .panels-strip {
+                height: 500px
+            }
+
+            .roadmap-section {
+                padding: 72px 0 88px
+            }
+
+            .funding-section {
+                padding: 72px 0 88px
+            }
+
+            .fcard {
+                padding: 36px 28px
+            }
+        }
+
+        /* ─────────────────────────────────────
+           MOBILE  ≤ 768px
+        ───────────────────────────────────── */
+        @media(max-width:768px) {
+
+            /* Nav */
+            .nav-links {
+                display: none
+            }
+
+            .nav-hamburger {
+                display: flex
+            }
+
+            .mobile-nav {
+                display: flex
+            }
+
+            nav img {
+                width: auto !important;
+                height: 26px !important
+            }
+
+            /* Focus */
+            .focus {
+                padding: 56px 0 48px
+            }
+
+            .focus-inner {
+                grid-template-columns: 1fr;
+                gap: 32px
+            }
+
+            .focus-left h2 {
+                font-size: clamp(20px, 5vw, 28px)
+            }
+
+            /* Highlights */
+            .highlights {
+                padding: 48px 0 56px
+            }
+
+            .highlights-header {
+                flex-direction: column;
+                gap: 20px
             }
 
             .logos-grid {
@@ -1188,26 +1338,80 @@
                 border-right: none
             }
 
-            .logo-cell:nth-child(4) {
+            .logo-cell:nth-child(4),
+            .logo-cell:nth-child(5),
+            .logo-cell:nth-child(6) {
                 border-top: 1px solid var(--rule)
+            }
+
+            /* Approach */
+            .approach {
+                padding: 56px 0
+            }
+
+            .approach-intro,
+            .approach-continuation {
+                font-size: clamp(18px, 4.5vw, 26px);
+                margin-bottom: 32px
             }
 
             .pillars {
                 grid-template-columns: 1fr
             }
 
+            .pillar {
+                padding: 28px 24px
+            }
+
+            .pillar-num {
+                font-size: 36px;
+                margin-bottom: 12px
+            }
+
+            .pillar h3 {
+                font-size: 14px
+            }
+
+            .pillar p {
+                font-size: 13px
+            }
+
+            /* CTA band */
             .cta-band {
                 flex-direction: column;
-                align-items: flex-start
+                align-items: flex-start;
+                padding: 52px var(--gutter);
+                gap: 20px
             }
 
             .img-strip {
                 grid-template-columns: 1fr
             }
 
+            /* Footer */
             footer {
                 flex-direction: column;
-                align-items: flex-start
+                align-items: flex-start;
+                gap: 20px
+            }
+
+            footer img {
+                width: auto !important;
+                height: 26px !important
+            }
+
+            /* Modules panels */
+            .modules-header {
+                flex-direction: column;
+                padding: 36px var(--gutter) 24px
+            }
+
+            .modules-header h2 {
+                font-size: clamp(20px, 5vw, 28px)
+            }
+
+            .modules-header p {
+                font-size: 12px
             }
 
             .panels-strip {
@@ -1216,28 +1420,166 @@
             }
 
             .mpanel {
-                height: 200px;
+                height: 178px;
                 flex: unset !important
             }
 
             .mp-number {
-                font-size: 100px
+                font-size: 88px
             }
 
-            .funding-cards {
-                grid-template-columns: 1fr
+            .mp-vtag {
+                bottom: 98px
             }
 
-            .modules-header {
-                flex-direction: column
+            .mp-badge {
+                font-size: 9px;
+                padding: 3px 10px
+            }
+
+            /* Roadmap */
+            .roadmap-section {
+                padding: 56px 0 68px
+            }
+
+            .roadmap-title {
+                font-size: clamp(48px, 10vw, 80px);
+                margin-bottom: 40px
             }
 
             .timeline-wrapper {
                 height: 280px
             }
 
-            .dp-panel {
+            .timeline-bar {
+                left: 0;
                 width: 100%
+            }
+
+            .t-label {
+                width: 120px;
+                font-size: 10px
+            }
+
+            .t-title {
+                font-size: 12px
+            }
+
+            /* Funding */
+            .funding-section {
+                padding: 56px 0 68px
+            }
+
+            .funding-title {
+                font-size: clamp(44px, 11vw, 80px);
+                margin-bottom: 40px
+            }
+
+            .funding-cards {
+                grid-template-columns: 1fr
+            }
+
+            .fcard {
+                padding: 32px 24px
+            }
+
+            .fcard-title {
+                font-size: 16px;
+                margin-bottom: 12px
+            }
+
+            .fcard-amount {
+                font-size: 18px;
+                margin-bottom: 18px
+            }
+
+            .fcard-desc {
+                font-size: 13px
+            }
+
+            /* Hero */
+            .hero-tagline {
+                font-size: 11px;
+                max-width: 178px;
+                line-height: 1.55
+            }
+
+            /* Detail panel */
+            .dp-panel {
+                width: 100%;
+                padding: 60px 20px 36px
+            }
+
+            .dp-heading {
+                font-size: 32px
+            }
+
+            .dp-metric-val {
+                font-size: 22px
+            }
+
+            .dp-desc {
+                font-size: 12.5px
+            }
+        }
+
+        /* ─────────────────────────────────────
+           SMALL PHONE  ≤ 480px
+        ───────────────────────────────────── */
+        @media(max-width:480px) {
+            .logos-grid {
+                grid-template-columns: repeat(2, 1fr)
+            }
+
+            .logo-cell:nth-child(2) {
+                border-right: none
+            }
+
+            .logo-cell:nth-child(3) {
+                border-right: 1px solid var(--rule);
+                border-top: 1px solid var(--rule)
+            }
+
+            .logo-cell:nth-child(4) {
+                border-top: 1px solid var(--rule)
+            }
+
+            .logo-cell:nth-child(5) {
+                border-top: 1px solid var(--rule)
+            }
+
+            .logo-cell:nth-child(6) {
+                border-top: 1px solid var(--rule)
+            }
+
+            .mpanel {
+                height: 156px
+            }
+
+            .mp-number {
+                font-size: 74px
+            }
+
+            .mp-vtag {
+                bottom: 86px
+            }
+
+            .roadmap-title {
+                font-size: clamp(40px, 11vw, 72px);
+                margin-bottom: 32px
+            }
+
+            .funding-title {
+                font-size: clamp(38px, 10vw, 68px);
+                margin-bottom: 32px
+            }
+
+            .fcard {
+                padding: 24px 18px
+            }
+
+            .dp-panel {
+                padding: 52px 16px 28px
             }
         }
     </style>
@@ -1257,12 +1599,25 @@
                 <a href="#roadmap">Roadmap</a>
                 <a href="http://localhost:3000/login.html" class="nav-cta">System Access</a>
             </div>
+            <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
         </div>
     </nav>
 
+    <!-- ── MOBILE NAV DRAWER ── -->
+    <div class="mobile-nav" id="mobile-nav">
+        <a href="#focus" onclick="closeMobileNav()">Modules</a>
+        <a href="#highlights" onclick="closeMobileNav()">Partners</a>
+        <a href="#approach" onclick="closeMobileNav()">Capabilities</a>
+        <a href="#modules" onclick="closeMobileNav()">Platform</a>
+        <a href="#roadmap" onclick="closeMobileNav()">Roadmap</a>
+        <a href="http://localhost:3000/login.html" onclick="closeMobileNav()">System Access</a>
+    </div>
+
     <!-- ── HERO ── -->
     <section class="hero">
-        <img class="hero-img" src="https://i.pinimg.com/1200x/86/6b/8b/866b8ba74fc3dc4adf2ed2be647b5db8.jpg"
+        <img class="hero-img" src="https://i.pinimg.com/1200x/c5/37/a9/c537a9b083bf01d5de78b145828b7b33.jpg"
             alt="Tactical map landscape" />
         <div class="hero-grid"></div>
         <p class="hero-tagline">Terra is an AI-powered tactical platform.<br />We equip frontline rangers to protect
@@ -1312,8 +1667,8 @@
                 <div class="logo-cell"><span class="l-traba">Lewa</span></div>
                 <div class="logo-cell"><span class="l-monumental">EU LIFE<br>GRANT</span></div>
                 <div class="logo-cell"><span>Microsoft AI</span></div>
-                <div class="logo-cell"><span>▶ UNREASONABLE</span></div>
-                <div class="logo-cell"><span>↗ Conservancy</span></div>
+                <div class="logo-cell"><span>UNREASONABLE</span></div>
+                <div class="logo-cell"><span>Kenya Wildlife Service</span></div>
             </div>
         </div>
     </section>
@@ -1330,6 +1685,9 @@
                 <span style="color: var(--copper);"><br>Explore our Target Clients, Solutions, and Prototype Evolution
                     below.</span>
             </p>
+            <a href="solutions.html" class="enter-btn">
+                Explore Solutions
+            </a>
             <div class="pillars">
                 <div class="pillar reveal">
                     <div class="pillar-num">01</div>
@@ -1350,9 +1708,6 @@
                         rules, we fit our platform to your operational reality.</p>
                 </div>
             </div>
-            <a href="solutions.html" class="enter-btn">
-                Explore Solutions
-            </a>
 
         </div>
     </section>
@@ -1601,6 +1956,25 @@
             dpPanel.classList.remove('open');
             rmSegs.forEach(s => s.classList.remove('rm-active'));
         }
+
+        /* ── Mobile nav ── */
+        const hamburger = document.getElementById('nav-hamburger');
+        const mobileNav = document.getElementById('mobile-nav');
+
+        function closeMobileNav() {
+            hamburger.classList.remove('open');
+            mobileNav.classList.remove('open');
+        }
+
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('open');
+            mobileNav.classList.toggle('open');
+        });
+
+        /* Close mobile nav on scroll */
+        window.addEventListener('scroll', () => {
+            if (mobileNav.classList.contains('open')) closeMobileNav();
+        }, { passive: true });
     </script>
 </body>
 

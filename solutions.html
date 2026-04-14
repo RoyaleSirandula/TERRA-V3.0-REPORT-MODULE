@@ -963,6 +963,191 @@
     .fade-up:nth-child(4) {
       transition-delay: 0.3s;
     }
+
+    /* ══════════════════════════════════
+       MOBILE RESPONSIVE  ≤ 768px
+    ══════════════════════════════════ */
+    @media (max-width: 768px) {
+
+      /* ── Global ── */
+      body {
+        overflow: auto;
+      }
+
+      /* ── Scroll wrap: disable snap, let content breathe ── */
+      .scroll-wrap {
+        scroll-snap-type: none;
+        height: auto;
+        overflow-y: visible;
+      }
+
+      /* ── Nav ── */
+      nav {
+        padding: 0 16px;
+      }
+
+      .nav-center {
+        display: none;
+      }
+
+      .nav-right {
+        display: none;
+      }
+
+      .nav-logo {
+        font-size: 12px;
+        padding: 4px 12px;
+        letter-spacing: 3px;
+      }
+
+      .nav-back {
+        font-size: 11px;
+        letter-spacing: 0.5px;
+      }
+
+      /* ── Hero ── */
+      .hero {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: 100svh;
+        scroll-snap-align: none;
+      }
+
+      .hero-left {
+        padding: 40px 24px 36px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .hero-ghost {
+        font-size: 120px;
+        top: 16px;
+        right: 16px;
+      }
+
+      .hero-title {
+        font-size: clamp(64px, 18vw, 100px);
+        margin-bottom: 20px;
+      }
+
+      .hero-right {
+        padding: 32px 24px 36px;
+        min-height: 260px;
+      }
+
+      .hero-badges {
+        top: 20px;
+        right: 20px;
+      }
+
+      .hero-right-heading {
+        font-size: 17px;
+        max-width: 100%;
+        margin-bottom: 24px;
+      }
+
+      /* ── Solutions layout: drop sidebar ── */
+      .solutions-layout {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      /* ── Content pane ── */
+      .content-section {
+        min-height: auto;
+        padding: 48px 20px 40px;
+        scroll-snap-align: none;
+      }
+
+      .cs-header {
+        margin-bottom: 32px;
+      }
+
+      .cs-title {
+        font-size: clamp(40px, 12vw, 64px);
+      }
+
+      /* ── Target customers ── */
+      .customer-card.full {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      /* ── Solution comparison ── */
+      .solution-comparison {
+        grid-template-columns: 1fr;
+        margin-bottom: 28px;
+      }
+
+      .solution-intro {
+        font-size: 14px;
+        margin-bottom: 28px;
+        max-width: 100%;
+      }
+
+      /* ── Solution pillars ── */
+      .solution-pillars {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      /* ── Footer CTA ── */
+      .footer-cta {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 40px 20px;
+        gap: 32px;
+        scroll-snap-align: none;
+      }
+
+      .footer-cta-title {
+        font-size: 40px;
+      }
+
+      .cta-stat-block {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      .cta-stat {
+        text-align: left;
+      }
+
+      .cta-stat-num {
+        font-size: 36px;
+      }
+
+      /* ── Global footer ── */
+      .global-footer {
+        padding: 16px 20px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      /* ── Timeline ── */
+      .timeline {
+        padding-left: 32px;
+      }
+
+      .timeline-dot {
+        left: -36px;
+      }
+
+      .ti-title {
+        font-size: 18px;
+      }
+
+      .ti-desc {
+        font-size: 13px;
+        max-width: 100%;
+      }
+    }
   </style>
 </head>
 
