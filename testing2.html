@@ -240,7 +240,7 @@
         .hero-grid {
             position: absolute;
             inset: 0;
-            background-image: linear-gradient(rgba(255, 255, 255, .028) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .028) 1px, transparent 1px);
+            background-image: linear-gradient(rgba(255, 255, 255, 0.174) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.173) 1px, transparent 1px);
             background-size: 64px 64px;
             pointer-events: none;
             z-index: 1
@@ -1096,6 +1096,63 @@
             gap: 16px
         }
 
+        .cta-left {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            max-width: 420px
+        }
+
+        .cta-social {
+            display: flex;
+            flex-direction: column;
+            gap: 10px
+        }
+
+        .cta-social-row {
+            display: flex;
+            align-items: center;
+            gap: 14px
+        }
+
+        .cta-social-label {
+            font-family: 'Syne', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: var(--accent)
+        }
+
+        .cta-social-link {
+            color: rgba(255, 255, 255, 0.741);
+            display: flex;
+            align-items: center;
+            transition: color .2s
+        }
+
+        .cta-social-link svg {
+            width: 25px;
+            height: 25px
+        }
+
+        .cta-social-link:hover {
+            color: var(--accent)
+        }
+
+        .cta-email {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            letter-spacing: .04em;
+            color: rgba(255, 255, 255, 0.741);
+            text-decoration: none;
+            transition: color .2s
+        }
+
+        .cta-email:hover {
+            color: var(--accent)
+        }
+
         /* FOOTER */
         footer {
             border-top: 1px solid var(--rule);
@@ -1592,12 +1649,13 @@
             <img src="assets/MINI TERRA LOGO.png" alt="logo"
                 style="width: 9%; height: 9%; object-fit: contain; z-index: 2; transition: filter 0.3s ease, transform 0.3s ease;">
             <div class="nav-links">
-                <a href="#focus">Modules</a>
+                <a href="#focus">Focus</a>
                 <a href="#highlights">Partners</a>
                 <a href="#approach">Capabilities</a>
                 <a href="#modules">Platform</a>
                 <a href="#roadmap">Roadmap</a>
-                <a href="http://localhost:3000/login.html" class="nav-cta">System Access</a>
+                <a href="#funding">Finance</a>
+                <a href="coming-soon.html" class="nav-cta">System Access</a>
             </div>
             <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu">
                 <span></span><span></span><span></span>
@@ -1607,17 +1665,18 @@
 
     <!-- ── MOBILE NAV DRAWER ── -->
     <div class="mobile-nav" id="mobile-nav">
-        <a href="#focus" onclick="closeMobileNav()">Modules</a>
+        <a href="#focus" onclick="closeMobileNav()">Focus</a>
         <a href="#highlights" onclick="closeMobileNav()">Partners</a>
         <a href="#approach" onclick="closeMobileNav()">Capabilities</a>
         <a href="#modules" onclick="closeMobileNav()">Platform</a>
         <a href="#roadmap" onclick="closeMobileNav()">Roadmap</a>
-        <a href="http://localhost:3000/login.html" onclick="closeMobileNav()">System Access</a>
+        <a href="#funding" onclick="closeMobileNav()">Finance</a>
+        <a href="coming-soon.html" onclick="closeMobileNav()">System Access</a>
     </div>
 
     <!-- ── HERO ── -->
     <section class="hero">
-        <img class="hero-img" src="https://i.pinimg.com/1200x/c5/37/a9/c537a9b083bf01d5de78b145828b7b33.jpg"
+        <img class="hero-img" src="https://i.pinimg.com/1200x/65/bb/d4/65bbd4bf8e82ca4801910016442b9475.jpg"
             alt="Tactical map landscape" />
         <div class="hero-grid"></div>
         <p class="hero-tagline">Terra is an AI-powered tactical platform.<br />We equip frontline rangers to protect
@@ -1822,8 +1881,12 @@
     <section class="funding-section" id="funding">
         <div class="funding-glow"></div>
         <div class="container">
-            <p class="section-label reveal" style="margin-bottom:24px; position:relative">Path to Sustainability</p>
+            <p class="section-label reveal" style="margin-bottom:24px; position:relative">Finance</p>
             <h2 class="funding-title reveal d1">Financial<br>Sustainability</h2>
+
+            <div class="funding-cta reveal d3" style="margin-bottom: 20px;">
+                <a href="kpi.html" class="btn-accent">Explore Our KPIs &nbsp;→</a>
+            </div>
 
             <div class="funding-cards reveal d2">
                 <div class="fcard">
@@ -1849,17 +1912,36 @@
                         conservation technology accelerators for an initial seed round.</div>
                 </div>
             </div>
-
-            <div class="funding-cta reveal d3">
-                <a href="mailto:[royalesirandula@gmail.com" class="btn-accent">Partner With Us &nbsp;→</a>
-            </div>
         </div>
     </section>
 
     <!-- ── CTA BAND ── -->
     <div class="cta-band" id="contact">
-        <h2>Ready to optimize limited operational field resources?</h2>
-        <a href="mailto:deployments@terra.org" class="btn-primary">Initialize Deployment &nbsp;→</a>
+        <div class="cta-left">
+            <h2>Ready to optimize limited operational field resources?</h2>
+            <div class="cta-social">
+                <div class="cta-social-row">
+                    <span class="cta-social-label">Follow Us &nbsp;→</span>
+                    <a href="https://www.instagram.com/official.terralabs?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                        class="cta-social-link" aria-label="Instagram" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                            <circle cx="12" cy="12" r="4" />
+                            <circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none" />
+                        </svg>
+                    </a>
+                    <a href="#" class="cta-social-link" aria-label="X / Twitter" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.733-8.835L2.25 2.25h6.891l4.259 5.629L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
+                        </svg>
+                    </a>
+                </div>
+                <a href="mailto:deployments@terra.org" class="cta-email">Founder - royalesirandula@gmail.com</a>
+            </div>
+        </div>
+        <a href="mailto:royalesirandula@gmail.com" class="btn-primary">Contact Us &nbsp;→</a>
     </div>
 
     <!-- ── FOOTER ── -->
@@ -1867,11 +1949,12 @@
         <img src="assets/MINI TERRA LOGO.png" alt="logo"
             style="width: 9%; height: 9%; object-fit: contain; z-index: 2; transition: filter 0.3s ease, transform 0.3s ease;">
         <div class="footer-links">
-            <a href="#focus">Modules</a>
+            <a href="#focus">Focus</a>
             <a href="#highlights">Partners</a>
             <a href="#approach">Capabilities</a>
             <a href="#modules">Platform</a>
             <a href="#roadmap">Roadmap</a>
+            <a href="#funding">Finance</a>
             <a href="#contact">Contact</a>
         </div>
         <span class="footer-copy">© 2026 Terra Labs</span>

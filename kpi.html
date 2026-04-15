@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terra – KPI Projections</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --cream: #0E191E;
+      --off-white: #050a0c;
+      --ink: #ffffff;
+      --mid: #abaeb0;
+      --light: #808b96;
+      --rule: rgba(255, 255, 255, 0.1);
+      --accent: #c8ff00;
+      --tag-bg: #152228;
+      --nav-h: 64px;
+      --gutter: clamp(24px, 5vw, 72px);
+      --max-w: 1100px;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--off-white);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23fff' opacity='0.015'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 0 var(--gutter);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-h);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      padding: 0 var(--gutter);
+      background: rgba(5, 10, 12, 0.88);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--rule);
+      justify-content: space-between;
+    }
+
+    .nav-wordmark {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+
+    .nav-wordmark span {
+      color: var(--accent);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .nav-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--light);
+    }
+
+    .nav-back-btn {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 7px 18px;
+      color: rgba(255, 255, 255, 0.7);
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+
+    .nav-back-btn:hover {
+      background: var(--ink);
+      color: var(--off-white);
+      border-color: var(--ink);
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      padding-top: calc(var(--nav-h) + 64px);
+      padding-bottom: 64px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .header-inner {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 48px;
+    }
+
+    .header-eyebrow {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .header-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(64px, 10vw, 120px);
+      line-height: 0.9;
+      letter-spacing: 0.02em;
+      color: var(--ink);
+    }
+
+    .header-title span {
+      color: var(--accent);
+    }
+
+    .header-meta {
+      text-align: right;
+    }
+
+    .header-meta-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--light);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .header-meta-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--mid);
+    }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--light);
+    }
+
+    /* ── REVENUE TICKER ── */
+    .revenue-strip {
+      padding: 72px 0;
+      border-bottom: 1px solid var(--rule);
+      overflow: hidden;
+    }
+
+    .revenue-strip-label {
+      margin-bottom: 40px;
+    }
+
+    .revenue-years {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--rule);
+      border: 1px solid var(--rule);
+    }
+
+    .rev-card {
+      background: var(--off-white);
+      padding: 40px 36px;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s ease;
+      cursor: default;
+    }
+
+    .rev-card:hover {
+      background: var(--cream);
+    }
+
+    .rev-card::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      background: var(--accent);
+      width: 0;
+      transition: width 0.8s var(--ease);
+    }
+
+    .rev-card.in-view::before {
+      width: 100%;
+    }
+
+    .rev-year {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.16em;
+      color: var(--light);
+      margin-bottom: 16px;
+    }
+
+    .rev-amount {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 6vw, 80px);
+      line-height: 0.9;
+      letter-spacing: 0.02em;
+      color: var(--ink);
+      margin-bottom: 12px;
+    }
+
+    .rev-breakdown {
+      font-size: 12px;
+      color: var(--light);
+      line-height: 1.7;
+      margin-top: 16px;
+      border-top: 1px solid var(--rule);
+      padding-top: 16px;
+    }
+
+    .rev-breakdown span {
+      color: var(--mid);
+    }
+
+    .rev-badge {
+      display: inline-block;
+      background: rgba(200, 255, 0, 0.1);
+      border: 1px solid rgba(200, 255, 0, 0.3);
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      padding: 3px 10px;
+      margin-bottom: 12px;
+    }
+
+    /* ── GOALS SECTION ── */
+    .goals-section {
+      padding: 80px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .goals-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 48px;
+      margin-bottom: 56px;
+    }
+
+    .goals-header h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(24px, 3vw, 36px);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      max-width: 400px;
+    }
+
+    .goals-header p {
+      max-width: 320px;
+      font-size: 13px;
+      color: var(--mid);
+      line-height: 1.8;
+    }
+
+    .goals-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      background: var(--rule);
+      border: 1px solid var(--rule);
+    }
+
+    .goal-card {
+      background: var(--off-white);
+      padding: 36px 32px;
+      transition: background 0.25s;
+    }
+
+    .goal-card:hover {
+      background: var(--cream);
+    }
+
+    .goal-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .goal-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 8px;
+    }
+
+    .goal-metric-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .goal-big-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 6vw, 72px);
+      line-height: 0.9;
+      color: var(--ink);
+    }
+
+    .goal-unit {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--light);
+      text-transform: uppercase;
+    }
+
+    .goal-bar-wrap {
+      height: 3px;
+      background: rgba(255, 255, 255, 0.08);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .goal-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0;
+      transition: width 1.2s var(--ease);
+    }
+
+    .goal-bar-fill.in-view {
+      width: var(--target-w);
+    }
+
+    .goal-timeline {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      color: var(--light);
+      text-transform: uppercase;
+    }
+
+    .goal-desc {
+      font-size: 12.5px;
+      color: var(--mid);
+      line-height: 1.75;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--rule);
+    }
+
+    /* ── CHARTS SECTION ── */
+    .charts-section {
+      padding: 80px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .charts-header {
+      margin-bottom: 56px;
+    }
+
+    .charts-header h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(22px, 2.8vw, 32px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-top: 12px;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--rule);
+      border: 1px solid var(--rule);
+      margin-bottom: 1px;
+    }
+
+    .charts-grid-wide {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1px;
+      background: var(--rule);
+      border: 1px solid var(--rule);
+    }
+
+    .chart-panel {
+      background: var(--off-white);
+      padding: 32px 36px;
+      transition: background 0.25s;
+    }
+
+    .chart-panel:hover {
+      background: var(--cream);
+    }
+
+    .chart-panel-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--light);
+      margin-bottom: 6px;
+    }
+
+    .chart-panel-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      margin-bottom: 28px;
+    }
+
+    .chart-wrap {
+      height: 220px;
+      position: relative;
+    }
+
+    .chart-wrap-tall {
+      height: 280px;
+      position: relative;
+    }
+
+    /* ── IMPACT STATS ── */
+    .impact-section {
+      padding: 80px 0;
+      border-bottom: 1px solid var(--rule);
+      background: var(--cream);
+    }
+
+    .impact-header {
+      margin-bottom: 56px;
+    }
+
+    .impact-header h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(22px, 2.8vw, 32px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-top: 12px;
+    }
+
+    .impact-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--rule);
+      border: 1px solid var(--rule);
+    }
+
+    .impact-stat {
+      background: var(--cream);
+      padding: 36px 28px;
+      transition: background 0.25s;
+    }
+
+    .impact-stat:hover {
+      background: var(--tag-bg);
+    }
+
+    .impact-stat-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--light);
+      margin-bottom: 12px;
+    }
+
+    .impact-stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(44px, 5vw, 64px);
+      line-height: 0.9;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .impact-stat-unit {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    /* ── TIMELINE SECTION ── */
+    .timeline-section {
+      padding: 96px 0;
+    }
+
+    .timeline-header {
+      margin-bottom: 64px;
+    }
+
+    .timeline-header h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 7vw, 88px);
+      letter-spacing: 0.02em;
+      line-height: 0.9;
+      margin-top: 12px;
+    }
+
+    .tl-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      border: 1px solid var(--rule);
+      background: var(--rule);
+    }
+
+    .tl-row {
+      background: var(--off-white);
+      display: grid;
+      grid-template-columns: 160px 1fr 1fr;
+      align-items: start;
+      padding: 32px 36px;
+      gap: 36px;
+      transition: background 0.25s;
+    }
+
+    .tl-row:hover {
+      background: var(--cream);
+    }
+
+    .tl-phase {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      text-transform: uppercase;
+      padding-top: 4px;
+    }
+
+    .tl-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 8px;
+    }
+
+    .tl-desc {
+      font-size: 12.5px;
+      color: var(--mid);
+      line-height: 1.75;
+    }
+
+    .tl-kpis {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tl-kpi {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tl-kpi-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .tl-kpi-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--mid);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── FOOTER ── */
+    .kpi-footer {
+      background: var(--off-white);
+      border-top: 1px solid var(--rule);
+      padding: 48px var(--gutter) 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .kpi-footer-left {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .kpi-footer-wordmark {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .kpi-footer-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      color: rgba(255, 255, 255, 0.18);
+      text-transform: uppercase;
+    }
+
+    .kpi-footer-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 10px 24px;
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      position: relative;
+      overflow: hidden;
+      transition: color 0.4s ease;
+    }
+
+    .kpi-footer-back::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform 0.4s var(--ease);
+      z-index: 0;
+    }
+
+    .kpi-footer-back:hover {
+      color: #000;
+    }
+
+    .kpi-footer-back:hover::before {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+
+    .kpi-footer-back span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .kpi-footer-arrow {
+      position: relative;
+      z-index: 1;
+      font-size: 14px;
+      transition: transform 0.3s ease;
+    }
+
+    .kpi-footer-back:hover .kpi-footer-arrow {
+      transform: translateX(-4px);
+    }
+
+    .kpi-footer-copy {
+      width: 100%;
+      font-family: 'Syne', sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: rgba(255, 255, 255, 0.15);
+      text-transform: uppercase;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+      margin-top: 8px;
+    }
+
+    /* ── REVEAL ANIMATIONS ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .d1 {
+      transition-delay: 0.05s;
+    }
+
+    .d2 {
+      transition-delay: 0.15s;
+    }
+
+    .d3 {
+      transition-delay: 0.25s;
+    }
+
+    .d4 {
+      transition-delay: 0.35s;
+    }
+
+    @media (max-width: 768px) {
+      .header-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .header-meta {
+        text-align: left;
+      }
+
+      .revenue-years {
+        grid-template-columns: 1fr;
+      }
+
+      .goals-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .impact-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .tl-row {
+        grid-template-columns: 1fr;
+      }
+
+      .goals-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-wordmark">TERRA<span>.</span>LABS</div>
+    <div class="nav-right">
+      <div class="nav-label">KPI Projections &mdash; Jun 2026 to Mar 2027</div>
+      <a class="nav-back-btn" href="testing2.html#funding">&#8592; Back</a>
+    </div>
+  </nav>
+
+  <!-- HEADER -->
+  <section class="page-header">
+    <div class="container">
+      <div class="header-inner">
+        <div>
+          <div class="header-eyebrow">Numbers Behind the Mission</div>
+          <div class="header-title">KPI<br><span>Projections</span></div>
+        </div>
+        <div class="header-meta">
+          <div class="header-meta-label">Scholarship Period</div>
+          <div class="header-meta-val">Jun 2026 – Mar 2027</div>
+          <div style="margin-top:12px">
+            <div class="header-meta-label">Model Version</div>
+            <div class="header-meta-val">Terra v0.9 – Pre-Commercial Pilot</div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="header-meta-label">3-Year ARR Target</div>
+            <div class="header-meta-val"
+              style="color: var(--accent); font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: 0.04em;">
+              €700,000+</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVENUE PROJECTIONS -->
+  <section class="revenue-strip">
+    <div class="container">
+      <div class="revenue-strip-label reveal">
+        <div class="section-label">Revenue Projections</div>
+      </div>
+      <div class="revenue-years">
+        <div class="rev-card reveal d1" data-observe>
+          <div class="rev-year">Year 1 &mdash; 2026/27</div>
+          <div class="rev-badge">Scholarship Period</div>
+          <div class="rev-amount">€13,000</div>
+          <div class="rev-breakdown">
+            <span>2 NGO Implementation Fees:</span> €5,000<br>
+            <span>2 Annual Command Tier Licenses:</span> €10,000<br>
+            <span>Grant / Scholarship Subsidy:</span> €30,000 (est.)<br>
+            <span>Total Revenue (EUR):</span> ~€13,000
+          </div>
+        </div>
+        <div class="rev-card reveal d2" data-observe>
+          <div class="rev-year">Year 2 &mdash; 2027/28</div>
+          <div class="rev-badge">Expansion Phase</div>
+          <div class="rev-amount">€270,000</div>
+          <div class="rev-breakdown">
+            <span>6 New Deployments @ €15k avg:</span> €90,000<br>
+            <span>8 Annual Licenses (Mix Tiers):</span> €160,000<br>
+            <span>Follow-on Grants &amp; Partnerships:</span> €50,000<br>
+            <span>Total Revenue (EUR):</span> €270,000+
+          </div>
+        </div>
+        <div class="rev-card reveal d3" data-observe>
+          <div class="rev-year">Year 3 &mdash; 2028/29</div>
+          <div class="rev-badge">Scale Phase</div>
+          <div class="rev-amount">€700,000</div>
+          <div class="rev-breakdown">
+            <span>20 Orgs on Annual Subscriptions:</span> €500,000<br>
+            <span>Hardware Partner Certification Fees:</span> €80,000<br>
+            <span>API Ecosystem &amp; Plugin Revenue:</span> €120,000<br>
+            <span>Total ARR (EUR):</span> €700,000+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCHOLARSHIP GOALS -->
+  <section class="goals-section">
+    <div class="container">
+      <div class="goals-header reveal">
+        <div>
+          <div class="section-label">Scholarship Period Goals</div>
+          <h2>Four targets. Ten months to deliver.</h2>
+        </div>
+        <p>Each goal is sequenced to build on the previous. Delivery of Goal 4 (mobile app) gates all field deployment
+          goals.</p>
+      </div>
+
+      <div class="goals-grid">
+
+        <div class="goal-card reveal d1">
+          <div class="goal-num">01 &mdash; Environmental</div>
+          <div class="goal-title">Protect Wildlife Habitat</div>
+          <div class="goal-metric-row">
+            <div class="goal-big-num">30K</div>
+            <div class="goal-unit">Hectares<br>Protected</div>
+          </div>
+          <div class="goal-bar-wrap">
+            <div class="goal-bar-fill" style="--target-w: 100%;" data-bar></div>
+          </div>
+          <div class="goal-timeline">Target Active: Months 8 – 10</div>
+          <div class="goal-desc">Intelligence-targeted ranger deployments over a 30,000-hectare pilot sector within
+            Tsavo. Achieved as cumulative output of all preceding goals — active coverage is only possible once mobile
+            app, partnerships, and ranger training are in place.</div>
+        </div>
+
+        <div class="goal-card reveal d2">
+          <div class="goal-num">02 &mdash; Partnerships</div>
+          <div class="goal-title">Formal NGO Pilot Agreements</div>
+          <div class="goal-metric-row">
+            <div class="goal-big-num">2</div>
+            <div class="goal-unit">Organizations<br>Engaged</div>
+          </div>
+          <div class="goal-bar-wrap">
+            <div class="goal-bar-fill" style="--target-w: 20%;" data-bar></div>
+          </div>
+          <div class="goal-timeline">Target Active: Months 1 – 5 & 6 – 9</div>
+          <div class="goal-desc">First partnership secured via outreach consultant in months 1–3. Second partnership
+            converted on proven pilot results in months 6–9, becoming a credibility-driven adoption rather than a cold
+            proposal.</div>
+        </div>
+
+        <div class="goal-card reveal d3">
+          <div class="goal-num">03 &mdash; Training</div>
+          <div class="goal-title">Frontline Rangers Upskilled</div>
+          <div class="goal-metric-row">
+            <div class="goal-big-num">40</div>
+            <div class="goal-unit">Rangers &<br>Commanders</div>
+          </div>
+          <div class="goal-bar-wrap">
+            <div class="goal-bar-fill" style="--target-w: 40%;" data-bar></div>
+          </div>
+          <div class="goal-timeline">Target Active: Months 4 – 9</div>
+          <div class="goal-desc">Cohort 1 (20 rangers) at first partner site in months 4–6. Cohort 2 (20 rangers) at
+            second partner site in months 7–9, benefiting from a UI already stress-tested in real operational
+            conditions.</div>
+        </div>
+
+        <div class="goal-card reveal d4">
+          <div class="goal-num">04 &mdash; Platform</div>
+          <div class="goal-title">Offline-First Mobile App Launch</div>
+          <div class="goal-metric-row">
+            <div class="goal-big-num">1</div>
+            <div class="goal-unit">Platform<br>Launched</div>
+          </div>
+          <div class="goal-bar-wrap">
+            <div class="goal-bar-fill" style="--target-w: 10%;" data-bar></div>
+          </div>
+          <div class="goal-timeline">Target Active: Months 1 – 3</div>
+          <div class="goal-desc">The foundational dependency gating all other goals. PWA development and offline sync
+            validation is the month 1–3 priority. Production-ready by month 4, deployed ahead of first ranger training
+            cohort.</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CHARTS -->
+  <section class="charts-section">
+    <div class="container">
+      <div class="charts-header reveal">
+        <div class="section-label">Data Visualisations</div>
+        <h2>Projected Growth Across Key Metrics</h2>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-panel reveal d1">
+          <div class="chart-panel-label">Revenue</div>
+          <div class="chart-panel-title">3-Year Revenue Trajectory (EUR)</div>
+          <div class="chart-wrap">
+            <canvas id="chartRevenue"></canvas>
+          </div>
+        </div>
+        <div class="chart-panel reveal d2">
+          <div class="chart-panel-label">Partnerships</div>
+          <div class="chart-panel-title">Cumulative NGO Organizations Onboarded</div>
+          <div class="chart-wrap">
+            <canvas id="chartOrgs"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:1px; background: var(--rule); margin-bottom:1px;"></div>
+
+      <div class="charts-grid">
+        <div class="chart-panel reveal d1">
+          <div class="chart-panel-label">Training</div>
+          <div class="chart-panel-title">Rangers Trained Over Scholarship Period</div>
+          <div class="chart-wrap">
+            <canvas id="chartRangers"></canvas>
+          </div>
+        </div>
+        <div class="chart-panel reveal d2">
+          <div class="chart-panel-label">Environmental Impact</div>
+          <div class="chart-panel-title">Hectares Under Active Intelligence Coverage (Ha)</div>
+          <div class="chart-wrap">
+            <canvas id="chartHectares"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:1px; background: var(--rule); margin-bottom:1px;"></div>
+
+      <div class="charts-grid-wide">
+        <div class="chart-panel reveal">
+          <div class="chart-panel-label">Confidence Engine</div>
+          <div class="chart-panel-title">ICE Algorithm Accuracy Score vs. Reports Processed (3-Year View)</div>
+          <div class="chart-wrap-tall">
+            <canvas id="chartIce"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IMPACT SNAPSHOT -->
+  <section class="impact-section">
+    <div class="container">
+      <div class="impact-header reveal">
+        <div class="section-label">By End of Scholarship Period</div>
+        <h2>Projected Impact Snapshot &mdash; March 2027</h2>
+      </div>
+      <div class="impact-grid">
+        <div class="impact-stat reveal d1">
+          <div class="impact-stat-label">Hectares Protected</div>
+          <div class="impact-stat-num">30K</div>
+          <div class="impact-stat-unit">Ha Actively Covered</div>
+        </div>
+        <div class="impact-stat reveal d2">
+          <div class="impact-stat-label">Rangers Onboarded</div>
+          <div class="impact-stat-num">40</div>
+          <div class="impact-stat-unit">Field Operatives Trained</div>
+        </div>
+        <div class="impact-stat reveal d3">
+          <div class="impact-stat-label">NGO Partnerships</div>
+          <div class="impact-stat-num">2</div>
+          <div class="impact-stat-unit">Apex Organisations</div>
+        </div>
+        <div class="impact-stat reveal d4">
+          <div class="impact-stat-label">Response Latency</div>
+          <div class="impact-stat-num">-90%</div>
+          <div class="impact-stat-unit">Reduction vs. Legacy Systems</div>
+        </div>
+        <div class="impact-stat reveal d1">
+          <div class="impact-stat-label">Reports Processed</div>
+          <div class="impact-stat-num">10K+</div>
+          <div class="impact-stat-unit">AI-Scored Sightings</div>
+        </div>
+        <div class="impact-stat reveal d2">
+          <div class="impact-stat-label">ICE Accuracy</div>
+          <div class="impact-stat-num">85%</div>
+          <div class="impact-stat-unit">Confidence Scoring Target</div>
+        </div>
+        <div class="impact-stat reveal d3">
+          <div class="impact-stat-label">Year 1 Revenue</div>
+          <div class="impact-stat-num">€13K</div>
+          <div class="impact-stat-unit">Bootstrapped Revenue</div>
+        </div>
+        <div class="impact-stat reveal d4">
+          <div class="impact-stat-label">Mobile Platform</div>
+          <div class="impact-stat-num">1</div>
+          <div class="impact-stat-unit">Offline PWA Launched</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIMELINE -->
+  <section class="timeline-section">
+    <div class="container">
+      <div class="timeline-header reveal">
+        <div class="section-label">Execution Sequence</div>
+        <h2>The Delivery<br>Roadmap</h2>
+      </div>
+
+      <div class="tl-rows">
+
+        <div class="tl-row reveal d1">
+          <div class="tl-phase">Months 1 – 3</div>
+          <div>
+            <div class="tl-title">Build & Validate the Mobile Platform</div>
+            <div class="tl-desc">Finalize offline-first PWA with contracted mobile developer. Conduct internal dead-zone
+              sync testing. Validate payload compression. Begin outreach to first NGO partner via sector consultant.
+            </div>
+          </div>
+          <div class="tl-kpis">
+            <div class="tl-kpi">
+              <div class="tl-kpi-dot"></div>
+              <div class="tl-kpi-text">Goal 4: Mobile Platform launched</div>
+            </div>
+            <div class="tl-kpi">
+              <div class="tl-kpi-dot" style="background: var(--light);"></div>
+              <div class="tl-kpi-text">Goal 2: First partner outreach initiated</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tl-row reveal d2">
+          <div class="tl-phase">Months 4 – 5</div>
+          <div>
+            <div class="tl-title">Close First Formal Partnership</div>
+            <div class="tl-desc">Deploy production-ready app ahead of first ranger cohort. Sign pilot agreement with
+              first apex NGO. Begin data migration and AI Confidence Engine configuration for their specific taxonomy
+              and region.</div>
+          </div>
+          <div class="tl-kpis">
+            <div class="tl-kpi">
+              <div class="tl-kpi-dot"></div>
+              <div class="tl-kpi-text">Goal 2: Partnership 1 of 2 secured</div>
+            </div>
+            <div class="tl-kpi">
+              <div class="tl-kpi-dot" style="background: var(--light);"></div>
+              <div class="tl-kpi-text">Goal 3: First ranger cohort (20) training begins</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tl-row reveal d3">
+          <div class="tl-phase">Months 6 – 7</div>
+          <div>
+            <div class="tl-title">Field Deployment & First Ranger Cohort</div>
+            <div class="tl-desc">First 20 rangers trained at Partner 1 field station. Live patrol intelligence begins
+              flowing through Terra's Site Analysis dashboard. UI stress-tested under real operational conditions and
+              refined accordingly.</div>
+          </div>
+          <div class="tl-kpis">
+            <div class="tl-kpi">
+              <div class="tl-kpi-dot"></div>
+              <div class="tl-kpi-text">Goal 3: 20 rangers trained (Cohort 1)</div>
+            </div>
+            <div class="tl-kpi">
+              <div class="tl-kpi-dot" style="background: var(--light);"></div>
+              <div class="tl-kpi-text">Goal 1: Pilot land coverage activated</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tl-row reveal d4">
+          <div class="tl-phase">Months 8 – 10</div>
+          <div>
+            <div class="tl-title">Second Partner & 30K Ha Milestone</div>
+            <div class="tl-desc">Second apex NGO converts on Partner 1 results — a credibility-driven adoption. Second
+              ranger cohort (20) onboarded. Combined coverage expands to the full 30,000-hectare threshold. Year-end
+              reporting compiled for scholarship period.</div>
+          </div>
+          <div class="tl-kpis">
+            <div class="tl-kpi">
+              <div class="tl-kpi-dot"></div>
+              <div class="tl-kpi-text">Goal 2: Partnership 2 of 2 secured</div>
+            </div>
+            <div class="tl-kpi">
+              <div class="tl-kpi-dot"></div>
+              <div class="tl-kpi-text">Goal 3: 40 rangers total trained</div>
+            </div>
+            <div class="tl-kpi">
+              <div class="tl-kpi-dot"></div>
+              <div class="tl-kpi-text">Goal 1: 30,000 ha actively protected</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="kpi-footer">
+      <div class="kpi-footer-left">
+        <div class="kpi-footer-wordmark">Terra Labs</div>
+        <div class="kpi-footer-label">KPI Projections &mdash; Jun 2026 to Mar 2027</div>
+      </div>
+      <a class="kpi-footer-back" href="testing2.html#funding">
+        <span class="kpi-footer-arrow">&#8592;</span>
+        <span>Back to Overview</span>
+      </a>
+      <div class="kpi-footer-copy">Terra &copy; 2026 &mdash; Conservation Intelligence Platform &mdash; All projections
+        are estimates based on current pilot data and market assumptions.</div>
+    </div>
+  </footer>
+
+  <script>
+    /* ── Scroll reveal ── */
+    const reveals = document.querySelectorAll('.reveal');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+    reveals.forEach(el => revealObserver.observe(el));
+
+    /* ── Progress bar reveal ── */
+    const bars = document.querySelectorAll('[data-bar]');
+    const barObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add('in-view');
+      });
+    }, { threshold: 0.3 });
+    bars.forEach(b => barObserver.observe(b));
+
+    /* ── Revenue card underline ── */
+    const revCards = document.querySelectorAll('.rev-card');
+    const rcObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add('in-view');
+      });
+    }, { threshold: 0.3 });
+    revCards.forEach(c => rcObserver.observe(c));
+
+    /* ── Chart defaults ── */
+    const ACCENT = '#c8ff00';
+    const MID = '#abaeb0';
+    const RULE = 'rgba(255,255,255,0.07)';
+    const INK = '#ffffff';
+
+    Chart.defaults.color = MID;
+    Chart.defaults.font.family = "'JetBrains Mono', monospace";
+    Chart.defaults.font.size = 10;
+
+    const commonGrid = {
+      color: RULE,
+      borderColor: 'transparent',
+      drawTicks: false,
+    };
+
+    const commonTicks = {
+      padding: 10,
+      color: 'rgba(255,255,255,0.35)',
+    };
+
+    /* ── Revenue Chart ── */
+    new Chart(document.getElementById('chartRevenue'), {
+      type: 'bar',
+      data: {
+        labels: ['Year 1', 'Year 2', 'Year 3'],
+        datasets: [{
+          label: 'EUR Revenue',
+          data: [13000, 270000, 700000],
+          backgroundColor: [
+            'rgba(200,255,0,0.15)',
+            'rgba(200,255,0,0.35)',
+            'rgba(200,255,0,0.75)',
+          ],
+          borderColor: ACCENT,
+          borderWidth: 1,
+          borderRadius: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }, tooltip: {
+            backgroundColor: '#0E191E',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            titleColor: ACCENT,
+            bodyColor: MID,
+            callbacks: {
+              label: ctx => ' €' + ctx.raw.toLocaleString()
+            }
+          }
+        },
+        scales: {
+          x: { grid: commonGrid, ticks: commonTicks },
+          y: {
+            grid: commonGrid, ticks: {
+              ...commonTicks,
+              callback: val => '€' + (val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val)
+            }
+          }
+        }
+      }
+    });
+
+    /* ── Orgs Chart ── */
+    new Chart(document.getElementById('chartOrgs'), {
+      type: 'line',
+      data: {
+        labels: ['M1', 'M3', 'M5', 'M7', 'M9', 'Y2Q1', 'Y2Q2', 'Y2Q3', 'Y2Q4', 'Y3'],
+        datasets: [{
+          label: 'Organizations',
+          data: [0, 0, 1, 1, 2, 4, 6, 7, 8, 20],
+          borderColor: ACCENT,
+          backgroundColor: 'rgba(200,255,0,0.06)',
+          borderWidth: 2,
+          pointBackgroundColor: ACCENT,
+          pointRadius: 4,
+          tension: 0.3,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }, tooltip: {
+            backgroundColor: '#0E191E',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            titleColor: ACCENT,
+            bodyColor: MID,
+          }
+        },
+        scales: {
+          x: { grid: commonGrid, ticks: commonTicks },
+          y: { grid: commonGrid, ticks: commonTicks, beginAtZero: true }
+        }
+      }
+    });
+
+    /* ── Rangers Chart ── */
+    new Chart(document.getElementById('chartRangers'), {
+      type: 'bar',
+      data: {
+        labels: ['M1-3', 'M4-5', 'M6-7', 'M8-10'],
+        datasets: [{
+          label: 'Rangers Trained',
+          data: [0, 0, 20, 40],
+          backgroundColor: 'rgba(200,255,0,0.2)',
+          borderColor: ACCENT,
+          borderWidth: 1,
+          borderRadius: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }, tooltip: {
+            backgroundColor: '#0E191E',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            titleColor: ACCENT,
+            bodyColor: MID,
+          }
+        },
+        scales: {
+          x: { grid: commonGrid, ticks: commonTicks },
+          y: { grid: commonGrid, ticks: commonTicks, beginAtZero: true, max: 50 }
+        }
+      }
+    });
+
+    /* ── Hectares Chart ── */
+    new Chart(document.getElementById('chartHectares'), {
+      type: 'line',
+      data: {
+        labels: ['M1', 'M3', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10'],
+        datasets: [{
+          label: 'Hectares',
+          data: [0, 0, 0, 5000, 12000, 20000, 25000, 30000],
+          borderColor: ACCENT,
+          backgroundColor: 'rgba(200,255,0,0.08)',
+          borderWidth: 2,
+          pointBackgroundColor: ACCENT,
+          pointRadius: 4,
+          tension: 0.4,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }, tooltip: {
+            backgroundColor: '#0E191E',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            titleColor: ACCENT,
+            bodyColor: MID,
+            callbacks: {
+              label: ctx => ' ' + ctx.raw.toLocaleString() + ' ha'
+            }
+          }
+        },
+        scales: {
+          x: { grid: commonGrid, ticks: commonTicks },
+          y: {
+            grid: commonGrid, ticks: {
+              ...commonTicks,
+              callback: val => (val / 1000).toFixed(0) + 'k ha'
+            }, beginAtZero: true
+          }
+        }
+      }
+    });
+
+    /* ── ICE Accuracy Chart ── */
+    new Chart(document.getElementById('chartIce'), {
+      type: 'line',
+      data: {
+        labels: ['Pre-launch', 'M2', 'M4', 'M6', 'M8', 'M10', 'Y2Q1', 'Y2Q2', 'Y2Q3', 'Y2Q4', 'Y3Q1', 'Y3Q3'],
+        datasets: [
+          {
+            label: 'ICE Accuracy (%)',
+            data: [60, 65, 68, 72, 78, 85, 87, 88, 89, 90, 91, 92],
+            borderColor: ACCENT,
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointBackgroundColor: ACCENT,
+            pointRadius: 3,
+            tension: 0.4,
+            yAxisID: 'yAcc',
+          },
+          {
+            label: 'Reports Processed (cumulative)',
+            data: [0, 200, 600, 1500, 3200, 10000, 18000, 28000, 42000, 60000, 80000, 120000],
+            borderColor: 'rgba(255,255,255,0.25)',
+            backgroundColor: 'rgba(255,255,255,0.03)',
+            borderWidth: 1.5,
+            borderDash: [4, 4],
+            pointRadius: 2,
+            tension: 0.4,
+            fill: true,
+            yAxisID: 'yReports',
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            display: true,
+            labels: { color: MID, boxWidth: 12, font: { size: 10 } }
+          },
+          tooltip: {
+            backgroundColor: '#0E191E',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            titleColor: ACCENT,
+            bodyColor: MID,
+          }
+        },
+        scales: {
+          x: { grid: commonGrid, ticks: commonTicks },
+          yAcc: {
+            type: 'linear',
+            position: 'left',
+            grid: commonGrid,
+            ticks: { ...commonTicks, callback: val => val + '%' },
+            min: 50, max: 100,
+          },
+          yReports: {
+            type: 'linear',
+            position: 'right',
+            grid: { display: false },
+            ticks: { ...commonTicks, callback: val => (val / 1000).toFixed(0) + 'k' },
+            beginAtZero: true,
+          }
+        }
+      }
+    });
+  </script>
+
+</body>
+
+</html>
