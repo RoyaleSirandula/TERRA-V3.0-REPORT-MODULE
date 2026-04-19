@@ -11,32 +11,34 @@ router.get('/sightings', async (req, res) => {
     try {
         const { start_date, end_date, species_id, north, south, east, west } = req.query;
         let query = `
-            SELECT report_id, species_id,
-                   validation_status, sensitivity_tier,
-                   sighting_timestamp as created_at,
-                   ST_X(geom) as longitude, ST_Y(geom) as latitude
-            FROM reports
-            WHERE validation_status = 'VALIDATED'
+            SELECT r.report_id, r.species_id,
+                   COALESCE(s.common_name, r.species_name_custom, 'Unknown Species') as species_name,
+                   r.validation_status, r.sensitivity_tier, r.ai_confidence_score,
+                   r.sighting_timestamp as created_at,
+                   ST_X(r.geom) as longitude, ST_Y(r.geom) as latitude
+            FROM reports r
+            LEFT JOIN species s ON r.species_id = s.species_id
+            WHERE r.validation_status = 'VALIDATED'
         `;
         const values = [];
         let paramIdx = 1;
 
         if (start_date && end_date) {
-            query += ` AND sighting_timestamp BETWEEN $${paramIdx++} AND $${paramIdx++}`;
+            query += ` AND r.sighting_timestamp BETWEEN $${paramIdx++} AND $${paramIdx++}`;
             values.push(start_date, end_date);
         }
 
         if (species_id) {
-            query += ` AND species_id = $${paramIdx++}`;
+            query += ` AND r.species_id = $${paramIdx++}`;
             values.push(species_id);
         }
 
         if (north && south && east && west) {
-            query += ` AND ST_Within(geom, ST_MakeEnvelope($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, 4326))`;
+            query += ` AND ST_Within(r.geom, ST_MakeEnvelope($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, 4326))`;
             values.push(west, south, east, north);
         }
 
-        query += ` ORDER BY sighting_timestamp DESC LIMIT 1000`; // safeguard limit
+        query += ` ORDER BY r.sighting_timestamp DESC LIMIT 1000`; // safeguard limit
 
         const result = await pool.query(query, values);
         res.json(result.rows);

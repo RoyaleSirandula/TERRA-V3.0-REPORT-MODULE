@@ -5,91 +5,91 @@
 
 :root {
   /* ── Colour Palette ──────────────────────────────────────── */
-  --clr-bg: #000000;
-  /* Pure black background    */
-  --clr-surface: #0a0a0a;
-  /* Slightly elevated panel  */
-  --clr-surface-2: #111111;
-  /* Nested surface / input   */
-  --clr-border: #333333;
-  /* Sharp technical dividers */
+  --clr-bg:        #07090e;   /* Near-black, cool slate base    */
+  --clr-surface:   #0d1117;   /* Card / panel elevation         */
+  --clr-surface-2: #161b22;   /* Input / nested panel           */
+  --clr-surface-3: #1c2128;   /* Deeply nested / dropdown       */
+  --clr-border:    rgba(255, 255, 255, 0.10); /* Hairline rule  */
+  --clr-rule:      rgba(255, 255, 255, 0.10); /* Gap-trick alias */
 
-  --clr-brand: #39d353;
-  /* Terra green (primary)    */
-  --clr-brand-dim: #1a7a2e;
-  /* Dimmer brand shade       */
-  --clr-brand-glow: rgba(57, 211, 83, 0.18);
+  /* Brand: lime — used surgically on CTAs, active states, data accent */
+  --clr-brand:      #b8f000;
+  --clr-brand-dim:  #8ab800;
+  --clr-brand-glow: rgba(184, 240, 0, 0.09);
 
-  --clr-accent: #58a6ff;
-  /* Blue accent / links      */
-  --clr-warning: #d29922;
-  /* Pending / caution        */
-  --clr-danger: #f85149;
-  /* Rejected / error         */
-  --clr-success: --clr-brand;
+  /* Supporting accents */
+  --clr-accent:   #00c8e0;   /* Data highlight / info          */
+  --clr-warning:  #d98c00;   /* Pending / caution              */
+  --clr-danger:   #e03c3c;   /* Rejected / error               */
+  --clr-success:  var(--clr-brand);
 
-  --clr-text: #ffffff;
-  /* Primary body text        */
-  --clr-text-muted: #8b949e;
-  /* Secondary / helper text  */
-  --clr-text-inverse: #000000;
-  /* Text on bright surfaces  */
+  /* Text — cool off-white hierarchy */
+  --clr-text:         #dde1e5;  /* Primary — readable off-white   */
+  --clr-text-muted:   #7d8693;  /* Secondary — cool blue-gray     */
+  --clr-text-dim:     #465060;  /* Tertiary — disabled/captions   */
+  --clr-text-inverse: #07090e;  /* Text on bright surfaces        */
 
   /* ── Typography ─────────────────────────────────────────── */
-  --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-display: 'Bebas Neue', sans-serif; /* Stat numbers / H1 */
+  --font-label:   'Syne', sans-serif;       /* Card titles / nav labels */
+  --font-sans:    'DM Sans', system-ui, sans-serif; /* Body / UI copy */
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace; /* Data / IDs */
 
-  --text-xs: 0.9rem;
-  --text-sm: 0.85rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.35rem;
-  --text-2xl: 1.65rem;
-  --text-3xl: 2rem;
-  --text-hero: 2.8rem;
+  /* Type scale — 4px step base */
+  --text-2xs:  0.6875rem;  /* 11px — badges, captions        */
+  --text-xs:   0.75rem;    /* 12px — labels, meta            */
+  --text-sm:   0.8125rem;  /* 13px — body default            */
+  --text-base: 1rem;       /* 16px                           */
+  --text-lg:   1.125rem;   /* 18px                           */
+  --text-xl:   1.25rem;    /* 20px                           */
+  --text-2xl:  1.5rem;     /* 24px                           */
+  --text-3xl:  2rem;       /* 32px                           */
 
-  --fw-regular: 400;
-  --fw-medium: 500;
+  --fw-light:    300;
+  --fw-regular:  400;
+  --fw-medium:   500;
   --fw-semibold: 600;
-  --fw-bold: 700;
+  --fw-bold:     700;
 
-  /* ── Spacing ─────────────────────────────────────────────── */
-  --sp-1: 0.25rem;
-  --sp-2: 0.5rem;
-  --sp-3: 0.75rem;
-  --sp-4: 1rem;
-  --sp-5: 1.25rem;
-  --sp-6: 0.75rem;
-  --sp-8: 2rem;
-  --sp-10: 2.5rem;
-  --sp-12: 3rem;
-  --sp-16: 4rem;
+  /* ── Spacing (8px base grid) ─────────────────────────────── */
+  --sp-1:  0.25rem;   /*  4px */
+  --sp-2:  0.5rem;    /*  8px */
+  --sp-3:  0.75rem;   /* 12px */
+  --sp-4:  1rem;      /* 16px */
+  --sp-5:  1.25rem;   /* 20px */
+  --sp-6:  1.5rem;    /* 24px */
+  --sp-8:  2rem;      /* 32px */
+  --sp-10: 2.5rem;    /* 40px */
+  --sp-12: 3rem;      /* 48px */
+  --sp-16: 4rem;      /* 64px */
 
-  /* ── Shape ───────────────────────────────────────────────── */
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
+  /* ── Shape — sharp edges throughout ─────────────────────── */
+  --radius-sm:   0px;
+  --radius-md:   0px;
+  --radius-lg:   0px;
+  --radius-xl:   0px;
   --radius-full: 0px;
 
-  /* ── Shadows ─────────────────────────────────────────────── */
-  /* Brutalist hard shadows matching Site Analysis */
-  --shadow-sm: 2px 2px 0px rgba(57, 211, 83, 0.3);
-  --shadow-md: 4px 4px 0px rgba(57, 211, 83, 0.3);
-  --shadow-lg: 6px 6px 0px rgba(57, 211, 83, 0.4);
-  --shadow-glow: 0 0 20px var(--clr-brand-glow);
+  /* ── Shadows — depth, not brand-colored ─────────────────── */
+  --shadow-xs:   0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-sm:   0 2px 6px rgba(0, 0, 0, 0.50);
+  --shadow-md:   0 4px 16px rgba(0, 0, 0, 0.55);
+  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.60);
+  --shadow-glow: 0 0 20px rgba(184, 240, 0, 0.10);
 
-  /* ── Transitions ─────────────────────────────────────────── */
-  --transition-fast: 150ms ease;
-  --transition-normal: 250ms ease;
-  --transition-slow: 400ms ease;
+  /* ── Easing ──────────────────────────────────────────────── */
+  --ease:              cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast:   140ms var(--ease);
+  --transition-normal: 260ms var(--ease);
+  --transition-slow:   440ms var(--ease);
 
   /* ── Layout ──────────────────────────────────────────────── */
-  --sidebar-w: 240px;
-  --topbar-h: 60px;
-  --content-max: 1100px;
-  --z-sidebar: 100;
-  --z-topbar: 200;
-  --z-modal: 300;
-  --z-toast: 400;
+  --sidebar-w:     220px;
+  --topbar-h:      56px;
+  --content-max:   1200px;
+  --content-pad:   clamp(1.5rem, 3vw, 2.5rem);
+  --z-sidebar:     100;
+  --z-topbar:      200;
+  --z-modal:       300;
+  --z-toast:       400;
 }

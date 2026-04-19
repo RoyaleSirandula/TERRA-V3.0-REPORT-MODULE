@@ -1,4 +1,5 @@
 const Report = require('../models/Report');
+const { query } = require('../config/db');
 
 exports.createReport = async (req, res) => {
     try {
@@ -79,6 +80,36 @@ exports.getReports = async (req, res) => {
     } catch (err) {
         console.error('Error fetching reports:', err);
         res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+exports.getStats = async (req, res) => {
+    try {
+        let userFilter = '';
+        const params = [];
+        if (req.user.permissions.includes('view_own_reports') && !req.user.permissions.includes('view_pending_reports')) {
+            userFilter = 'WHERE user_id = $1';
+            params.push(req.user.user_id);
+        }
+
+        const { rows } = await query(`
+            SELECT
+                COUNT(*)::int                                                                              AS total,
+                COUNT(*) FILTER (WHERE validation_status = 'PENDING')::int                                AS pending,
+                COUNT(*) FILTER (WHERE validation_status = 'VALIDATED')::int                              AS validated,
+                COUNT(DISTINCT COALESCE(species_id::text, species_name_custom))::int                      AS species_count,
+                COALESCE(ROUND(AVG(ai_confidence_score))::int, 0)                                         AS avg_confidence,
+                COUNT(*) FILTER (WHERE ai_confidence_score >= 70)::int                                    AS conf_high,
+                COUNT(*) FILTER (WHERE ai_confidence_score >= 40 AND ai_confidence_score < 70)::int       AS conf_medium,
+                COUNT(*) FILTER (WHERE ai_confidence_score < 40 OR ai_confidence_score IS NULL)::int      AS conf_low
+            FROM reports
+            ${userFilter}
+        `, params);
+
+        res.json(rows[0]);
+    } catch (err) {
+        console.error('[API] Stats error:', err);
+        res.status(500).json({ error: 'Failed to fetch statistics' });
     }
 };
 

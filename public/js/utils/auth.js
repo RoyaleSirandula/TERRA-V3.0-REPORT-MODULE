@@ -5,8 +5,9 @@
 
 const Auth = (() => {
     /* ── Internal State ──────────────────────────────────────── */
-    const TOKEN_KEY = 'terra_token';
-    const USER_KEY = 'terra_user';
+    const TOKEN_KEY  = 'terra_token';
+    const USER_KEY   = 'terra_user';
+    const ADMIN_KEY  = 'terra_admin_unlocked';
 
     /* ── Public API ──────────────────────────────────────────── */
     return {
@@ -21,6 +22,7 @@ const Auth = (() => {
         clearSession() {
             sessionStorage.removeItem(TOKEN_KEY);
             sessionStorage.removeItem(USER_KEY);
+            sessionStorage.removeItem(ADMIN_KEY);
         },
 
         /* Raw token string */
@@ -45,6 +47,17 @@ const Auth = (() => {
             const user = this.getUser();
             if (!user) return false;
             return Array.isArray(user.permissions) && user.permissions.includes(permissionSlug);
+        },
+
+        /* Admin privilege elevation — persists for the browser session */
+        setAdminUnlocked() {
+            sessionStorage.setItem(ADMIN_KEY, '1');
+        },
+        isAdminUnlocked() {
+            return sessionStorage.getItem(ADMIN_KEY) === '1';
+        },
+        clearAdminUnlocked() {
+            sessionStorage.removeItem(ADMIN_KEY);
         },
     };
 })();

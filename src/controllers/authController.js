@@ -129,4 +129,26 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+/* ── POST /api/auth/verify-password ─────────────────────── */
+const verifyPassword = async (req, res) => {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: 'Password required.' });
+
+    try {
+        const { rows } = await query(
+            'SELECT password_hash FROM users WHERE user_id = $1',
+            [req.user.user_id]
+        );
+        if (!rows.length) return res.status(401).json({ error: 'User not found.' });
+
+        const valid = await bcrypt.compare(password, rows[0].password_hash);
+        if (!valid) return res.status(401).json({ error: 'Incorrect password.' });
+
+        res.json({ ok: true });
+    } catch (err) {
+        console.error('[AuthController.verifyPassword]', err);
+        res.status(500).json({ error: 'Verification failed.' });
+    }
+};
+
+module.exports = { register, login, verifyPassword };

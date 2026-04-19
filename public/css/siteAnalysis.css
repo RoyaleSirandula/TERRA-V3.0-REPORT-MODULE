@@ -318,6 +318,17 @@
     color: #fff;
 }
 
+/* "← Report" variant — brand colour so it's clearly distinct from "← Sessions" */
+.sa-back-btn--report {
+    color: #E31B23;
+    opacity: 0.85;
+}
+
+.sa-back-btn--report:hover {
+    color: #E31B23;
+    opacity: 1;
+}
+
 
 .site-analysis {
     display: flex;
@@ -497,6 +508,81 @@
     color: #E31B23;
     margin-top: var(--sp-1);
     font-weight: var(--fw-bold);
+}
+
+/*
+ * Active Points filter button group — sits below the stat value.
+ * Two compact toggle buttons: ALL and SAME SP.
+ * Mirrors the resolution button style used in the layer panel.
+ */
+.sa-ap-filter-btns {
+    display: flex;
+    gap: 3px;
+    margin-top: var(--sp-1);
+}
+
+.sa-ap-btn {
+    flex: 1;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    color: #777;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 0;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.sa-ap-btn:hover:not(:disabled) {
+    background: #e0e0e0;
+    color: #000;
+    border-color: #999;
+}
+
+/* Active state — brand accent to match the tactical theme */
+.sa-ap-btn.active {
+    background: #000;
+    color: #E31B23;
+    border-color: #000;
+}
+
+/* Disabled state — greyed out, no pointer so it's clearly inactive */
+.sa-ap-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/*
+ * Species selector in the Buffer Analysis panel.
+ * Matches the existing sa-buffer-input aesthetic: dark background,
+ * mono font, brand accent on focus.
+ */
+.sa-buffer-species-sel {
+    width: 100%;
+    background: #111;
+    border: 1px solid #333;
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    padding: var(--sp-1) var(--sp-2);
+    margin-bottom: var(--sp-2);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.sa-buffer-species-sel:focus {
+    border-color: #E31B23;
+}
+
+.sa-buffer-species-sel option {
+    background: #111;
+    color: #fff;
 }
 
 /* ── Grid Rendering ──────────────────────────────────────── */
@@ -842,4 +928,88 @@
     font-weight: var(--fw-bold);
     color: #000;
     min-width: 90px;
+}
+
+/* ── Grid Resolution Selector ────────────────────────────────
+ *
+ * Rendered inside .sa-layer-panel only for admin / ranger / analyst.
+ * The divider visually separates the layer toggles above from the
+ * resolution controls below, keeping the panel scannable.
+ * ────────────────────────────────────────────────────────── */
+
+/* Hairline rule between the layer checkboxes and the resolution block */
+.sa-layer-divider {
+    height: 1px;
+    background: #333;
+    margin: var(--sp-3) 0;
+}
+
+/* Wrapper that holds the label, button row, and meta line */
+.sa-resolution-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+/* Small section label above the buttons */
+.sa-resolution-label {
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    color: var(--clr-brand);
+    font-family: var(--font-mono);
+    font-weight: var(--fw-bold);
+}
+
+/*
+ * Button row — five presets laid out in a tight 2-column wrap so the
+ * panel does not become too tall on small screens.  The buttons share
+ * the same tactile style as .sa-btn but are smaller and flush-width.
+ */
+.sa-resolution-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.sa-res-btn {
+    flex: 1 1 calc(50% - 2px); /* two per row, gap accounted for */
+    background: #111;
+    border: 1px solid #333;
+    color: #aaa;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 4px 0;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.sa-res-btn:hover {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #555;
+}
+
+/* Active preset — highlight with brand colour to match tactical theme */
+.sa-res-btn.active {
+    background: #000;
+    color: var(--clr-brand);
+    border-color: var(--clr-brand);
+}
+
+/*
+ * Meta line — shows "Cell: ~500m · 64 cells" below the buttons.
+ * The cell count updates live on every render so the user can see
+ * the density before committing to a finer resolution.
+ */
+.sa-resolution-meta {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: #555;
+    letter-spacing: 0.04em;
 }

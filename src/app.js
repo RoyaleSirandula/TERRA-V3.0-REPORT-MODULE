@@ -8,6 +8,8 @@ require('dotenv').config();
 const reportRoutes = require('./routes/reportRoutes');
 const authRoutes = require('./routes/authRoutes');
 const analysisRoutes = require('./routes/analysisRoutes');
+const userRoutes = require('./routes/userRoutes');
+const rolesRoutes = require('./routes/rolesRoutes');
 
 
 const app = express();
@@ -33,6 +35,8 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/roles', rolesRoutes);
 
 
 // Health Check

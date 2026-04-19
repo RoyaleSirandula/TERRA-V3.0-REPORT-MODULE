@@ -15,6 +15,9 @@ router.post('/',
 // Get reports (Base authentication required)
 router.get('/', authenticate, reportController.getReports);
 
+// Get aggregate stats (must be before /:id to avoid conflict)
+router.get('/stats', authenticate, reportController.getStats);
+
 // Get single report
 router.get('/:id', authenticate, reportController.getReportById);
 

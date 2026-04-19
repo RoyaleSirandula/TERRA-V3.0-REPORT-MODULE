@@ -7,9 +7,8 @@
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(16px);
+        transform: translateY(20px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -17,50 +16,54 @@
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 @keyframes slideInLeft {
     from {
         opacity: 0;
-        transform: translateX(-20px);
+        transform: translateX(-24px);
     }
-
     to {
         opacity: 1;
         transform: translateX(0);
     }
 }
 
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.94);
     }
-
-    50% {
-        opacity: 0.5;
+    to {
+        opacity: 1;
+        transform: scale(1);
     }
 }
 
-/* Brand glow pulse for map marker / active elements */
+/* Pulse for live indicators */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+}
+
+/* Slow rotation for ring decorations */
+@keyframes rotateSlow {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* Brand glow pulse */
 @keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 4px  rgba(184, 240, 0, 0.18); }
+    50%       { box-shadow: 0 0 14px rgba(184, 240, 0, 0.38); }
+}
 
-    0%,
-    100% {
-        box-shadow: 0 0 6px var(--clr-brand-glow);
-    }
-
-    50% {
-        box-shadow: 0 0 18px var(--clr-brand-glow);
-    }
+/* Accent underline sweep (used on cards/links on enter) */
+@keyframes sweepRight {
+    from { transform: scaleX(0); transform-origin: left; }
+    to   { transform: scaleX(1); transform-origin: left; }
 }
 
 /* ── Utility Classes ────────────────────────────────────────── */
@@ -76,38 +79,44 @@
     animation: slideInLeft var(--transition-slow) both;
 }
 
-/* Skeleton loader */
+.anim-scale-in {
+    animation: scaleIn var(--transition-slow) both;
+}
+
+/* Stagger helpers */
+.anim-delay-1 { animation-delay: 0.08s; }
+.anim-delay-2 { animation-delay: 0.16s; }
+.anim-delay-3 { animation-delay: 0.24s; }
+.anim-delay-4 { animation-delay: 0.32s; }
+
+/* ── Skeleton Loader ────────────────────────────────────────── */
 .skeleton {
-    background: linear-gradient(90deg,
-            var(--clr-surface-2) 25%,
-            var(--clr-border) 50%,
-            var(--clr-surface-2) 75%);
+    background: linear-gradient(
+        90deg,
+        var(--clr-surface-2) 25%,
+        rgba(255, 255, 255, 0.05) 50%,
+        var(--clr-surface-2) 75%
+    );
     background-size: 200% 100%;
-    animation: skeletonShimmer 1.4s ease infinite;
-    border-radius: var(--radius-md);
+    animation: skeletonShimmer 1.6s ease infinite;
 }
 
 @keyframes skeletonShimmer {
-    0% {
-        background-position: 200% 0;
-    }
-
-    100% {
-        background-position: -200% 0;
-    }
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
-/* Live pulse dot (Rangers / Alerts) */
+/* ── Live Pulse Dot ─────────────────────────────────────────── */
 .live-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+    width: 7px;
+    height: 7px;
     background: var(--clr-brand);
     animation: glowPulse 2s ease-in-out infinite;
     display: inline-block;
+    flex-shrink: 0;
 }
 
-/* Toast notifications */
+/* ── Toast Notifications ────────────────────────────────────── */
 .toast-container {
     position: fixed;
     bottom: var(--sp-8);
@@ -122,7 +131,6 @@
 .toast {
     background: var(--clr-surface);
     border: 1px solid var(--clr-border);
-    border-radius: var(--radius-md);
     padding: var(--sp-4) var(--sp-5);
     box-shadow: var(--shadow-lg);
     font-size: var(--text-sm);
@@ -134,34 +142,26 @@
     gap: var(--sp-3);
 }
 
-.toast--success {
-    border-left: 3px solid var(--clr-brand);
-}
+.toast--success { border-left: 2px solid var(--clr-brand); }
+.toast--error   { border-left: 2px solid var(--clr-danger); }
+.toast--warning { border-left: 2px solid var(--clr-warning); }
 
-.toast--error {
-    border-left: 3px solid var(--clr-danger);
-}
-
-.toast--warning {
-    border-left: 3px solid var(--clr-warning);
-}
-
-/* Modal */
+/* ── Modal ──────────────────────────────────────────────────── */
 .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(5, 10, 12, 0.80);
     z-index: var(--z-modal);
     display: flex;
     align-items: center;
     justify-content: center;
     animation: fadeIn 0.2s both;
+    backdrop-filter: blur(4px);
 }
 
 .modal {
     background: var(--clr-surface);
     border: 1px solid var(--clr-border);
-    border-radius: var(--radius-xl);
     padding: var(--sp-8);
     width: min(560px, 95vw);
     max-height: 90vh;
@@ -175,9 +175,14 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--sp-6);
+    padding-bottom: var(--sp-4);
+    border-bottom: 1px solid var(--clr-border);
 }
 
 .modal__title {
+    font-family: var(--font-label);
     font-size: var(--text-xl);
-    font-weight: var(--fw-semibold);
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }

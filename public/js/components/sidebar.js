@@ -67,9 +67,14 @@ const Sidebar = (() => {
       );
       if (visibleItems.length === 0) return ''; // Hide empty sections
 
+      const isAdmin = section.section === 'Administration';
+      const lockBadge = isAdmin
+        ? `<span class="sidebar__admin-lock" title="Secured – Admin access only">&#9670; ADM</span>`
+        : '';
+
       return `
         <div class="sidebar__section">
-          <span class="sidebar__section-label">${section.section}</span>
+          <span class="sidebar__section-label">${section.section}${lockBadge}</span>
           ${visibleItems.map(item => renderNavLink(item, activePage)).join('')}
         </div>
       `;

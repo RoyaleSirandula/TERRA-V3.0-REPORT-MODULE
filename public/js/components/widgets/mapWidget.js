@@ -81,37 +81,74 @@ const MapWidget = (() => {
                     subdomains: 'abcd',
                 }).addTo(map);
 
+                const statusKey = (report?.validation_status || 'pending').toLowerCase();
+                const dateStr = new Date(report?.created_at || Date.now()).toLocaleString();
+                const coordStr = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+
                 // Primary sighting pin
                 L.marker([lat, lng], { icon: buildMarker('brand') })
                     .addTo(map)
                     .bindPopup(`
-            <strong>${report?.species_name || 'Unknown Species'}</strong><br/>
-            ${new Date(report?.created_at || Date.now()).toLocaleString()}<br/>
-            <span class="badge badge--${(report?.validation_status || 'pending').toLowerCase()}">
-              ${report?.validation_status || 'PENDING'}
-            </span>
-          `);
+                        <div class="terra-popup">
+                            <div class="terra-popup__header">
+                                <span class="terra-popup__species">${report?.species_name || 'Unknown Species'}</span>
+                                <span class="badge badge--${statusKey}">${report?.validation_status || 'PENDING'}</span>
+                            </div>
+                            <div class="terra-popup__body">
+                                <div class="terra-popup__row">
+                                    <span class="terra-popup__label">Coords</span>
+                                    <span class="terra-popup__value">${coordStr}</span>
+                                </div>
+                                <div class="terra-popup__row">
+                                    <span class="terra-popup__label">Date</span>
+                                    <span class="terra-popup__value">${dateStr}</span>
+                                </div>
+                                ${report?.region_id ? `
+                                <div class="terra-popup__row">
+                                    <span class="terra-popup__label">Region</span>
+                                    <span class="terra-popup__value">${report.region_id.slice(0, 8)}</span>
+                                </div>` : ''}
+                            </div>
+                        </div>
+                    `, { maxWidth: 280 });
 
                 // Observation radius circle (1 km default)
                 L.circle([lat, lng], {
                     radius: 1000,
-                    color: 'rgba(52,211,153,0.9)',
-                    fillColor: 'rgba(52,211,153,0.07)',
-                    fillOpacity: 1,
-                    weight: 1.5,
-                    dashArray: '4 4',
+                    color: '#b8f000',
+                    fillColor: '#b8f000',
+                    fillOpacity: 0.04,
+                    weight: 1,
+                    dashArray: '4 6',
+                    opacity: 0.5,
                 }).addTo(map);
 
-                // If there are nearby sighting coords, plot them (placeholder)
+                // Nearby sighting markers (placeholder)
                 const nearbyMock = [
-                    { lat: lat + 0.008, lng: lng - 0.012, color: 'warning' },
-                    { lat: lat - 0.011, lng: lng + 0.009, color: 'accent' },
+                    { lat: lat + 0.008, lng: lng - 0.012, color: 'warning', label: 'Nearby sighting' },
+                    { lat: lat - 0.011, lng: lng + 0.009, color: 'accent',  label: 'Nearby sighting' },
                 ];
 
                 nearbyMock.forEach(pt => {
                     L.marker([pt.lat, pt.lng], { icon: buildMarker(pt.color) })
                         .addTo(map)
-                        .bindPopup('Nearby sighting (cluster)');
+                        .bindPopup(`
+                            <div class="terra-popup">
+                                <div class="terra-popup__header">
+                                    <span class="terra-popup__species">Nearby Sighting</span>
+                                </div>
+                                <div class="terra-popup__body">
+                                    <div class="terra-popup__row">
+                                        <span class="terra-popup__label">Coords</span>
+                                        <span class="terra-popup__value">${pt.lat.toFixed(5)}, ${pt.lng.toFixed(5)}</span>
+                                    </div>
+                                    <div class="terra-popup__row">
+                                        <span class="terra-popup__label">Type</span>
+                                        <span class="terra-popup__value">Cluster point</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `, { maxWidth: 240 });
                 });
 
                 // Move attribution to bottom-left to avoid crowding actions

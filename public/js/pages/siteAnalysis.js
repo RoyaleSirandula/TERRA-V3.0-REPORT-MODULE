@@ -9,6 +9,8 @@
 const SiteAnalysisPage = (() => {
 
     /* ── Module-level Map State ──────────────────────────────── */
+    let _container = null;  // Reference to the page container element
+    let _skipAutofit = false; // True when a specific viewport is already set (session restore or report flyTo)
     let _map = null;
     let _reports = [];
     let _filteredReports = [];
@@ -18,9 +20,85 @@ const SiteAnalysisPage = (() => {
     let _bufferLayer = null;
     let _drawnItems = null;
     let _activeMode = 'aesthetic';
-    let _pendingFlyTo = null; // Queued flyTo once map is confirmed ready
+    let _pendingFlyTo = null;     // Queued flyTo once map is confirmed ready
+
+    /*
+     * _originMarker — the red circle placed at the report's coordinates when
+     * the view was opened from a report detail page.  Stored so its popup
+     * content can be updated with the species name once loadData() resolves
+     * it (the 550 ms map-init delay means species is not yet known when the
+     * marker is first created).
+     */
+    let _originMarker = null;
+
+    /*
+     * _bufferRing — the live L.circle that visualises the buffer zone.
+     * Added directly to _map (not _bufferLayer) so it survives
+     * _bufferLayer.clearLayers() calls from runBufferOnGeometry().
+     * Managed exclusively by updateBufferRing().
+     */
+    let _bufferRing = null;
+
+    /*
+     * _sessionReportId — the report_id that originally opened this view.
+     * Stored so loadData() can look up the species after the API responds
+     * (by which point _pendingFlyTo may already have been cleared by initMap).
+     *
+     * _sessionSpeciesId / _sessionSpeciesName — the species tied to this
+     * session.  Once set, "Total Records" filters to this species inside the
+     * buffer zone.  Both are null for fresh sessions with no report context.
+     */
+    let _sessionReportId   = null;
+    let _sessionSpeciesId  = null;
+    let _sessionSpeciesName = null;
+
+    /*
+     * _viewportSpeciesFilter — governs whether "Active Points" and
+     * "Sector Density" count every species visible in the viewport
+     * ('all') or only sightings matching the session species ('same').
+     *
+     * Defaults to 'all' for every fresh session.  Persisted to and
+     * restored from saved sessions so the panel reads identically
+     * when the session is re-opened.
+     *
+     * 'same' is only actionable when _sessionSpeciesId is set; the
+     * dropdown option is disabled otherwise to prevent phantom filtering.
+     */
+    let _viewportSpeciesFilter = 'all';
+
+    /*
+     * _gridResolution — the currently active resolution preset key.
+     * Starts on 'standard' for every new map view; can be changed by
+     * authorized users via the resolution selector in the layer panel.
+     * Also persisted to / restored from saved sessions.
+     */
+    let _gridResolution = 'standard';
 
     const SESSIONS_KEY = 'terra-sa-sessions';
+
+    /*
+     * GRID_RESOLUTIONS — all available density-grid presets.
+     *
+     * cellSize   : the width/height of one grid square in decimal degrees.
+     *              At the equator, 0.001° ≈ 111m, so multiply to get metres.
+     * display    : human-readable string shown in the stat panel and tooltips.
+     * maxCells   : safety cap — if rendering this preset at the current zoom
+     *              would produce more than this many cells, we auto-step up
+     *              to the next coarser resolution instead of freezing the browser.
+     */
+    const GRID_RESOLUTIONS = {
+        fine:     { label: 'Fine',     cellSize: 0.001, display: '~100m',  maxCells: 300 },
+        standard: { label: 'Standard', cellSize: 0.005, display: '~500m',  maxCells: 400 },
+        medium:   { label: 'Medium',   cellSize: 0.010, display: '~1km',   maxCells: 500 },
+        coarse:   { label: 'Coarse',   cellSize: 0.025, display: '~2.5km', maxCells: 600 },
+        regional: { label: 'Regional', cellSize: 0.050, display: '~5km',   maxCells: Infinity },
+    };
+
+    /*
+     * RESOLUTION_ORDER — keys in coarsest-to-finest order, used when stepping
+     * up (fallback) or down (recommendation) during the performance guard.
+     */
+    const RESOLUTION_ORDER = ['regional', 'coarse', 'medium', 'standard', 'fine'];
 
     let _timeline = {
         minDate: null,
@@ -58,6 +136,7 @@ const SiteAnalysisPage = (() => {
        SESSIONS DASHBOARD
     ═══════════════════════════════════════════════════════════ */
     function renderSessionsDashboard(container) {
+        _container = container;
         container.innerHTML = `
             <div class="sa-dashboard anim-fade-in">
                 <div class="sa-dashboard__header">
@@ -151,10 +230,10 @@ const SiteAnalysisPage = (() => {
         }
 
         wrap.innerHTML = html;
-        attachSessionListeners(container);
+        attachSessionListeners();
     }
 
-    function attachSessionListeners(container) {
+    function attachSessionListeners() {
         const wrap = document.getElementById('sa-sessions-wrap');
         if (!wrap) return;
 
@@ -163,7 +242,7 @@ const SiteAnalysisPage = (() => {
             btn.addEventListener('click', () => {
                 const id = btn.dataset.id;
                 const session = loadSessions().find(s => s.id === id);
-                if (session) renderMapView(container, session);
+                if (session) renderMapView(_container, session);
             });
         });
 
@@ -291,6 +370,13 @@ const SiteAnalysisPage = (() => {
             isArchived: false,
             viewport: { lat: center.lat, lng: center.lng, zoom: _map.getZoom() },
             mode: _activeMode,
+            // Persist the active resolution so opening this session restores the exact view
+            gridResolution: _gridResolution,
+            // Persist species context so "Total Records" restores to the same species filter
+            speciesId:   _sessionSpeciesId,
+            speciesName: _sessionSpeciesName,
+            // Persist viewport species filter so Active Points / Density restore identically
+            viewportSpeciesFilter: _viewportSpeciesFilter,
             layers: {
                 grid: document.getElementById('layer-grid')?.checked ?? true,
                 tactical: document.getElementById('layer-tactical')?.checked ?? true,
@@ -311,12 +397,552 @@ const SiteAnalysisPage = (() => {
         return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
     }
 
+    /* ── Grid Resolution Helpers ─────────────────────────────────
+     *
+     * These three functions work together to make resolution changes
+     * safe, smooth, and role-gated.
+     * ────────────────────────────────────────────────────────── */
+
+    /*
+     * canControlGridResolution()
+     *
+     * Checks the currently logged-in user's role against the list of
+     * roles that are permitted to change the density-grid resolution.
+     * Called once when building the layer panel HTML — if the user is
+     * not authorised the resolution selector is simply not rendered,
+     * so there is nothing to click and no client-side bypass is needed.
+     */
+    function canControlGridResolution() {
+        const role = (Auth.getUser()?.role_name || '').toLowerCase();
+        return ['admin', 'ranger', 'analyst'].includes(role);
+    }
+
+    /*
+     * estimateCellCount(cellSize)
+     *
+     * Before we commit to a full grid re-render, this gives us a cheap
+     * upper-bound on how many rectangles Leaflet would need to draw.
+     * We multiply the degree-spans of the current viewport by the inverse
+     * of cellSize — i.e. how many cells fit along each axis — then multiply
+     * the two axes together.
+     *
+     * This is intentionally an over-estimate (it counts the full bounding
+     * box, not just cells that contain sightings), which keeps us safely
+     * conservative about performance.
+     */
+    function estimateCellCount(cellSize) {
+        if (!_map) return 0;
+        const b = _map.getBounds();
+        const latSpan = b.getNorth() - b.getSouth();
+        const lngSpan = b.getEast()  - b.getWest();
+        return Math.ceil(latSpan / cellSize) * Math.ceil(lngSpan / cellSize);
+    }
+
+    /*
+     * getNextCoarserResolution(currentKey)
+     *
+     * Returns the key of the next coarser preset in RESOLUTION_ORDER.
+     * Used by the performance guard inside renderGrid() to step up
+     * automatically when the current resolution would produce too many
+     * cells.  Returns null when we are already at the coarsest level
+     * ('regional'), meaning the guard should just render without stepping.
+     *
+     * Example:  getNextCoarserResolution('standard') → 'medium'
+     *           getNextCoarserResolution('regional')  → null
+     */
+    function getNextCoarserResolution(currentKey) {
+        const idx = RESOLUTION_ORDER.indexOf(currentKey);
+        // RESOLUTION_ORDER goes coarsest → finest; a higher index means finer.
+        // We want one step coarser, so we move towards index 0.
+        return idx > 0 ? RESOLUTION_ORDER[idx - 1] : null;
+    }
+
+    /* ── Live Analysis Panel Helpers ────────────────────────────
+     *
+     * Seven functions that collectively own the bottom stat bar:
+     *
+     *   haversineDistanceMeters  — pure maths, no deps
+     *   getViewportAreaKm2       — map geometry, no deps
+     *   getViewportSightings     — data × map bounds, honours species filter
+     *   computeViewportStats     — writes sa-val-points + sa-val-density
+     *   computeBufferRecords     — writes sa-val-total + sa-delta-total
+     *   setSessionSpecies        — sets species context, triggers recompute
+     *   syncActivePointsFilter   — keeps the Active Points dropdown in sync
+     *                              with the current species context
+     *
+     * All are called from renderLayers() or the relevant input listeners,
+     * so every pan, zoom, filter change, or dropdown selection keeps the
+     * panel in sync.
+     * ────────────────────────────────────────────────────────── */
+
+    /*
+     * matchesSessionSpecies(report)
+     *
+     * Returns true when the given report belongs to the current session
+     * species, handling both storage modes:
+     *
+     *   UUID-registered species  → report.species_id === _sessionSpeciesId
+     *   Free-text species        → report.species_name === _sessionSpeciesId
+     *     (free-text entries have species_id = null in the DB; the controller
+     *      stores the user's text to species_name_custom, and the sightings
+     *      API surfaces it via COALESCE as species_name.  We use species_name
+     *      as the effective key for these records.)
+     *
+     * Called from computeBufferRecords() and getViewportSightings() wherever
+     * a species-filtered pool is needed.
+     */
+    function matchesSessionSpecies(r) {
+        if (!_sessionSpeciesId) return false;
+        return r.species_id === _sessionSpeciesId
+            || r.species_name === _sessionSpeciesId;
+    }
+
+    /*
+     * haversineDistanceMeters(lat1, lng1, lat2, lng2)
+     *
+     * Great-circle distance between two WGS-84 points, in metres.
+     * Used to test whether a sighting falls inside the buffer zone without
+     * a server round-trip, so "Total Records" updates instantly as the user
+     * drags the radius slider or types new coordinates.
+     *
+     * Accuracy ≈ 0.3 % for distances under 300 km — sufficient for
+     * buffer radii up to 50 km.
+     */
+    function haversineDistanceMeters(lat1, lng1, lat2, lng2) {
+        const R      = 6371000;                          // Earth mean radius, metres
+        const toRad  = deg => deg * Math.PI / 180;
+        const dLat   = toRad(lat2 - lat1);
+        const dLng   = toRad(lng2 - lng1);
+        const a      = Math.sin(dLat / 2) ** 2
+                     + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2))
+                     * Math.sin(dLng / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    /*
+     * getViewportAreaKm2()
+     *
+     * Approximate area of the current map viewport in km², used to
+     * normalise the sighting count into a meaningful density value.
+     *
+     *   Height = latSpan° × 111.32 km/°
+     *   Width  = lngSpan° × 111.32 km/° × cos(centreLat)
+     *   (cos correction accounts for longitude convergence near the poles)
+     *
+     * Returns at least 0.001 km² to prevent division by zero at extreme zoom.
+     */
+    function getViewportAreaKm2() {
+        if (!_map) return 1;
+        const b          = _map.getBounds();
+        const latSpan    = b.getNorth() - b.getSouth();
+        const lngSpan    = b.getEast()  - b.getWest();
+        const centreLat  = (b.getNorth() + b.getSouth()) / 2;
+        const heightKm   = latSpan * 111.32;
+        const widthKm    = lngSpan * 111.32 * Math.abs(Math.cos(centreLat * Math.PI / 180));
+        return Math.max(heightKm * widthKm, 0.001);
+    }
+
+    /*
+     * getViewportSightings()
+     *
+     * Returns the subset of _filteredReports whose coordinates fall inside
+     * the current Leaflet viewport bounds.  This is the data source for
+     * both "Active Points" and "Sector Density", giving the user a reading
+     * that reflects exactly what is visible on screen right now — not the
+     * full dataset which may extend far outside the current view.
+     *
+     * Respects _viewportSpeciesFilter:
+     *   'all'  — every record in bounds (default)
+     *   'same' — only records whose species_id matches _sessionSpeciesId
+     *
+     * Density is derived from the same filtered pool, so both stats are
+     * always consistent with whichever filter the user has selected.
+     */
+    function getViewportSightings() {
+        if (!_map || _filteredReports.length === 0) return [];
+
+        const bufLat = parseFloat(document.getElementById('buffer-lat')?.value);
+        const bufLng = parseFloat(document.getElementById('buffer-lng')?.value);
+        const radius = parseInt(document.getElementById('buffer-radius-slider')?.value || 5000, 10);
+
+        /*
+         * Active Points now reflects the user's buffer zone rather than the
+         * visible viewport.  This makes "SAME SP" meaningful: the user sees
+         * exactly how many same-species sightings fall inside the ring they
+         * have drawn.  Falls back to viewport bounds when no buffer is set yet.
+         */
+        let pool;
+        if (!isNaN(bufLat) && !isNaN(bufLng)) {
+            pool = _filteredReports.filter(r =>
+                haversineDistanceMeters(bufLat, bufLng, r.latitude, r.longitude) <= radius
+            );
+        } else {
+            const b = _map.getBounds();
+            pool = _filteredReports.filter(r =>
+                r.latitude  >= b.getSouth() && r.latitude  <= b.getNorth() &&
+                r.longitude >= b.getWest()  && r.longitude <= b.getEast()
+            );
+        }
+
+        // Apply species filter when SAME SP mode is active
+        if (_viewportSpeciesFilter === 'same' && _sessionSpeciesId) {
+            pool = pool.filter(matchesSessionSpecies);
+        }
+
+        return pool;
+    }
+
+    /*
+     * computeViewportStats()
+     *
+     * Recalculates and writes "Active Points" and "Sector Density" using
+     * only the sightings that are currently visible in the viewport.
+     *
+     * Called at the end of renderLayers(), which fires on every moveend,
+     * zoomend, layer toggle, and temporal filter change — keeping both
+     * stats live without any extra event wiring.
+     *
+     *   Active Points  : raw viewport sighting count  (whole number)
+     *   Sector Density : count ÷ viewport km²         (2 d.p. below 10, 1 d.p. above)
+     *
+     * Both stats honour the _viewportSpeciesFilter chosen by the user, since
+     * they both derive from getViewportSightings().  The Sector Density sub-
+     * label updates to reflect which pool is being measured.
+     */
+    function computeViewportStats() {
+        const viewport = getViewportSightings();
+        const count    = viewport.length;
+        const density  = count / getViewportAreaKm2();
+
+        const pointsEl      = document.getElementById('sa-val-points');
+        const densityEl     = document.getElementById('sa-val-density');
+        const densityDeltaEl = document.getElementById('sa-delta-density');
+
+        if (pointsEl)  pointsEl.textContent  = count;
+        if (densityEl) densityEl.textContent = density < 10
+            ? density.toFixed(2)
+            : density.toFixed(1);
+
+        // Reflect the active filter in the Sector Density sub-label so both
+        // panels clearly communicate that they share the same species scope.
+        if (densityDeltaEl) {
+            densityDeltaEl.textContent = (_viewportSpeciesFilter === 'same' && _sessionSpeciesId)
+                ? 'SAME SP / KM²'
+                : 'PTS / KM²';
+        }
+    }
+
+    /*
+     * computeBufferRecords()
+     *
+     * Counts sightings within the currently configured buffer zone,
+     * optionally restricted to the session species.
+     *
+     * Data source: _filteredReports — so the reading already honours the
+     * active temporal filter (timeline slider position).
+     *
+     * Reads from the DOM at call time so it is always consistent with
+     * whatever the user has typed / dragged:
+     *   #buffer-lat / #buffer-lng   — buffer centre
+     *   #buffer-radius-slider       — radius in metres
+     *
+     * If no valid centre is set yet (user hasn't placed a buffer), the
+     * stat falls back to the total count of species-matching records
+     * across all loaded data so the field is never left empty.
+     *
+     * Writes:
+     *   #sa-val-total    — the count
+     *   #sa-delta-total  — small descriptor label (species + radius context)
+     */
+    function computeBufferRecords() {
+        const bufLat   = parseFloat(document.getElementById('buffer-lat')?.value);
+        const bufLng   = parseFloat(document.getElementById('buffer-lng')?.value);
+        const radius   = parseInt(document.getElementById('buffer-radius-slider')?.value || 5000, 10);
+
+        // If a session species is set, narrow the candidate pool to that species only
+        const pool = _sessionSpeciesId
+            ? _filteredReports.filter(matchesSessionSpecies)
+            : _filteredReports;
+
+        let count, label;
+
+        if (!isNaN(bufLat) && !isNaN(bufLng)) {
+            // Buffer centre is valid — count how many candidates fall within radius
+            count = pool.filter(r =>
+                haversineDistanceMeters(bufLat, bufLng, r.latitude, r.longitude) <= radius
+            ).length;
+
+            const radiusLabel = radius >= 1000
+                ? `${(radius / 1000).toFixed(0)}km`
+                : `${radius}m`;
+
+            // Label: include a truncated species tag when the session has species context
+            label = _sessionSpeciesName
+                ? `${radiusLabel} · ${_sessionSpeciesName.toUpperCase().slice(0, 14)}`
+                : `${radiusLabel} BUFFER ZONE`;
+        } else {
+            // No buffer centre — show total matching records as a fallback
+            count = pool.length;
+            label = _sessionSpeciesName
+                ? `ALL · ${_sessionSpeciesName.toUpperCase().slice(0, 14)}`
+                : 'ALL VALIDATED';
+        }
+
+        const valEl   = document.getElementById('sa-val-total');
+        const deltaEl = document.getElementById('sa-delta-total');
+        if (valEl)   valEl.textContent   = count;
+        if (deltaEl) deltaEl.textContent = label;
+    }
+
+    /*
+     * setSessionSpecies(speciesId, speciesName)
+     *
+     * Stores the species context for the current session.  Once set,
+     * computeBufferRecords() will restrict "Total Records" to sightings
+     * of this species only.
+     *
+     * Called from:
+     *   - loadData()  : after the report list resolves, when a reportId is
+     *                   present and its matching report is found in the data
+     *   - initMap()   : during session restore, when speciesId was persisted
+     *
+     * Passing null clears the filter (all-species mode).
+     */
+    function setSessionSpecies(speciesId, speciesName) {
+        _sessionSpeciesId   = speciesId  || null;
+        _sessionSpeciesName = speciesName || null;
+        // Recompute immediately so the stat reflects the new species context
+        computeBufferRecords();
+        // Enable/disable "SAME SP" button and refresh the species badge
+        syncActivePointsFilter();
+        updateSpeciesDisplay();
+        // If the origin marker exists and a species is now known, update its
+        // popup so the species row appears without recreating the marker.
+        if (_originMarker && _originMarker._updatePopup && _sessionSpeciesName) {
+            _originMarker._updatePopup(_sessionSpeciesName);
+        }
+    }
+
+    /*
+     * syncActivePointsFilter()
+     *
+     * Keeps the Active Points species-filter dropdown aligned with the
+     * current session state.  Should be called whenever _sessionSpeciesId
+     * or _viewportSpeciesFilter changes.
+     *
+     * Responsibilities:
+     *   1. Enable the "Same Species" option only when _sessionSpeciesId is set.
+     *   2. If the species was cleared while the filter was on 'same', silently
+     *      fall back to 'all' so the stat panel never shows a phantom filter.
+     *   3. Set the select's displayed value to match _viewportSpeciesFilter.
+     *   4. Trigger a computeViewportStats() recompute so the numbers are
+     *      immediately consistent with the new dropdown state.
+     */
+    function syncActivePointsFilter() {
+        const allBtn  = document.querySelector('#sa-ap-filter-btns [data-filter="all"]');
+        const sameBtn = document.getElementById('sa-ap-btn-same');
+        if (!allBtn || !sameBtn) return;
+
+        const hasSpecies = !!_sessionSpeciesId;
+
+        // 'SAME SP' is only actionable when a species has been selected
+        sameBtn.disabled = !hasSpecies;
+
+        // Guard: if the species was cleared while the filter was on 'same', reset
+        if (!hasSpecies && _viewportSpeciesFilter === 'same') {
+            _viewportSpeciesFilter = 'all';
+        }
+
+        // Reflect active state visually on the two buttons
+        allBtn.classList.toggle('active',  _viewportSpeciesFilter === 'all');
+        sameBtn.classList.toggle('active', _viewportSpeciesFilter === 'same');
+
+        // Recompute so Active Points and Sector Density immediately match
+        computeViewportStats();
+    }
+
+    /*
+     * populateSpeciesSelector()
+     *
+     * Builds the species <select> in the Buffer Analysis panel from the
+     * unique species found in the loaded _reports array.
+     *
+     * Called once from loadData() after sightings are fetched, so every
+     * species that exists in the dataset is available — regardless of
+     * whether the session was opened from a report or created fresh.
+     *
+     * Uses window.SpeciesRegistry common names when available; falls back
+     * to the species_name field on the report, then to the raw species_id.
+     *
+     * The current _sessionSpeciesId (if any) is pre-selected so restored
+     * sessions show the correct species immediately.
+     */
+    function populateSpeciesSelector() {
+        const sel  = document.getElementById('buffer-species-filter');
+        if (!sel || _reports.length === 0) return;
+
+        /*
+         * Collect unique species from the loaded data.
+         *
+         * Reports submitted with a free-text species name (e.g. "Cheetah")
+         * are stored with species_id = null and species_name_custom = "Cheetah".
+         * The API's COALESCE returns species_name = "Cheetah" for those rows, but
+         * species_id remains null — so we cannot use species_id as the sole key.
+         *
+         * Solution: use species_id when present (UUID-registered species), falling
+         * back to species_name (the COALESCE display value) for free-text entries.
+         * This effective key is stored as the <option> value so the change listener
+         * can pass it to setSessionSpecies() for filtering.
+         */
+        const speciesMap = {};
+        _reports.forEach(r => {
+            const effectiveKey = r.species_id || r.species_name;
+            const displayName  = (window.SpeciesRegistry && r.species_id &&
+                                  window.SpeciesRegistry[r.species_id]?.common_name)
+                               || r.species_name
+                               || r.species_id;
+            // Skip blank keys and the generic fallback produced by the DB COALESCE
+            if (!effectiveKey || effectiveKey === 'Unknown Species') return;
+            if (!speciesMap[effectiveKey]) {
+                speciesMap[effectiveKey] = displayName || effectiveKey;
+            }
+        });
+
+        // Rebuild the option list; "All Species" stays pinned at the top
+        sel.innerHTML = '<option value="">All Species</option>';
+        Object.entries(speciesMap)
+            .sort((a, b) => String(a[1]).localeCompare(String(b[1])))
+            .forEach(([key, name]) => {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = name;
+                // Pre-select the current session species (report-opened or restored)
+                if (key === _sessionSpeciesId) opt.selected = true;
+                sel.appendChild(opt);
+            });
+
+        // Sync the display badge to the current selection
+        updateSpeciesDisplay();
+    }
+
+    /*
+     * updateSpeciesDisplay()
+     *
+     * Refreshes the small species badge (#buffer-species-display) next to
+     * the "Species" label in the buffer panel to match the current
+     * _sessionSpeciesName.  Truncated to stay within the panel width.
+     */
+    function updateSpeciesDisplay() {
+        const disp = document.getElementById('buffer-species-display');
+        if (!disp) return;
+        disp.textContent = _sessionSpeciesName
+            ? _sessionSpeciesName.toUpperCase().slice(0, 12)
+            : 'ALL';
+    }
+
+    /*
+     * setGridResolution(key)
+     *
+     * Public-facing setter for the active resolution.  Updates module
+     * state, refreshes every resolution button's active class, syncs the
+     * stat-panel display text, then triggers a full layer re-render so
+     * the new cell size is visible immediately.
+     *
+     * Called from the resolution-button click handler wired up in
+     * attachMapListeners(), and also from the performance guard inside
+     * renderGrid() when it needs to auto-step coarser.
+     */
+    function setGridResolution(key) {
+        if (!GRID_RESOLUTIONS[key]) return; // Silently ignore unknown keys
+
+        _gridResolution = key;
+        const preset = GRID_RESOLUTIONS[key];
+
+        // Reflect active state on every resolution button
+        document.querySelectorAll('[data-resolution]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.resolution === key);
+        });
+
+        // Update the small meta line inside the layer panel
+        const metaEl = document.getElementById('sa-resolution-display');
+        if (metaEl) metaEl.textContent = preset.display;
+
+        // Update the bottom stat panel so the field stays in sync
+        const statEl = document.getElementById('sa-val-resolution');
+        if (statEl) statEl.textContent = preset.display;
+
+        // Re-render the grid layer with the new cell size
+        renderLayers();
+    }
+
+    /*
+     * updateBufferRing()
+     *
+     * Creates or updates the live red dashed circle that visualises the
+     * buffer zone on the map.  Called on every radius-slider input and
+     * lat/lng coordinate change so the ring tracks user inputs in real
+     * time — no "Run Buffer" click required.
+     *
+     * The ring lives directly on _map (not _bufferLayer) so it is never
+     * accidentally cleared by runBufferOnGeometry()'s layer housekeeping.
+     *
+     * After updating the ring this function re-renders sightings (so dots
+     * inside the ring appear/disappear as the zone changes) and refreshes
+     * both the buffer stat and Active Points count.
+     */
+    function updateBufferRing() {
+        if (!_map) return;
+
+        const lat    = parseFloat(document.getElementById('buffer-lat')?.value);
+        const lng    = parseFloat(document.getElementById('buffer-lng')?.value);
+        const radius = parseInt(document.getElementById('buffer-radius-slider')?.value || 5000, 10);
+
+        if (isNaN(lat) || isNaN(lng)) {
+            // No valid centre — remove the ring if present
+            if (_bufferRing) { _map.removeLayer(_bufferRing); _bufferRing = null; }
+        } else if (_bufferRing) {
+            // Smooth in-place update: Leaflet just repositions the SVG path
+            _bufferRing.setLatLng([lat, lng]);
+            _bufferRing.setRadius(radius);
+        } else {
+            _bufferRing = L.circle([lat, lng], {
+                radius,
+                color: '#E31B23',
+                weight: 1.5,
+                dashArray: '8, 6',
+                fillColor: '#E31B23',
+                fillOpacity: 0.04
+            }).addTo(_map);
+        }
+
+        // Keep dots, buffer-zone stat, and Active Points count in sync
+        if (document.getElementById('layer-sightings')?.checked) {
+            renderSightings();
+        } else if (_sightingsLayer) {
+            _sightingsLayer.clearLayers();
+        }
+        computeBufferRecords();
+        computeViewportStats();
+    }
+
     /* ═══════════════════════════════════════════════════════════
        MAP VIEW
        options can be { lat, lng, reportId } (from report detail)
        OR a full session object (from sessions list)
     ═══════════════════════════════════════════════════════════ */
     function renderMapView(container, options = {}) {
+        _container = container;
+
+        // Reset species state for the new view so stale data from the
+        // previous session never bleeds into a fresh one.
+        _sessionReportId    = options.reportId || null;
+        _sessionSpeciesId   = options.speciesId  || null;
+        _sessionSpeciesName = options.speciesName || null;
+
+        // Restore viewport species filter from session, or default to 'all'
+        // for every fresh session so the dropdown starts in a clean state.
+        _viewportSpeciesFilter = options.viewportSpeciesFilter || 'all';
+
         // Store flyTo target before the map exists
         if (options.lat != null && options.lng != null) {
             _pendingFlyTo = {
@@ -325,8 +951,10 @@ const SiteAnalysisPage = (() => {
                 zoom: options.viewport?.zoom || 14,
                 reportId: options.reportId || null
             };
+            _skipAutofit = true;
         } else {
             _pendingFlyTo = null;
+            _skipAutofit = options.viewport != null; // session restore has its own viewport
         }
 
         // Restore mode from session if present
@@ -337,6 +965,10 @@ const SiteAnalysisPage = (() => {
             <div class="sa-header">
                 <div style="display:flex;align-items:center;gap:var(--sp-5);">
                     <button class="sa-back-btn" id="btn-back-dashboard" title="Back to Sessions">← Sessions</button>
+                    ${options.reportId
+                        ? `<button class="sa-back-btn sa-back-btn--report" id="btn-back-report"
+                                   title="Back to originating report">← Report</button>`
+                        : ''}
                     <div class="sa-header__title">Site Analysis // Tactical Overview</div>
                 </div>
                 <div class="sa-header__right">
@@ -386,6 +1018,33 @@ const SiteAnalysisPage = (() => {
                         <input type="checkbox" id="layer-heatmap" ${options.layers?.heatmap !== false ? 'checked' : ''}>
                         <label for="layer-heatmap">Density Heatmap</label>
                     </div>
+
+                    ${/*
+                       * Resolution selector — only rendered for roles that are
+                       * allowed to change grid resolution (admin, ranger, analyst).
+                       * All five presets are built from GRID_RESOLUTIONS so adding
+                       * a new preset only requires an entry in that config object.
+                       */''}
+                    ${canControlGridResolution() ? `
+                    <div class="sa-layer-divider"></div>
+                    <div class="sa-resolution-wrap">
+                        <div class="sa-resolution-label">Grid Resolution</div>
+                        <div class="sa-resolution-btns" id="sa-resolution-btns">
+                            ${Object.entries(GRID_RESOLUTIONS).map(([key, preset]) => `
+                                <button
+                                    class="sa-res-btn ${key === _gridResolution ? 'active' : ''}"
+                                    data-resolution="${key}"
+                                    title="${preset.display} cell size">
+                                    ${preset.label}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <div class="sa-resolution-meta">
+                            Cell: <span id="sa-resolution-display">${GRID_RESOLUTIONS[_gridResolution].display}</span>
+                            &nbsp;·&nbsp;
+                            <span id="sa-cell-count">—</span> cells
+                        </div>
+                    </div>` : ''}
                 </div>
 
                 <div class="sa-buffer-panel" id="sa-buffer-panel">
@@ -395,6 +1054,18 @@ const SiteAnalysisPage = (() => {
                         <span class="sa-buffer-val" id="buffer-radius-display">5km</span>
                     </div>
                     <input type="range" id="buffer-radius-slider" min="500" max="50000" step="500" value="5000" />
+                    <!-- Species selector — sets the session species context used by
+                         both "Total Records" (buffer zone) and the "SAME SP" viewport
+                         filter on Active Points / Sector Density.  Populated from the
+                         loaded sightings data so every species in the dataset is
+                         available regardless of how the session was opened. -->
+                    <div class="sa-buffer-row" style="margin-top:8px;">
+                        <label>Species</label>
+                        <span class="sa-buffer-val" id="buffer-species-display" style="font-size:8px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ALL</span>
+                    </div>
+                    <select id="buffer-species-filter" class="sa-buffer-species-sel">
+                        <option value="">All Species</option>
+                    </select>
                     <div class="sa-buffer-row" style="margin-top:8px;"><label>Center</label></div>
                     <div style="display:flex;gap:4px;margin-bottom:6px;">
                         <input type="number" id="buffer-lat" class="sa-buffer-input" placeholder="Lat" step="0.0001" ${_pendingFlyTo ? `value="${_pendingFlyTo.lat.toFixed(5)}"` : ''} />
@@ -413,25 +1084,45 @@ const SiteAnalysisPage = (() => {
             </div>
 
             <div class="sa-analysis-panel">
+                <!-- Sector Density: sightings per km² in current viewport.
+                     Value and label (#sa-delta-density) are both updated by
+                     computeViewportStats().  The label switches between
+                     "PTS / KM²" and "SAME SP / KM²" to mirror the species
+                     filter chosen on the Active Points panel. -->
                 <div class="sa-stat">
                     <div class="sa-stat__label">Sector Density</div>
-                    <div class="sa-stat__value" id="sa-val-density">0.0</div>
-                    <div class="sa-stat__delta">INTENSITY INDEX</div>
+                    <div class="sa-stat__value" id="sa-val-density">0.00</div>
+                    <div class="sa-stat__delta" id="sa-delta-density">PTS / KM²</div>
                 </div>
+                <!-- Active Points: count of sightings visible in current viewport.
+                     Updated by computeViewportStats() on every pan/zoom/filter.
+                     Toggle buttons (#sa-ap-filter-btns) scope the count to the
+                     session species or all species.  Sector Density shares the
+                     same filter so both panels are always consistent.
+                     "SAME SP" button becomes active once a species is selected
+                     in the Buffer Analysis panel. -->
                 <div class="sa-stat">
                     <div class="sa-stat__label">Active Points</div>
                     <div class="sa-stat__value" id="sa-val-points">0</div>
-                    <div class="sa-stat__delta">FILTERED SIGHTINGS</div>
+                    <div class="sa-ap-filter-btns" id="sa-ap-filter-btns">
+                        <button class="sa-ap-btn active" data-filter="all">ALL</button>
+                        <button class="sa-ap-btn" data-filter="same" id="sa-ap-btn-same" disabled>SAME SP</button>
+                    </div>
                 </div>
+                <!-- Grid Resolution: the cell size currently being rendered.
+                     Updated by renderGrid() / setGridResolution(). -->
                 <div class="sa-stat">
                     <div class="sa-stat__label">Grid Resolution</div>
-                    <div class="sa-stat__value">~500m</div>
+                    <div class="sa-stat__value" id="sa-val-resolution">${GRID_RESOLUTIONS[_gridResolution].display}</div>
                     <div class="sa-stat__delta">ADAPTIVE CELLS</div>
                 </div>
+                <!-- Total Records: sightings of the session species within the
+                     current buffer zone radius.  Both value and descriptor label
+                     (#sa-delta-total) are updated by computeBufferRecords(). -->
                 <div class="sa-stat">
                     <div class="sa-stat__label">Total Records</div>
                     <div class="sa-stat__value" id="sa-val-total">0</div>
-                    <div class="sa-stat__delta">ALL VALIDATED</div>
+                    <div class="sa-stat__delta" id="sa-delta-total">ALL VALIDATED</div>
                 </div>
             </div>
         </div>
@@ -443,6 +1134,41 @@ const SiteAnalysisPage = (() => {
     }
 
     /* ══════════════ Map Initialization ═══════════════════════ */
+
+    /*
+     * buildOriginPopupHtml(lat, lng, reportId, speciesName)
+     *
+     * Returns the HTML string for the report-origin circle-marker popup.
+     * Separated from the marker creation so it can be called again from
+     * setSessionSpecies() once the species name is available — the popup
+     * content is updated in-place without recreating the marker.
+     */
+    function buildOriginPopupHtml(lat, lng, reportId, speciesName) {
+        return `
+            <div class="terra-popup">
+                <div class="terra-popup__header">
+                    <span class="terra-popup__species" style="color:var(--clr-danger);">Report Origin</span>
+                </div>
+                <div class="terra-popup__body">
+                    ${speciesName ? `
+                    <div class="terra-popup__row">
+                        <span class="terra-popup__label">Species</span>
+                        <span class="terra-popup__value terra-popup__value--highlight">${escapeHtml(speciesName)}</span>
+                    </div>` : ''}
+                    <div class="terra-popup__row">
+                        <span class="terra-popup__label">Coords</span>
+                        <span class="terra-popup__value">${lat.toFixed(5)}, ${lng.toFixed(5)}</span>
+                    </div>
+                    ${reportId ? `
+                    <div class="terra-popup__row">
+                        <span class="terra-popup__label">Report ID</span>
+                        <span class="terra-popup__value">${reportId.slice(0, 8)}</span>
+                    </div>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
     function initMap(sessionOptions = {}) {
         const defaultLat = -1.2921;
         const defaultLng = 36.8219;
@@ -452,6 +1178,8 @@ const SiteAnalysisPage = (() => {
             if (!mapEl) return;
 
             if (_map) { _map.remove(); _map = null; }
+            _originMarker = null; // Clear stale reference on every new map init
+            _bufferRing   = null; // Clear stale buffer ring reference
 
             _map = L.map('sa-map', {
                 zoomControl: true,
@@ -460,7 +1188,7 @@ const SiteAnalysisPage = (() => {
             }).setView([defaultLat, defaultLng], 10);
 
             _map.createPane('gridPane');
-            _map.getPane('gridPane').style.zIndex = 999;
+            _map.getPane('gridPane').style.zIndex = 450;  // below popupPane (700) so popups render above
             _map.getPane('gridPane').style.pointerEvents = 'auto';
 
             LAYERS[_activeMode].addTo(_map);
@@ -489,31 +1217,72 @@ const SiteAnalysisPage = (() => {
                 _map.invalidateSize();
                 updateModeUI();
 
+                /*
+                 * Initialise the Active Points filter dropdown.
+                 * At this point _viewportSpeciesFilter has already been set
+                 * in renderMapView() (restored from session or defaulted to
+                 * 'all').  syncActivePointsFilter() sets the select's value,
+                 * disables "Same Species" if no species context exists yet,
+                 * and runs an initial computeViewportStats() pass.
+                 */
+                syncActivePointsFilter();
+
                 // ── Apply flyTo from pending options ──────────────
                 if (_pendingFlyTo) {
                     const { lat, lng, zoom, reportId } = _pendingFlyTo;
                     _map.setView([lat, lng], zoom || 14);
 
-                    // Origin highlight marker
-                    L.circleMarker([lat, lng], {
+                    /*
+                     * Origin highlight marker — species is not known yet at this
+                     * point (loadData() may still be in-flight), so the popup is
+                     * built with speciesName = null.  setSessionSpecies() holds a
+                     * reference via _originMarker and will call _updatePopup() once
+                     * the species is resolved, filling in the species row.
+                     */
+                    _originMarker = L.circleMarker([lat, lng], {
                         radius: 16,
                         color: '#E31B23',
                         weight: 3,
                         fillColor: '#E31B23',
                         fillOpacity: 0.2
-                    }).bindPopup(`
-                        <div style="font-family:var(--font-mono);font-size:10px;">
-                            <strong style="color:#E31B23;">REPORT ORIGIN</strong><br/>
-                            ${lat.toFixed(5)}, ${lng.toFixed(5)}<br/>
-                            ${reportId ? `ID: ${reportId.slice(0, 8)}` : ''}
-                        </div>
-                    `).addTo(_bufferLayer).openPopup();
+                    });
+                    // Attach an update helper that re-sets popup content without
+                    // recreating the marker or losing its position on the map.
+                    _originMarker._updatePopup = (speciesName) => {
+                        _originMarker.setPopupContent(
+                            buildOriginPopupHtml(lat, lng, reportId, speciesName)
+                        );
+                    };
+                    _originMarker
+                        .bindPopup(buildOriginPopupHtml(lat, lng, reportId, null), { maxWidth: 240 })
+                        .addTo(_bufferLayer)
+                        .openPopup();
 
                     _pendingFlyTo = null;
                 } else if (sessionOptions.viewport) {
                     // Restore saved viewport from a session
                     const { lat, lng, zoom } = sessionOptions.viewport;
                     _map.setView([lat, lng], zoom);
+
+                    /*
+                     * Restore the grid resolution the user had when they saved.
+                     * We validate the key against GRID_RESOLUTIONS so a stale
+                     * or corrupted session value can never break the render loop.
+                     * setGridResolution() also updates the button UI and stat panel.
+                     */
+                    if (sessionOptions.gridResolution && GRID_RESOLUTIONS[sessionOptions.gridResolution]) {
+                        setGridResolution(sessionOptions.gridResolution);
+                    }
+
+                    /*
+                     * Restore species context — this re-enables the species filter
+                     * on "Total Records" so the stat reads the same as when the
+                     * session was saved.  setSessionSpecies() triggers an immediate
+                     * recompute so the stat is correct before the user interacts.
+                     */
+                    if (sessionOptions.speciesId) {
+                        setSessionSpecies(sessionOptions.speciesId, sessionOptions.speciesName);
+                    }
 
                     // Restore buffer inputs
                     if (sessionOptions.buffer) {
@@ -566,6 +1335,10 @@ const SiteAnalysisPage = (() => {
                         }
                     }
                 }
+
+                // Draw the initial buffer ring if coordinates are already set —
+                // report flyTo fills them above; session restore fills them above too.
+                updateBufferRing();
             }, 550);
 
             _map.on('moveend zoomend', () => renderLayers());
@@ -581,11 +1354,12 @@ const SiteAnalysisPage = (() => {
                     const lngInput = document.getElementById('buffer-lng');
                     if (latInput) latInput.value = latlng.lat.toFixed(5);
                     if (lngInput) lngInput.value = latlng.lng.toFixed(5);
+                    updateBufferRing(); // Draw / reposition the ring at the placed marker
                 }
 
                 try {
                     const geoJSON = layer.toGeoJSON();
-                    const res = await API.post('/api/analysis/user-objects', { type, geometry: geoJSON.geometry, meta_data: {} });
+                    const res = await API.post('/analysis/user-objects', { type, geometry: geoJSON.geometry, meta_data: {} });
                     if (res && res.object_id) layer._dbId = res.object_id;
                     handleAnalysis(type, geoJSON.geometry);
                 } catch (e) {
@@ -597,7 +1371,7 @@ const SiteAnalysisPage = (() => {
             _map.on(L.Draw.Event.DELETED, async function (event) {
                 event.layers.eachLayer(async (layer) => {
                     if (layer._dbId) {
-                        try { await API.delete('/api/analysis/user-objects/' + layer._dbId); } catch (e) { }
+                        try { await API.delete('/analysis/user-objects/' + layer._dbId); } catch (e) { }
                     }
                 });
                 _bufferLayer.clearLayers();
@@ -609,9 +1383,40 @@ const SiteAnalysisPage = (() => {
     /* ══════════════ Data Loading ══════════════════════════════ */
     async function loadData() {
         try {
-            _reports = await API.get('/api/analysis/sightings');
-            const totalEl = document.getElementById('sa-val-total');
-            if (totalEl) totalEl.textContent = _reports.length;
+            _reports = await API.get('/analysis/sightings');
+
+            /*
+             * Species auto-detection from report context.
+             *
+             * When this view was opened from a report detail page, _sessionReportId
+             * is set.  Now that _reports is populated we can find the matching
+             * record and extract its species — allowing "Total Records" to filter
+             * to that species automatically without any extra API call.
+             *
+             * If no matching report is found (e.g. the report is not yet validated
+             * and therefore not in the sightings endpoint), the stat gracefully
+             * falls back to counting all validated records.
+             *
+             * If speciesId was already set (restored from a saved session), we
+             * skip detection so the saved value is not overwritten.
+             */
+            if (_sessionReportId && !_sessionSpeciesId) {
+                const origin = _reports.find(r => r.report_id === _sessionReportId);
+                if (origin) {
+                    /*
+                     * Use species_id when present (UUID-registered species).
+                     * For reports where the user typed a free-text name, species_id
+                     * is null in the DB — fall back to species_name (the COALESCE
+                     * value from the API) so the filter key is never null.
+                     * Skip the generic 'Unknown Species' fallback — it is not a
+                     * meaningful filter target.
+                     */
+                    const effectiveKey = origin.species_id || origin.species_name;
+                    if (effectiveKey && effectiveKey !== 'Unknown Species') {
+                        setSessionSpecies(effectiveKey, origin.species_name || origin.species_id);
+                    }
+                }
+            }
 
             if (_reports.length > 0) {
                 const dates = _reports.map(r => new Date(r.created_at).getTime()).filter(t => !isNaN(t));
@@ -623,11 +1428,18 @@ const SiteAnalysisPage = (() => {
                 updateTimelineUI();
                 applyTemporalFilter();
 
-                // If no specific flyTo, auto-fit to sightings
-                if (!_pendingFlyTo) {
+                /*
+                 * Populate the species selector in the Buffer Analysis panel now
+                 * that _reports is available.  This makes the species filter
+                 * usable in any session, not just ones opened from a report.
+                 */
+                populateSpeciesSelector();
+
+                // If no specific viewport is set, auto-fit to sightings
+                if (!_skipAutofit) {
                     const points = _reports.map(r => [r.latitude, r.longitude]);
                     setTimeout(() => {
-                        if (_map && points.length > 0 && !document.getElementById('sa-map')?._hasFlyTarget) {
+                        if (_map && points.length > 0) {
                             try { _map.fitBounds(L.latLngBounds(points), { padding: [80, 80], maxZoom: 13 }); } catch (e) { }
                         }
                     }, 700);
@@ -641,10 +1453,10 @@ const SiteAnalysisPage = (() => {
     /* ══════════════ Layer Rendering ═══════════════════════════ */
     function renderLayers() {
         if (!_map) return;
-        const showGrid = document.getElementById('layer-grid')?.checked;
+        const showGrid     = document.getElementById('layer-grid')?.checked;
         const showTactical = document.getElementById('layer-tactical')?.checked;
         const showSightings = document.getElementById('layer-sightings')?.checked;
-        const showHeatmap = document.getElementById('layer-heatmap')?.checked;
+        const showHeatmap  = document.getElementById('layer-heatmap')?.checked;
 
         if (showGrid || showTactical) renderGrid(showGrid, showTactical);
         else _gridLayer.clearLayers();
@@ -654,6 +1466,14 @@ const SiteAnalysisPage = (() => {
 
         if (showHeatmap) renderHeatmap();
         else { if (_heatmapLayer) { _map.removeLayer(_heatmapLayer); _heatmapLayer = null; } }
+
+        /*
+         * Always recompute viewport stats after any layer change, pan, or zoom.
+         * renderLayers() is the single choke-point for all visual updates, so
+         * calling here guarantees Active Points and Sector Density are always
+         * current without needing separate moveend/zoomend wiring.
+         */
+        computeViewportStats();
     }
 
     function renderGrid(showDensityCells = true, showTacticalLines = true) {
@@ -661,7 +1481,53 @@ const SiteAnalysisPage = (() => {
         _gridLayer.clearLayers();
 
         if (showDensityCells && _filteredReports.length > 0) {
-            const cellSize = 0.005;
+            /*
+             * Performance guard — before building any Leaflet rectangles,
+             * estimate how many grid cells the current resolution would produce
+             * across the visible viewport.  If that count exceeds the preset's
+             * maxCells threshold, step up to the next coarser resolution and
+             * inform the user via a toast.  This prevents the browser from
+             * stalling on zoom levels where tiny cells produce hundreds of rects.
+             *
+             * We loop (instead of stepping once) in case even the next level is
+             * still over budget — e.g. extreme zoom-out on 'fine' resolution.
+             */
+            let activeKey = _gridResolution;
+            while (activeKey) {
+                const preset = GRID_RESOLUTIONS[activeKey];
+                const estimated = estimateCellCount(preset.cellSize);
+                if (estimated <= preset.maxCells) break; // Safe to render at this level
+
+                const coarser = getNextCoarserResolution(activeKey);
+                if (!coarser) break; // Already at 'regional' — just render whatever we have
+
+                // Step coarser without saving to _gridResolution, so the user's
+                // chosen setting is preserved and they can zoom back in.
+                activeKey = coarser;
+            }
+
+            // Only notify once, and only when the rendered resolution differs from
+            // the user's chosen resolution — avoids repeated toasts on every pan/zoom.
+            if (activeKey !== _gridResolution) {
+                const _lastAutoStep = renderGrid._lastAutoStep;
+                if (_lastAutoStep !== activeKey) {
+                    Toast.warning(
+                        `Grid auto-stepped to ${GRID_RESOLUTIONS[activeKey].label} — zoom in for finer detail.`
+                    );
+                }
+            }
+            // Track which auto-stepped key was last notified so we don't repeat the toast.
+            renderGrid._lastAutoStep = (activeKey !== _gridResolution) ? activeKey : null;
+            const cellSize = GRID_RESOLUTIONS[activeKey].cellSize;
+
+            // Update the cell count badge in the layer panel with the estimated value
+            const cellCountEl = document.getElementById('sa-cell-count');
+            if (cellCountEl) cellCountEl.textContent = estimateCellCount(cellSize);
+
+            // Also keep the stat panel in sync with whatever is actually being rendered
+            const statEl = document.getElementById('sa-val-resolution');
+            if (statEl) statEl.textContent = GRID_RESOLUTIONS[activeKey].display;
+
             const cells = {};
             let maxCount = 0;
 
@@ -695,18 +1561,28 @@ const SiteAnalysisPage = (() => {
                     (window.SpeciesRegistry && window.SpeciesRegistry[r.species_id]?.common_name) || r.species_id || 'Unknown'
                 ))];
                 rect.bindPopup(`
-                    <div style="font-family:var(--font-mono);font-size:10px;min-width:160px;">
-                        <strong style="color:#E31B23;display:block;margin-bottom:4px;">GRID CELL</strong>
-                        <span>Sightings: <b>${count}</b></span><br/>
-                        <span>Intensity: <b>${(intensity * 100).toFixed(0)}%</b></span><br/>
-                        <span style="opacity:0.7;font-size:9px;">${species.slice(0, 4).join(', ')}</span>
+                    <div class="terra-popup">
+                        <div class="terra-popup__header">
+                            <span class="terra-popup__species">Grid Cell</span>
+                            <span class="terra-popup__value terra-popup__value--highlight">${count} sighting${count !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div class="terra-popup__body">
+                            <div class="terra-popup__row">
+                                <span class="terra-popup__label">Intensity</span>
+                                <span class="terra-popup__value terra-popup__value--highlight">${(intensity * 100).toFixed(0)}%</span>
+                            </div>
+                            ${species.length ? `<div class="terra-popup__row">
+                                <span class="terra-popup__label">Species</span>
+                                <span class="terra-popup__value">${species.slice(0, 3).join(', ')}</span>
+                            </div>` : ''}
+                        </div>
                     </div>
-                `);
+                `, { maxWidth: 260 });
                 rect.addTo(_gridLayer);
             });
 
-            const densityEl = document.getElementById('sa-val-density');
-            if (densityEl) densityEl.textContent = (maxCount / 5).toFixed(1);
+            // sa-val-density is now owned by computeViewportStats(), called
+            // from renderLayers() after renderGrid() returns — no write here.
         }
 
         if (showTacticalLines) renderTacticalGrid();
@@ -747,10 +1623,62 @@ const SiteAnalysisPage = (() => {
     function renderSightings() {
         if (!_sightingsLayer) return;
         _sightingsLayer.clearLayers();
-        _filteredReports.forEach(r => {
-            const marker = L.circleMarker([r.latitude, r.longitude], { radius: 4, fillColor: '#E31B23', color: '#000', weight: 1, opacity: 0.8, fillOpacity: 0.8 });
-            const speciesName = (window.SpeciesRegistry && window.SpeciesRegistry[r.species_id]?.common_name) || r.species_id || 'Unknown';
-            marker.bindPopup(`<div style="font-family:var(--font-mono);font-size:10px;"><strong>${speciesName}</strong><br/>${new Date(r.created_at).toLocaleDateString()}<br/>Tier: ${r.sensitivity_tier || '–'} | Conf: ${r.ai_confidence_score || 'N/A'}%</div>`);
+
+        const bufLat = parseFloat(document.getElementById('buffer-lat')?.value);
+        const bufLng = parseFloat(document.getElementById('buffer-lng')?.value);
+        const radius = parseInt(document.getElementById('buffer-radius-slider')?.value || 5000, 10);
+
+        /*
+         * Other-report dots are hidden by default.  They only appear once the
+         * user has defined a buffer centre (typed coords or placed a marker).
+         * This satisfies both reveal cases:
+         *   Case 1 – same-species: _sessionSpeciesId set from report context →
+         *            pool is narrowed to matching species below.
+         *   Case 2 – chosen species: user picks from buffer-species-filter →
+         *            setSessionSpecies() stores it and _sessionSpeciesId is set.
+         * When no species is selected (all-species mode), all sightings within
+         * the buffer ring are shown.
+         */
+        if (isNaN(bufLat) || isNaN(bufLng)) return;
+
+        let pool = _filteredReports.filter(r =>
+            haversineDistanceMeters(bufLat, bufLng, r.latitude, r.longitude) <= radius
+        );
+
+        if (_sessionSpeciesId) {
+            pool = pool.filter(matchesSessionSpecies);
+        }
+
+        pool.forEach(r => {
+            const marker = L.circleMarker([r.latitude, r.longitude], {
+                radius: 4, fillColor: '#E31B23', color: '#000',
+                weight: 1, opacity: 0.8, fillOpacity: 0.8
+            });
+            // Prefer the API's COALESCE species_name (handles free-text entries)
+            const speciesDisplay = r.species_name
+                || (window.SpeciesRegistry && window.SpeciesRegistry[r.species_id]?.common_name)
+                || r.species_id || 'Unknown';
+            marker.bindPopup(`
+                <div class="terra-popup">
+                    <div class="terra-popup__header">
+                        <span class="terra-popup__species">${escapeHtml(speciesDisplay)}</span>
+                    </div>
+                    <div class="terra-popup__body">
+                        <div class="terra-popup__row">
+                            <span class="terra-popup__label">Date</span>
+                            <span class="terra-popup__value">${new Date(r.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div class="terra-popup__row">
+                            <span class="terra-popup__label">Tier</span>
+                            <span class="terra-popup__value">${r.sensitivity_tier || '—'}</span>
+                        </div>
+                        <div class="terra-popup__row">
+                            <span class="terra-popup__label">Confidence</span>
+                            <span class="terra-popup__value terra-popup__value--highlight">${r.ai_confidence_score != null ? r.ai_confidence_score + '%' : 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+            `, { maxWidth: 240 });
             marker.addTo(_sightingsLayer);
         });
     }
@@ -772,7 +1700,7 @@ const SiteAnalysisPage = (() => {
         const radius = parseInt(document.getElementById('buffer-radius-slider')?.value || 5000, 10);
         try {
             if (type === 'polygon') {
-                const data = await API.post('/api/analysis/ndvi-zonal', { polygon: geometry });
+                const data = await API.post('/analysis/ndvi-zonal', { polygon: geometry });
                 const trendRows = Array.isArray(data.trend)
                     ? data.trend.map(t => `<p><span>${t.date}:</span><span class="val">${parseFloat(t.value).toFixed(3)}</span></p>`).join('')
                     : '';
@@ -793,19 +1721,13 @@ const SiteAnalysisPage = (() => {
 
     async function runBufferOnGeometry(geometry, radiusMeters) {
         showResultsLoading();
-        _bufferLayer.clearLayers();
+        // Note: _bufferRing (the live ring) is managed by updateBufferRing() and
+        // lives on _map directly — do NOT clear _bufferLayer here or it removes
+        // the origin marker.  The ring already reflects the correct zone.
 
         try {
-            const data = await API.post('/api/analysis/buffer', { geometry, radius_meters: radiusMeters });
+            const data = await API.post('/analysis/buffer', { geometry, radius_meters: radiusMeters });
             const radiusKm = (radiusMeters / 1000).toFixed(1);
-            const coords = geometry.coordinates;
-            let center;
-            if (geometry.type === 'Point') center = [coords[1], coords[0]];
-            else if (geometry.type === 'LineString') { const m = Math.floor(coords.length / 2); center = [coords[m][1], coords[m][0]]; }
-
-            if (center) {
-                L.circle(center, { radius: radiusMeters, color: '#E31B23', weight: 2, dashArray: '8, 6', fillColor: '#E31B23', fillOpacity: 0.06 }).addTo(_bufferLayer);
-            }
 
             let speciesHtml = '';
             if (Array.isArray(data.sightings_list) && data.sightings_list.length > 0) {
@@ -848,20 +1770,86 @@ const SiteAnalysisPage = (() => {
     }
 
     /* ══════════════ Map Listeners ═════════════════════════════ */
-    function attachMapListeners(container, options) {
-        // Back to dashboard
+    function attachMapListeners(_container, options) {
+        // Back to sessions dashboard
         document.getElementById('btn-back-dashboard')?.addEventListener('click', () => {
             if (_map) { _map.remove(); _map = null; }
+            _originMarker = null;
             window.location.hash = '#/site-analysis';
+        });
+
+        /*
+         * Back to Report — only rendered when this view was opened from (or
+         * saved with) a report.  Navigates to that report's detail page so
+         * the user can continue their workflow without going via My Reports.
+         */
+        document.getElementById('btn-back-report')?.addEventListener('click', () => {
+            if (_map) { _map.remove(); _map = null; }
+            _originMarker = null;
+            Router.navigate('report-detail', { reportId: _sessionReportId });
         });
 
         // Mode toggles
         document.getElementById('btn-mode-aesthetic')?.addEventListener('click', () => setMode('aesthetic'));
         document.getElementById('btn-mode-satellite')?.addEventListener('click', () => setMode('satellite'));
 
-        // Layer checkboxes
+        // Layer checkboxes — each toggle triggers a full layer re-render
         ['layer-grid', 'layer-tactical', 'layer-sightings', 'layer-heatmap'].forEach(id => {
             document.getElementById(id)?.addEventListener('change', renderLayers);
+        });
+
+        /*
+         * Active Points filter buttons — clicking ALL or SAME SP updates
+         * _viewportSpeciesFilter and immediately recomputes both Active Points
+         * and Sector Density.  Event delegation on the button group container
+         * so we only need one listener regardless of button count.
+         */
+        document.getElementById('sa-ap-filter-btns')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('.sa-ap-btn');
+            if (!btn || btn.disabled) return;
+            _viewportSpeciesFilter = btn.dataset.filter;
+            syncActivePointsFilter();
+        });
+
+        /*
+         * Buffer panel species selector — changing the selected species sets
+         * the session species context, which:
+         *   1. Enables the "SAME SP" viewport filter button
+         *   2. Recomputes "Total Records" (buffer zone count for that species)
+         *   3. Updates the species badge in the buffer panel header
+         *
+         * Selecting "All Species" (empty value) clears the context and
+         * disables the "SAME SP" button, resetting both stats to all-species.
+         */
+        document.getElementById('buffer-species-filter')?.addEventListener('change', (e) => {
+            const key = e.target.value;
+            if (!key) {
+                setSessionSpecies(null, null);
+                return;
+            }
+            /*
+             * The option's text content is already the resolved display name
+             * (set by populateSpeciesSelector) — use it directly rather than
+             * doing a second lookup that might fail for free-text species.
+             */
+            const name = e.target.options[e.target.selectedIndex].text;
+            setSessionSpecies(key, name);
+        });
+
+        /*
+         * Resolution button clicks — use event delegation on the container
+         * rather than attaching one listener per button.  The container
+         * is only present when canControlGridResolution() returned true,
+         * so the optional-chain handles the case where the panel was not
+         * rendered (read-only roles).
+         *
+         * e.target.closest('[data-resolution]') lets us click anywhere
+         * inside the button (including its text node) and still get the
+         * button element with its dataset.
+         */
+        document.getElementById('sa-resolution-btns')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-resolution]');
+            if (btn) setGridResolution(btn.dataset.resolution);
         });
 
         // Close results
@@ -876,15 +1864,25 @@ const SiteAnalysisPage = (() => {
         });
         document.getElementById('btn-timeline-play')?.addEventListener('click', togglePlayback);
 
-        // Buffer radius display
+        // Buffer radius display + live Total Records recompute
         const bSlider = document.getElementById('buffer-radius-slider');
-        const bDisp = document.getElementById('buffer-radius-display');
+        const bDisp   = document.getElementById('buffer-radius-display');
         if (bSlider && bDisp) {
             bSlider.addEventListener('input', () => {
                 const v = parseInt(bSlider.value, 10);
                 bDisp.textContent = v >= 1000 ? `${(v / 1000).toFixed(1)}km` : `${v}m`;
+                // Live ring resize + sightings + stats — no "Run Buffer" needed
+                updateBufferRing();
             });
         }
+
+        /*
+         * Buffer coordinate inputs — recompute Total Records as the user types
+         * so the stat is always consistent with the current buffer centre,
+         * even before they click "Run Buffer".
+         */
+        document.getElementById('buffer-lat')?.addEventListener('input', updateBufferRing);
+        document.getElementById('buffer-lng')?.addEventListener('input', updateBufferRing);
 
         // Buffer run button
         document.getElementById('btn-run-buffer')?.addEventListener('click', async () => {
@@ -895,6 +1893,7 @@ const SiteAnalysisPage = (() => {
                 Toast.error('Enter valid lat/lng coordinates or draw a marker on the map first.');
                 return;
             }
+            updateBufferRing(); // Ensure ring is current before backend analysis
             await runBufferOnGeometry({ type: 'Point', coordinates: [lng, lat] }, radius);
         });
 
@@ -931,12 +1930,23 @@ const SiteAnalysisPage = (() => {
     }
 
     function applyTemporalFilter() {
+        /*
+         * Rebuild _filteredReports from the full _reports array using the
+         * current timeline position.  When no timeline data is available
+         * (e.g. all reports share the same date), all records pass through.
+         */
         _filteredReports = !_timeline.minDate
             ? [..._reports]
-            : _reports.filter(r => { const t = new Date(r.created_at).getTime(); return !isNaN(t) && t <= _timeline.currentDate; });
-        const el = document.getElementById('sa-val-points');
-        if (el) el.textContent = _filteredReports.length;
+            : _reports.filter(r => {
+                const t = new Date(r.created_at).getTime();
+                return !isNaN(t) && t <= _timeline.currentDate;
+              });
+
+        // renderLayers() calls computeViewportStats() which owns sa-val-points
+        // and sa-val-density.  computeBufferRecords() re-reads _filteredReports
+        // so Total Records stays in sync with the new temporal slice.
         renderLayers();
+        computeBufferRecords();
     }
 
     function togglePlayback() {
