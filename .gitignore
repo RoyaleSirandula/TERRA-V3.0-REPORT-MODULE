@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Environment variables — never commit these
+.env
+.env.*
+!.env.example
+
+# Credentials & service account keys — NEVER commit
+*.json.json
+gee-credentials.json
+gee-credentials.json.json
+*-credentials.json
+*-service-account.json
+serviceAccountKey.json
+
+# Uploaded user media
+uploads/
+
+# OS / editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Build output
+dist/
+build/
