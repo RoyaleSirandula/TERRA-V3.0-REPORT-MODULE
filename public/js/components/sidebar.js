@@ -1,45 +1,45 @@
 /* ============================================================
    TERRA – sidebar.js
-   Renders the sidebar navigation based on the user's permissions.
-   NAV_ITEMS defines all possible navigation entries; each entry
-   can require a specific permission to be shown.
+   Renders the sidebar navigation. Supports collapse/expand via
+   a toggle button; state is persisted in localStorage.
    ============================================================ */
 
 const Sidebar = (() => {
 
+  const COLLAPSED_KEY = 'terra_sidebar_collapsed';
+
   /* ── Navigation Configuration ────────────────────────────── */
-  /* To add a new nav item, add an entry here. No HTML changes needed. */
   const NAV_ITEMS = [
     {
       section: 'Overview',
       items: [
-        { id: 'dashboard', label: 'Dashboard', permission: null },
-        { id: 'map', label: 'Live Map', permission: null },
+        { id: 'dashboard',     label: 'Dashboard',    icon: '■', permission: null },
+        { id: 'map',           label: 'Live Map',     icon: '○', permission: null },
       ],
     },
     {
       section: 'Reports',
       items: [
-        { id: 'submit-report', label: 'Submit Report', permission: 'submit_report' },
-        { id: 'my-reports', label: 'My Reports', permission: 'view_own_reports' },
-        { id: 'pending', label: 'Pending Queue', permission: 'view_pending_reports' },
-        { id: 'validated', label: 'Validated', permission: 'view_protected_reports' },
+        { id: 'submit-report', label: 'Submit Report', icon: '+', permission: 'submit_report' },
+        { id: 'my-reports',    label: 'My Reports',    icon: '≡', permission: 'view_own_reports' },
+        { id: 'pending',       label: 'Pending Queue', icon: '◷', permission: 'view_pending_reports' },
+        { id: 'validated',     label: 'Validated',     icon: '✓', permission: 'view_protected_reports' },
       ],
     },
     {
       section: 'Analysis',
       items: [
-        { id: 'site-analysis', label: 'Site Analysis', permission: 'export_data' },
-        { id: 'analytics', label: 'Analytics', permission: 'export_data' },
-        { id: 'export', label: 'Export Data', permission: 'export_data' },
+        { id: 'site-analysis', label: 'Site Analysis', icon: '◈', permission: 'export_data' },
+        { id: 'analytics',     label: 'Analytics',     icon: '◆', permission: 'export_data' },
+        { id: 'export',        label: 'Export Data',   icon: '↗', permission: 'export_data' },
       ],
     },
     {
       section: 'Administration',
       items: [
-        { id: 'users', label: 'Manage Users', permission: 'manage_users' },
-        { id: 'roles', label: 'Roles & Perms', permission: 'manage_roles' },
-        { id: 'audit-logs', label: 'Audit Logs', permission: 'view_audit_logs' },
+        { id: 'users',      label: 'Manage Users', icon: '⊕', permission: 'manage_users' },
+        { id: 'roles',      label: 'Roles & Perms', icon: '⊛', permission: 'manage_roles' },
+        { id: 'audit-logs', label: 'Audit Logs',   icon: '≣', permission: 'view_audit_logs' },
       ],
     },
   ];
@@ -52,8 +52,10 @@ const Sidebar = (() => {
         class="nav-link nav-link--tactical ${isActive}"
         data-page="${item.id}"
         aria-current="${isActive ? 'page' : 'false'}"
+        title="${item.label}"
       >
-        <span class="nav-label">> ${item.label}</span>
+        <span class="nav-icon">${item.icon}</span>
+        <span class="nav-label">${item.label}</span>
       </button>
     `;
   }
@@ -61,11 +63,10 @@ const Sidebar = (() => {
   /* ── Internal: build sections, filtering by permission ───── */
   function buildNavHTML(activePage) {
     return NAV_ITEMS.map(section => {
-      // Filter items by permission
       const visibleItems = section.items.filter(item =>
         !item.permission || Auth.hasPermission(item.permission)
       );
-      if (visibleItems.length === 0) return ''; // Hide empty sections
+      if (visibleItems.length === 0) return '';
 
       const isAdmin = section.section === 'Administration';
       const lockBadge = isAdmin
@@ -74,7 +75,9 @@ const Sidebar = (() => {
 
       return `
         <div class="sidebar__section">
-          <span class="sidebar__section-label">${section.section}${lockBadge}</span>
+          <span class="sidebar__section-label">
+            <span class="sidebar__section-text">${section.section}</span>${lockBadge}
+          </span>
           ${visibleItems.map(item => renderNavLink(item, activePage)).join('')}
         </div>
       `;
@@ -100,31 +103,47 @@ const Sidebar = (() => {
     if (!sidebar) return;
 
     const user = Auth.getUser();
+    const isCollapsed = localStorage.getItem(COLLAPSED_KEY) === '1';
+
+    // Apply collapse state to sidebar and app-shell immediately
+    sidebar.classList.toggle('sidebar--collapsed', isCollapsed);
+    document.getElementById('app-shell')?.classList.toggle('sidebar-collapsed', isCollapsed);
 
     sidebar.innerHTML = `
-      <!-- Logo -->
       <div class="sidebar__logo">
         <div class="sidebar__logo-icon">::</div>
         <span class="sidebar__logo-text">TER<span>RA</span></span>
+        <button class="sidebar__toggle" id="sidebar-toggle"
+          title="${isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}"
+          aria-label="${isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}"
+        >${isCollapsed ? '»' : '«'}</button>
       </div>
 
-      <!-- Nav -->
       <nav class="sidebar__nav" id="sidebar-nav">
         ${buildNavHTML(activePage)}
       </nav>
 
-      <!-- User Footer -->
       <div class="sidebar__footer">
         ${buildFooterHTML(user)}
       </div>
     `;
 
-    // Attach click listeners for page routing
+    // Route navigation
     sidebar.querySelectorAll('.nav-link').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const pageId = btn.dataset.page;
-        Router.navigate(pageId);
-      });
+      btn.addEventListener('click', () => Router.navigate(btn.dataset.page));
+    });
+
+    // Collapse toggle
+    document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
+      const collapsed = sidebar.classList.toggle('sidebar--collapsed');
+      document.getElementById('app-shell')?.classList.toggle('sidebar-collapsed', collapsed);
+      localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0');
+      const toggle = document.getElementById('sidebar-toggle');
+      if (toggle) {
+        toggle.textContent = collapsed ? '»' : '«';
+        toggle.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+        toggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+      }
     });
   }
 

@@ -355,16 +355,7 @@
     background: #fff;
 }
 
-/* ── Map Controls Overlay ────────────────────────────────── */
-.sa-controls {
-    position: absolute;
-    top: var(--sp-6);
-    right: var(--sp-6);
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-2);
-}
+/* .sa-controls removed — base map controls moved into Layers dock panel */
 
 .sa-btn {
     background: #fff;
@@ -702,6 +693,8 @@
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+    max-height: calc(100% - var(--sp-20) - var(--sp-6));
+    overflow-y: auto;
 }
 
 .sa-layer-panel h3 {
@@ -712,6 +705,26 @@
     color: var(--clr-brand);
     border-bottom: 1px solid #333;
     padding-bottom: var(--sp-2);
+}
+
+.sa-layer-divider {
+    height: 1px;
+    background: #333;
+    margin: var(--sp-4) 0;
+    opacity: 0.5;
+}
+
+.sa-layer-badge {
+    background: rgba(184, 240, 0, 0.15);
+    color: var(--clr-brand);
+    border: 1px solid rgba(184, 240, 0, 0.4);
+    font-size: 8px;
+    padding: 1px 4px;
+    letter-spacing: 0.08em;
+    font-weight: var(--fw-bold);
+    margin-left: auto;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
 }
 
 .sa-layer-item {
@@ -901,20 +914,26 @@
     box-shadow: 0 0 0 3px rgba(227, 27, 35, 0.3);
 }
 
-/* ── Time Slider ─────────────────────────────────────────── */
+/* ── Time Slider — collapsed by default, toggled via TIME tab ─ */
 .sa-timeline {
     position: absolute;
-    bottom: var(--sp-6);
-    left: 100px;
-    right: 100px;
-    background: rgba(255, 255, 255, 0.9);
-    border: 2px solid #000;
+    bottom: 0;
+    left: 0;
+    right: 42px; /* leave room for tab strip */
+    background: rgba(255, 255, 255, 0.96);
+    border-top: 2px solid #000;
     padding: var(--sp-2) var(--sp-4);
     display: flex;
     align-items: center;
     gap: var(--sp-4);
     z-index: 1000;
-    box-shadow: 4px 4px 0px #000;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
+    transform: translateY(100%);
+    transition: transform 0.2s ease;
+}
+
+.sa-timeline.open {
+    transform: translateY(0);
 }
 
 .sa-timeline input[type=range] {
@@ -1012,4 +1031,701 @@
     font-size: 8px;
     color: #555;
     letter-spacing: 0.04em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RIGHT DOCK SYSTEM
+   Tab strip (42 px) + sliding drawer (240 px).
+   All panels inside the drawer; only one shown at a time.
+═══════════════════════════════════════════════════════════ */
+
+.sa-dock {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: row;
+    pointer-events: none; /* let map clicks through by default */
+}
+
+/* ── Tab strip ─────────────────────────────────────────────── */
+.sa-dock__tabs {
+    width: 42px;
+    background: rgba(0, 0, 0, 0.92);
+    border-left: 1px solid #1c1c1c;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 0;
+    gap: 2px;
+    pointer-events: all;
+    flex-shrink: 0;
+}
+
+.sa-dock__tab {
+    width: 38px;
+    min-height: 54px;
+    background: none;
+    border: none;
+    color: #555;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 0;
+    transition: color 0.15s, background 0.15s;
+    position: relative;
+}
+
+.sa-dock__tab:hover {
+    color: #bbb;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.sa-dock__tab.active {
+    color: var(--clr-brand);
+    background: rgba(184, 240, 0, 0.07);
+}
+
+.sa-dock__tab.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 2px;
+    background: var(--clr-brand);
+}
+
+.sa-dock__tab-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.sa-dock__tab-label {
+    font-size: 7px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: bold;
+    line-height: 1;
+}
+
+/* Pushes the TIME tab to the bottom */
+.sa-dock__tab-sep {
+    flex: 1;
+}
+
+/* ── Sliding drawer ────────────────────────────────────────── */
+.sa-dock__drawer {
+    width: 0;
+    overflow: hidden;
+    transition: width 0.22s ease;
+    background: #000;
+    pointer-events: none;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sa-dock__drawer.open {
+    width: 240px;
+    pointer-events: all;
+    border-left: 1px solid #1c1c1c;
+}
+
+/* ── Individual panels inside drawer ───────────────────────── */
+.sa-dock__panel {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 14px 20px;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: #ddd;
+    min-width: 240px; /* prevent layout thrash during slide animation */
+}
+
+.sa-dock__panel.active {
+    display: block;
+}
+
+/* Section header inside a panel */
+.sa-dock__panel-hdr {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--clr-brand);
+    border-bottom: 1px solid #1e1e1e;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sa-dock__panel-hdr:first-child {
+    margin-top: 0;
+}
+
+/* Range inputs within any dock panel */
+.sa-dock__panel input[type="range"] {
+    width: 100%;
+    cursor: pointer;
+    accent-color: #E31B23;
+    margin-bottom: var(--sp-1);
+}
+
+/* ── Panel header note (e.g. "GEE" badge) ──────────────────── */
+.sa-dock__panel-hdr-note {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    font-weight: var(--fw-bold);
+    letter-spacing: 0.1em;
+    color: var(--clr-brand);
+    border: 1px solid rgba(184, 240, 0, 0.35);
+    padding: 1px 4px;
+    opacity: 0.8;
+}
+
+/* ── Base Map Radio Group ───────────────────────────────────── */
+.sa-basemap-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.sa-basemap-opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid #222;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.sa-basemap-opt:has(input:checked) {
+    border-color: var(--clr-brand);
+    background: rgba(184, 240, 0, 0.06);
+}
+
+.sa-basemap-opt input[type="radio"] {
+    margin-top: 2px;
+    accent-color: var(--clr-brand);
+    flex-shrink: 0;
+}
+
+.sa-basemap-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: var(--fw-bold);
+    color: var(--clr-text);
+    letter-spacing: 0.06em;
+    line-height: 1.2;
+    display: block;
+}
+
+.sa-basemap-desc {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--clr-text-dim);
+    display: block;
+    margin-top: 1px;
+}
+
+/* ── GEE Layer Item with Opacity Row ───────────────────────── */
+.sa-gee-item {
+    margin-bottom: 2px;
+}
+
+.sa-gee-opacity {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0 6px 20px;
+    border-left: 2px solid rgba(184, 240, 0, 0.25);
+    margin-left: 4px;
+}
+
+.sa-gee-opacity-lbl {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--clr-text-dim);
+    white-space: nowrap;
+    letter-spacing: 0.06em;
+}
+
+.sa-gee-opacity-slider {
+    flex: 1;
+    cursor: pointer;
+    accent-color: var(--clr-brand);
+    height: 2px;
+}
+
+.sa-gee-opacity-val {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--clr-brand);
+    width: 26px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* ── GEE layer badge variants ───────────────────────────────── */
+.sa-layer-badge--trend {
+    color: #74a901;
+    border-color: rgba(116, 169, 1, 0.4);
+}
+
+.sa-layer-badge--habitat {
+    color: #00cf75;
+    border-color: rgba(0, 207, 117, 0.4);
+}
+
+/* ── Monthly NDVI bar chart (Results panel) ─────────────────── */
+.sa-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 52px;
+    margin: 6px 0 10px;
+    padding: 0 2px;
+}
+
+.sa-chart-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    height: 100%;
+    justify-content: flex-end;
+}
+
+.sa-chart-bar {
+    width: 100%;
+    min-height: 2px;
+    transition: height 0.25s ease, opacity 0.15s;
+}
+
+.sa-chart-bar:hover { opacity: 0.75; }
+
+.sa-chart-lbl {
+    font-family: var(--font-mono);
+    font-size: 6px;
+    color: var(--clr-text-dim);
+    margin-top: 3px;
+    letter-spacing: 0;
+}
+
+/* ── Results panel key-value rows ───────────────────────────── */
+#sa-tool-content p {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--clr-text-muted);
+    margin: 3px 0;
+    line-height: 1.4;
+}
+
+#sa-tool-content p .val {
+    color: var(--clr-brand);
+    font-weight: var(--fw-bold);
+}
+
+.sa-tool-section-label {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: var(--fw-bold);
+    letter-spacing: 0.14em;
+    color: var(--clr-text-dim);
+    text-transform: uppercase;
+    margin: 10px 0 4px;
+    border-top: 1px solid var(--clr-border);
+    padding-top: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INPUT ELEMENT REFINEMENTS
+   Custom checkboxes, radios, sliders, selects and text
+   inputs — all matched to the dark tactical design system.
+   Sharp edges, mono font, brand-lime on active states.
+═══════════════════════════════════════════════════════════ */
+
+/* ── Checkboxes ─────────────────────────────────────────────── */
+.sa-layer-item input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border: 1px solid #2d2d2d;
+    background: var(--clr-surface-2);
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    margin: 0;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.sa-layer-item input[type="checkbox"]:hover {
+    border-color: var(--clr-text-dim);
+}
+
+.sa-layer-item input[type="checkbox"]:checked {
+    background: var(--clr-brand);
+    border-color: var(--clr-brand);
+}
+
+/* Checkmark — black slash on lime fill */
+.sa-layer-item input[type="checkbox"]:checked::after {
+    content: '';
+    display: block;
+    position: absolute;
+    left: 3px;
+    top: 1px;
+    width: 4px;
+    height: 7px;
+    border-right: 1.5px solid #000;
+    border-bottom: 1.5px solid #000;
+    transform: rotate(45deg);
+}
+
+/* ── Layer item labels ──────────────────────────────────────── */
+.sa-layer-item label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--clr-text-muted);
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    flex: 1;
+    user-select: none;
+    transition: color var(--transition-fast);
+}
+
+.sa-layer-item:has(input:checked) label {
+    color: var(--clr-text);
+}
+
+.sa-layer-item label:hover {
+    color: var(--clr-text);
+}
+
+/* ── Radio Buttons (Base Map selector) ──────────────────────── */
+.sa-basemap-opt input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border: 1px solid #2d2d2d;
+    background: var(--clr-surface-2);
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    margin: 0;
+    margin-top: 1px;
+    /* square — matches the radius: 0px design system */
+    transition: border-color var(--transition-fast);
+}
+
+.sa-basemap-opt input[type="radio"]:hover {
+    border-color: var(--clr-text-dim);
+}
+
+.sa-basemap-opt input[type="radio"]:checked {
+    border-color: var(--clr-brand);
+}
+
+/* Square inner fill on selected state */
+.sa-basemap-opt input[type="radio"]:checked::after {
+    content: '';
+    display: block;
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: var(--clr-brand);
+    top: 2px;
+    left: 2px;
+}
+
+/* ── Range Sliders — Dock Panels (dark surface) ─────────────── */
+.sa-dock__panel input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 14px;     /* touch target */
+    background: transparent;
+    cursor: pointer;
+    margin-bottom: var(--sp-1);
+    padding: 0;
+}
+
+.sa-dock__panel input[type="range"]::-webkit-slider-runnable-track {
+    height: 2px;
+    background: #1c2128;
+    border: none;
+}
+
+.sa-dock__panel input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 10px;
+    background: var(--clr-brand);
+    border: none;
+    border-radius: 0; /* square — tactical */
+    margin-top: -4px;
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+}
+
+.sa-dock__panel input[type="range"]:hover::-webkit-slider-thumb {
+    transform: scale(1.3);
+}
+
+.sa-dock__panel input[type="range"]::-moz-range-track {
+    height: 2px;
+    background: #1c2128;
+    border: none;
+}
+
+.sa-dock__panel input[type="range"]::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    background: var(--clr-brand);
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+}
+
+/* ── Range Slider — Timeline (light background) ─────────────── */
+.sa-timeline input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    height: 14px;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+}
+
+.sa-timeline input[type="range"]::-webkit-slider-runnable-track {
+    height: 2px;
+    background: #ccc;
+    border: none;
+}
+
+.sa-timeline input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 10px;
+    background: #E31B23;
+    border: none;
+    border-radius: 0;
+    margin-top: -4px;
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+}
+
+.sa-timeline input[type="range"]:hover::-webkit-slider-thumb {
+    transform: scale(1.3);
+}
+
+.sa-timeline input[type="range"]::-moz-range-track {
+    height: 2px;
+    background: #ccc;
+    border: none;
+}
+
+.sa-timeline input[type="range"]::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    background: #E31B23;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+}
+
+/* ── Number Inputs — Buffer coordinates ─────────────────────── */
+.sa-buffer-input {
+    flex: 1;
+    background: var(--clr-surface-2);
+    border: 1px solid #2a2a2a;
+    color: var(--clr-text);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 5px var(--sp-2);
+    width: 0;
+    min-width: 0;
+    text-align: center;
+    outline: none;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+    -moz-appearance: textfield;
+    appearance: textfield;       /* hide spin buttons (Firefox + standard) */
+}
+
+.sa-buffer-input:hover {
+    border-color: #3a3a3a;
+}
+
+.sa-buffer-input:focus {
+    border-color: var(--clr-brand);
+    background: var(--clr-surface-3);
+}
+
+/* Hide WebKit spin buttons */
+.sa-buffer-input::-webkit-outer-spin-button,
+.sa-buffer-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.sa-buffer-input::placeholder {
+    color: var(--clr-text-dim);
+    font-style: normal;
+    letter-spacing: 0;
+}
+
+/* ── Species Select — custom dropdown arrow ─────────────────── */
+.sa-buffer-species-sel {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    background-color: var(--clr-surface-2);
+    /* SVG arrow — dim grey, no border-radius */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23465060'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    border: 1px solid #2a2a2a;
+    color: var(--clr-text-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 5px 24px 5px var(--sp-2);
+    margin-bottom: var(--sp-2);
+    cursor: pointer;
+    outline: none;
+    transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.sa-buffer-species-sel:hover {
+    border-color: #3a3a3a;
+}
+
+.sa-buffer-species-sel:focus {
+    border-color: var(--clr-brand);
+    color: var(--clr-text);
+    /* Update arrow to brand on focus */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23b8f000'/%3E%3C/svg%3E");
+}
+
+.sa-buffer-species-sel option {
+    background: var(--clr-surface-2);
+    color: var(--clr-text-muted);
+    padding: 4px;
+}
+
+/* ── Buffer panel row labels ────────────────────────────────── */
+.sa-buffer-row label {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--clr-text-dim);
+    font-weight: var(--fw-bold);
+    user-select: none;
+}
+
+/* ── Run Buffer + dock buttons — dark context override ──────── */
+.sa-dock__panel .sa-btn {
+    background: var(--clr-surface-2);
+    border: 1px solid #2a2a2a;
+    color: var(--clr-text-muted);
+    box-shadow: none;
+    font-size: 9px;
+    padding: var(--sp-2) var(--sp-3);
+    letter-spacing: 0.1em;
+    transition: background var(--transition-fast), color var(--transition-fast),
+                border-color var(--transition-fast);
+}
+
+.sa-dock__panel .sa-btn:hover {
+    background: var(--clr-brand);
+    color: #000;
+    border-color: var(--clr-brand);
+    transform: none;
+    box-shadow: none;
+}
+
+/* ── GEE opacity label font refinement ──────────────────────── */
+.sa-gee-opacity-lbl {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* ── Panel header first-child margin reset ──────────────────── */
+.sa-dock__panel-hdr:first-child {
+    margin-top: 0;
+}
+
+/* ── Community Tier Restriction UI ─────────────────────────── */
+
+/*
+ * .sa-tier-banner
+ * Non-dismissable info strip rendered directly below the map header
+ * when the user is a Community account.  Spans the full map width.
+ */
+.sa-tier-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: 6px var(--sp-4);
+    background: #0d1117;
+    border-bottom: 1px solid #30363d;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--clr-text-dim);
+    letter-spacing: 0.06em;
+    line-height: 1.5;
+}
+
+.sa-tier-banner__icon {
+    color: var(--clr-brand);
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+/*
+ * .sa-tier-lock
+ * Replaces the GEE section inside the Layers panel for Community users.
+ * Provides a clear visual signal that these layers require an upgrade.
+ */
+.sa-tier-lock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-4) var(--sp-2);
+    text-align: center;
+    border: 1px dashed #30363d;
+    margin: var(--sp-2) 0;
+}
+
+.sa-tier-lock__icon {
+    font-size: 18px;
+    color: #30363d;
+}
+
+.sa-tier-lock__text {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--clr-text-dim);
+    letter-spacing: 0.08em;
+    line-height: 1.5;
 }

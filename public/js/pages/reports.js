@@ -99,7 +99,23 @@ const ReportsPage = (() => {
     if (!tbody) return;
 
     try {
-      const params = mode === 'pending' ? '?status=PENDING' : mode === 'validated' ? '?status=VALIDATED' : '';
+      /*
+       * Query-param strategy per mode:
+       *
+       * my-reports  → always ?mine=true regardless of role.
+       *               This ensures Rangers/Analysts/Admins also see only
+       *               their own submissions on the My Reports view.
+       *               Community accounts are additionally scoped server-side
+       *               by the isCommunityTier gate in reportController.getReports().
+       *
+       * pending     → ?status=PENDING (role-gated by view_pending_reports permission)
+       * validated   → ?status=VALIDATED
+       */
+      let params = '';
+      if (mode === 'my-reports') params = '?mine=true';
+      else if (mode === 'pending')   params = '?status=PENDING';
+      else if (mode === 'validated') params = '?status=VALIDATED';
+
       const reports = await API.get(`/reports${params}`);
       console.log(`[REPORTS] Mode: ${mode}, count: ${reports.length}`);
       renderRows(tbody, reports, mode);

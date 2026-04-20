@@ -46,4 +46,7 @@ const authorize = (requiredPermission) => {
     };
 };
 
-module.exports = { authenticate, authorize };
+/* Re-export requireCap so routes only need to import from auth.js */
+const { requireCap } = require('../utils/capabilities');
+
+module.exports = { authenticate, authorize, requireCap };

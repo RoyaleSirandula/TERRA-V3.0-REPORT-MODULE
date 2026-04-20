@@ -5,11 +5,15 @@ const morgan = require('morgan');
 const path = require('path');
 require('dotenv').config();
 
-const reportRoutes = require('./routes/reportRoutes');
-const authRoutes = require('./routes/authRoutes');
-const analysisRoutes = require('./routes/analysisRoutes');
-const userRoutes = require('./routes/userRoutes');
-const rolesRoutes = require('./routes/rolesRoutes');
+const reportRoutes        = require('./routes/reportRoutes');
+const authRoutes          = require('./routes/authRoutes');
+const analysisRoutes      = require('./routes/analysisRoutes');
+const userRoutes          = require('./routes/userRoutes');
+const rolesRoutes         = require('./routes/rolesRoutes');
+const geeRoutes           = require('./routes/gee.routes');
+const sharingRoutes       = require('./routes/sharingRoutes');
+const teamsRoutes         = require('./routes/teamsRoutes');
+const notificationsRoutes = require('./routes/notificationsRoutes');
 
 
 const app = express();
@@ -32,11 +36,15 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/analysis', analysisRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/roles', rolesRoutes);
+app.use('/api/auth',          authRoutes);
+app.use('/api/reports',       reportRoutes);
+app.use('/api/analysis',      analysisRoutes);
+app.use('/api/users',         userRoutes);
+app.use('/api/roles',         rolesRoutes);
+app.use('/api/gee',           geeRoutes);
+app.use('/api/shares',        sharingRoutes);
+app.use('/api/teams',         teamsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 
 // Health Check

@@ -1,17 +1,31 @@
 const express = require('express');
-const router = express.Router();
-const { pool } = require('../config/db');
+const router  = express.Router();
+const { pool }         = require('../config/db');
 const { authenticate } = require('../middleware/auth');
+const { requireCap }   = require('../utils/capabilities');
 
-// Apply minimal auth to all analysis queries (could refine with granular permissions later)
 router.use(authenticate);
 
 /* ── 1. Advanced Sighting Filter (Spatiotemporal) ────────────── */
+/*
+ * own_only scoping:
+ * Community members have siteAnalysis.ownReportsOnly = true in the
+ * capability matrix.  When the query param ?own_only=true is present
+ * AND the authenticated user carries this capability, the WHERE clause
+ * is restricted to r.user_id = current user.  This prevents a Community
+ * account from seeing other users' validated reports even if they call
+ * the endpoint directly without the frontend restriction.
+ */
 router.get('/sightings', async (req, res) => {
     try {
-        const { start_date, end_date, species_id, north, south, east, west } = req.query;
+        const { start_date, end_date, species_id, north, south, east, west, own_only } = req.query;
+
+        const { buildCapabilities } = require('../utils/capabilities');
+        const caps = buildCapabilities(req.user.role_name);
+        const forceOwnOnly = caps.siteAnalysis.ownReportsOnly;
+
         let query = `
-            SELECT r.report_id, r.species_id,
+            SELECT r.report_id, r.species_id, r.user_id,
                    COALESCE(s.common_name, r.species_name_custom, 'Unknown Species') as species_name,
                    r.validation_status, r.sensitivity_tier, r.ai_confidence_score,
                    r.sighting_timestamp as created_at,
@@ -22,6 +36,12 @@ router.get('/sightings', async (req, res) => {
         `;
         const values = [];
         let paramIdx = 1;
+
+        // Scope to own reports for Community tier or explicit own_only param
+        if (forceOwnOnly || own_only === 'true') {
+            query += ` AND r.user_id = $${paramIdx++}`;
+            values.push(req.user.user_id);
+        }
 
         if (start_date && end_date) {
             query += ` AND r.sighting_timestamp BETWEEN $${paramIdx++} AND $${paramIdx++}`;
@@ -38,7 +58,7 @@ router.get('/sightings', async (req, res) => {
             values.push(west, south, east, north);
         }
 
-        query += ` ORDER BY r.sighting_timestamp DESC LIMIT 1000`; // safeguard limit
+        query += ` ORDER BY r.sighting_timestamp DESC LIMIT 1000`;
 
         const result = await pool.query(query, values);
         res.json(result.rows);
@@ -96,8 +116,9 @@ router.delete('/user-objects/:id', async (req, res) => {
     }
 });
 
-/* ── 3. NDVI Zonal Statistics (MOCK) ───────────────────────── */
-router.post('/ndvi-zonal', async (req, res) => {
+/* ── 3. NDVI Zonal Statistics ───────────────────────────────── */
+/* Gate: Community accounts cannot run NDVI analysis. */
+router.post('/ndvi-zonal', requireCap('siteAnalysis.ndviAnalysis'), async (req, res) => {
     // Phase 1: Mocked response. In production, this would use ST_SummaryStatsAgg(ST_Clip(raster, geometry))
     try {
         const { polygon } = req.body;
@@ -129,7 +150,8 @@ router.post('/ndvi-zonal', async (req, res) => {
 });
 
 /* ── 4. Buffer & Proximity Analysis ────────────────────────── */
-router.post('/buffer', async (req, res) => {
+/* Gate: Community accounts cannot run buffer analysis. */
+router.post('/buffer', requireCap('siteAnalysis.bufferAnalysis'), async (req, res) => {
     try {
         const { geometry, radius_meters } = req.body;
         const geomStr = typeof geometry === 'string' ? geometry : JSON.stringify(geometry);

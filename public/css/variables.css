@@ -62,6 +62,7 @@
   --sp-10: 2.5rem;    /* 40px */
   --sp-12: 3rem;      /* 48px */
   --sp-16: 4rem;      /* 64px */
+  --sp-20: 5rem;      /* 80px */
 
   /* ── Shape — sharp edges throughout ─────────────────────── */
   --radius-sm:   0px;

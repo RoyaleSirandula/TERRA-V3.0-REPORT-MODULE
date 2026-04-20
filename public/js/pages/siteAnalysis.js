@@ -22,6 +22,11 @@ const SiteAnalysisPage = (() => {
     let _activeMode = 'aesthetic';
     let _pendingFlyTo = null;     // Queued flyTo once map is confirmed ready
 
+    /* ── GEE Layer State ─────────────────────────────────────── */
+    let _geeLayers = {};          // { vegetation: L.tileLayer, water: L.tileLayer, ... }
+    let _geeMapIds = {};          // Cache: { 'vegetation-high': { urlTemplate }, ... }
+    let _activeGeeTypes = new Set(); // Currently enabled GEE layer types
+
     /*
      * _originMarker — the red circle placed at the report's coordinates when
      * the view was opened from a report detail page.  Stored so its popup
@@ -77,6 +82,21 @@ const SiteAnalysisPage = (() => {
     const SESSIONS_KEY = 'terra-sa-sessions';
 
     /*
+     * _isCommunityRestricted
+     *
+     * Set once in render() from Auth.getCaps().siteAnalysis.mode.
+     * When true the map view applies the Community tier restrictions:
+     *   • Basemap locked to satellite, Minimal option is hidden.
+     *   • Sightings API called with ?own_only=true.
+     *   • GEE, Buffer, and Results panels are not mounted.
+     *   • Drawing tools are disabled.
+     *   • A non-dismissable info banner is shown.
+     * The server enforces all gates independently; this flag is
+     * purely for UI rendering — not a security boundary.
+     */
+    let _isCommunityRestricted = false;
+
+    /*
      * GRID_RESOLUTIONS — all available density-grid presets.
      *
      * cellSize   : the width/height of one grid square in decimal degrees.
@@ -124,6 +144,9 @@ const SiteAnalysisPage = (() => {
        (no options)                      → sessions dashboard
     ═══════════════════════════════════════════════════════════ */
     function render(container, options = {}) {
+        // Derive tier restriction once per render; all sub-functions read _isCommunityRestricted.
+        _isCommunityRestricted = !Auth.can('siteAnalysis.geeAccess');
+
         const hasCoords = options && options.lat != null && options.lng != null && !isNaN(parseFloat(options.lat));
         if (hasCoords) {
             renderMapView(container, options);
@@ -381,7 +404,15 @@ const SiteAnalysisPage = (() => {
                 grid: document.getElementById('layer-grid')?.checked ?? true,
                 tactical: document.getElementById('layer-tactical')?.checked ?? true,
                 sightings: document.getElementById('layer-sightings')?.checked ?? true,
-                heatmap: document.getElementById('layer-heatmap')?.checked ?? true
+                heatmap: document.getElementById('layer-heatmap')?.checked ?? true,
+                geeVegetation:    document.getElementById('layer-gee-vegetation')?.checked    ?? false,
+                geeWater:         document.getElementById('layer-gee-water')?.checked         ?? false,
+                geeElevation:     document.getElementById('layer-gee-elevation')?.checked     ?? false,
+                geeLandCover:     document.getElementById('layer-gee-land-cover')?.checked    ?? false,
+                geePrecipitation: document.getElementById('layer-gee-precipitation')?.checked ?? false,
+                geeTemperature:   document.getElementById('layer-gee-temperature')?.checked   ?? false,
+                geeNdviTrend:     document.getElementById('layer-gee-ndvi-trend')?.checked    ?? false,
+                geeHabitat:       document.getElementById('layer-gee-habitat')?.checked       ?? false
             },
             timeline: { currentDate: _timeline.currentDate },
             drawnItems: drawnFeatures,
@@ -957,8 +988,12 @@ const SiteAnalysisPage = (() => {
             _skipAutofit = options.viewport != null; // session restore has its own viewport
         }
 
-        // Restore mode from session if present
-        if (options.mode) _activeMode = options.mode;
+        // Restore mode from session if present, but Community is always satellite
+        if (_isCommunityRestricted) {
+            _activeMode = 'satellite';
+        } else if (options.mode) {
+            _activeMode = options.mode;
+        }
 
         container.innerHTML = `
         <div class="site-analysis anim-fade-in">
@@ -979,103 +1014,261 @@ const SiteAnalysisPage = (() => {
                 </div>
             </div>
 
+            ${_isCommunityRestricted ? `
+            <div class="sa-tier-banner">
+                <span class="sa-tier-banner__icon">◈</span>
+                <span>Community view — showing your reports in satellite mode only. Upgrade to Ranger for full analytical tools.</span>
+            </div>` : ''}
+
             <div class="sa-map-wrap">
                 <div id="sa-map"></div>
 
-                <div class="sa-controls">
-                    <button class="sa-btn" id="btn-mode-aesthetic">Minimal Mode</button>
-                    <button class="sa-btn" id="btn-mode-satellite">Satellite Layer</button>
-                </div>
 
                 <div class="sa-overlay-bottom-left">
                     <div class="sa-compass">N</div>
                     <div class="sa-scale-bar"></div>
                 </div>
 
-                <div class="sa-tool-results" id="sa-tool-results">
-                    <div class="sa-tool-results__header">
-                        <h3 id="sa-tool-title">Analysis Results</h3>
-                        <button class="sa-tool-results__close" id="btn-close-results">&times;</button>
-                    </div>
-                    <div id="sa-tool-content">Select or draw an area to analyze.</div>
-                </div>
+                <!-- ══ RIGHT DOCK: tab strip + sliding drawer ══ -->
+                <div class="sa-dock" id="sa-dock">
 
-                <div class="sa-layer-panel">
-                    <h3>Active Layers</h3>
-                    <div class="sa-layer-item">
-                        <input type="checkbox" id="layer-grid" ${options.layers?.grid !== false ? 'checked' : ''}>
-                        <label for="layer-grid">Density Grid</label>
-                    </div>
-                    <div class="sa-layer-item">
-                        <input type="checkbox" id="layer-tactical" ${options.layers?.tactical !== false ? 'checked' : ''}>
-                        <label for="layer-tactical">Tactical Lines</label>
-                    </div>
-                    <div class="sa-layer-item">
-                        <input type="checkbox" id="layer-sightings" ${options.layers?.sightings !== false ? 'checked' : ''}>
-                        <label for="layer-sightings">Sightings Data</label>
-                    </div>
-                    <div class="sa-layer-item">
-                        <input type="checkbox" id="layer-heatmap" ${options.layers?.heatmap !== false ? 'checked' : ''}>
-                        <label for="layer-heatmap">Density Heatmap</label>
-                    </div>
+                    <!-- Drawer slides open to the left of the tab strip -->
+                    <div class="sa-dock__drawer" id="sa-dock-drawer">
 
-                    ${/*
-                       * Resolution selector — only rendered for roles that are
-                       * allowed to change grid resolution (admin, ranger, analyst).
-                       * All five presets are built from GRID_RESOLUTIONS so adding
-                       * a new preset only requires an entry in that config object.
-                       */''}
-                    ${canControlGridResolution() ? `
-                    <div class="sa-layer-divider"></div>
-                    <div class="sa-resolution-wrap">
-                        <div class="sa-resolution-label">Grid Resolution</div>
-                        <div class="sa-resolution-btns" id="sa-resolution-btns">
-                            ${Object.entries(GRID_RESOLUTIONS).map(([key, preset]) => `
-                                <button
-                                    class="sa-res-btn ${key === _gridResolution ? 'active' : ''}"
-                                    data-resolution="${key}"
-                                    title="${preset.display} cell size">
-                                    ${preset.label}
-                                </button>
-                            `).join('')}
+                        <!-- LAYERS PANEL -->
+                        <div class="sa-dock__panel" id="sa-panel-layers">
+
+                            <!-- ① Base Map -->
+                            <div class="sa-dock__panel-hdr">Base Map</div>
+                            <div class="sa-basemap-group">
+                                ${!_isCommunityRestricted ? `
+                                <label class="sa-basemap-opt">
+                                    <input type="radio" name="basemap" id="basemap-minimal" value="aesthetic" ${_activeMode !== 'satellite' ? 'checked' : ''}>
+                                    <span class="sa-basemap-label">Minimal</span>
+                                    <span class="sa-basemap-desc">Clean contrast for data layers</span>
+                                </label>` : ''}
+                                <label class="sa-basemap-opt">
+                                    <input type="radio" name="basemap" id="basemap-satellite" value="satellite" checked ${_isCommunityRestricted ? 'disabled' : ''}>
+                                    <span class="sa-basemap-label">Satellite</span>
+                                    <span class="sa-basemap-desc">Real-world imagery${_isCommunityRestricted ? '' : ' + GEE intel'}</span>
+                                </label>
+                            </div>
+
+                            <!-- ② Data Layers -->
+                            <div class="sa-layer-divider"></div>
+                            <div class="sa-dock__panel-hdr">Data Layers</div>
+                            <div class="sa-layer-item">
+                                <input type="checkbox" id="layer-sightings" ${options.layers?.sightings !== false ? 'checked' : ''}>
+                                <label for="layer-sightings">Sightings Data</label>
+                            </div>
+                            <div class="sa-layer-item">
+                                <input type="checkbox" id="layer-heatmap" ${options.layers?.heatmap !== false ? 'checked' : ''}>
+                                <label for="layer-heatmap">Density Heatmap</label>
+                            </div>
+                            <div class="sa-layer-item">
+                                <input type="checkbox" id="layer-grid" ${options.layers?.grid !== false ? 'checked' : ''}>
+                                <label for="layer-grid">Density Grid</label>
+                            </div>
+                            <div class="sa-layer-item">
+                                <input type="checkbox" id="layer-tactical" ${options.layers?.tactical !== false ? 'checked' : ''}>
+                                <label for="layer-tactical">Tactical Lines</label>
+                            </div>
+
+                            <!-- ③ Environmental Intelligence (GEE) -->
+                            <div class="sa-layer-divider"></div>
+                            ${_isCommunityRestricted ? `
+                            <div class="sa-tier-lock">
+                                <div class="sa-tier-lock__icon">◈</div>
+                                <div class="sa-tier-lock__text">Environmental Intelligence layers require Ranger tier or above.</div>
+                            </div>` : `
+                            <div class="sa-dock__panel-hdr">Environmental Intelligence
+                                <span class="sa-dock__panel-hdr-note">GEE</span>
+                            </div>
+
+                            <div class="sa-gee-item">
+                                <div class="sa-layer-item">
+                                    <input type="checkbox" id="layer-gee-vegetation">
+                                    <label for="layer-gee-vegetation">Vegetation (NDVI)</label>
+                                    <div class="sa-layer-badge" id="badge-gee-veg" style="display:none;">HIGH-RES</div>
+                                </div>
+                                <div class="sa-gee-opacity" id="gee-opacity-row-vegetation" style="display:none;">
+                                    <span class="sa-gee-opacity-lbl">Opacity</span>
+                                    <input type="range" id="gee-opacity-vegetation" class="sa-gee-opacity-slider" min="10" max="100" step="5" value="70">
+                                    <span class="sa-gee-opacity-val" id="gee-opacity-val-vegetation">70%</span>
+                                </div>
+                            </div>
+
+                            <div class="sa-gee-item">
+                                <div class="sa-layer-item">
+                                    <input type="checkbox" id="layer-gee-water">
+                                    <label for="layer-gee-water">Water Features</label>
+                                </div>
+                                <div class="sa-gee-opacity" id="gee-opacity-row-water" style="display:none;">
+                                    <span class="sa-gee-opacity-lbl">Opacity</span>
+                                    <input type="range" id="gee-opacity-water" class="sa-gee-opacity-slider" min="10" max="100" step="5" value="70">
+                                    <span class="sa-gee-opacity-val" id="gee-opacity-val-water">70%</span>
+                                </div>
+                            </div>
+
+                            <div class="sa-gee-item">
+                                <div class="sa-layer-item">
+                                    <input type="checkbox" id="layer-gee-elevation">
+                                    <label for="layer-gee-elevation">Elevation (Hillshade)</label>
+                                </div>
+                                <div class="sa-gee-opacity" id="gee-opacity-row-elevation" style="display:none;">
+                                    <span class="sa-gee-opacity-lbl">Opacity</span>
+                                    <input type="range" id="gee-opacity-elevation" class="sa-gee-opacity-slider" min="10" max="100" step="5" value="70">
+                                    <span class="sa-gee-opacity-val" id="gee-opacity-val-elevation">70%</span>
+                                </div>
+                            </div>
+
+                            <div class="sa-gee-item">
+                                <div class="sa-layer-item">
+                                    <input type="checkbox" id="layer-gee-land-cover">
+                                    <label for="layer-gee-land-cover">Land Cover (ESA)</label>
+                                    <div class="sa-layer-badge" style="display:block;">10m</div>
+                                </div>
+                                <div class="sa-gee-opacity" id="gee-opacity-row-land-cover" style="display:none;">
+                                    <span class="sa-gee-opacity-lbl">Opacity</span>
+                                    <input type="range" id="gee-opacity-land-cover" class="sa-gee-opacity-slider" min="10" max="100" step="5" value="70">
+                                    <span class="sa-gee-opacity-val" id="gee-opacity-val-land-cover">70%</span>
+                                </div>
+                            </div>
+
+                            <div class="sa-gee-item">
+                                <div class="sa-layer-item">
+                                    <input type="checkbox" id="layer-gee-precipitation">
+                                    <label for="layer-gee-precipitation">Precipitation (CHIRPS)</label>
+                                </div>
+                                <div class="sa-gee-opacity" id="gee-opacity-row-precipitation" style="display:none;">
+                                    <span class="sa-gee-opacity-lbl">Opacity</span>
+                                    <input type="range" id="gee-opacity-precipitation" class="sa-gee-opacity-slider" min="10" max="100" step="5" value="65">
+                                    <span class="sa-gee-opacity-val" id="gee-opacity-val-precipitation">65%</span>
+                                </div>
+                            </div>
+
+                            <div class="sa-gee-item">
+                                <div class="sa-layer-item">
+                                    <input type="checkbox" id="layer-gee-temperature">
+                                    <label for="layer-gee-temperature">Temperature · LST</label>
+                                </div>
+                                <div class="sa-gee-opacity" id="gee-opacity-row-temperature" style="display:none;">
+                                    <span class="sa-gee-opacity-lbl">Opacity</span>
+                                    <input type="range" id="gee-opacity-temperature" class="sa-gee-opacity-slider" min="10" max="100" step="5" value="65">
+                                    <span class="sa-gee-opacity-val" id="gee-opacity-val-temperature">65%</span>
+                                </div>
+                            </div>
+
+                            <div class="sa-gee-item">
+                                <div class="sa-layer-item">
+                                    <input type="checkbox" id="layer-gee-ndvi-trend">
+                                    <label for="layer-gee-ndvi-trend">NDVI Trend (2018–23)</label>
+                                    <div class="sa-layer-badge sa-layer-badge--trend" style="display:block;">REG</div>
+                                </div>
+                                <div class="sa-gee-opacity" id="gee-opacity-row-ndvi-trend" style="display:none;">
+                                    <span class="sa-gee-opacity-lbl">Opacity</span>
+                                    <input type="range" id="gee-opacity-ndvi-trend" class="sa-gee-opacity-slider" min="10" max="100" step="5" value="80">
+                                    <span class="sa-gee-opacity-val" id="gee-opacity-val-ndvi-trend">80%</span>
+                                </div>
+                            </div>
+
+                            <div class="sa-gee-item">
+                                <div class="sa-layer-item">
+                                    <input type="checkbox" id="layer-gee-habitat">
+                                    <label for="layer-gee-habitat">Habitat Suitability</label>
+                                    <div class="sa-layer-badge sa-layer-badge--habitat" style="display:block;">IDX</div>
+                                </div>
+                                <div class="sa-gee-opacity" id="gee-opacity-row-habitat" style="display:none;">
+                                    <span class="sa-gee-opacity-lbl">Opacity</span>
+                                    <input type="range" id="gee-opacity-habitat" class="sa-gee-opacity-slider" min="10" max="100" step="5" value="75">
+                                    <span class="sa-gee-opacity-val" id="gee-opacity-val-habitat">75%</span>
+                                </div>
+                            </div>
+                            `}
+
+                            <!-- ④ Grid Resolution -->
+                            ${canControlGridResolution() ? `
+                            <div class="sa-layer-divider"></div>
+                            <div class="sa-dock__panel-hdr">Grid Resolution</div>
+                            <div class="sa-resolution-wrap">
+                                <div class="sa-resolution-btns" id="sa-resolution-btns">
+                                    ${Object.entries(GRID_RESOLUTIONS).map(([key, preset]) => `
+                                        <button
+                                            class="sa-res-btn ${key === _gridResolution ? 'active' : ''}"
+                                            data-resolution="${key}"
+                                            title="${preset.display} cell size">
+                                            ${preset.label}
+                                        </button>
+                                    `).join('')}
+                                </div>
+                                <div class="sa-resolution-meta">
+                                    Cell: <span id="sa-resolution-display">${GRID_RESOLUTIONS[_gridResolution].display}</span>
+                                    &nbsp;·&nbsp;
+                                    <span id="sa-cell-count">—</span> cells
+                                </div>
+                            </div>` : ''}
                         </div>
-                        <div class="sa-resolution-meta">
-                            Cell: <span id="sa-resolution-display">${GRID_RESOLUTIONS[_gridResolution].display}</span>
-                            &nbsp;·&nbsp;
-                            <span id="sa-cell-count">—</span> cells
+
+                        <!-- BUFFER / PROXIMITY PANEL -->
+                        <div class="sa-dock__panel" id="sa-panel-buffer">
+                            <div class="sa-dock__panel-hdr">Buffer / Proximity</div>
+                            <div class="sa-buffer-row">
+                                <label>Radius</label>
+                                <span class="sa-buffer-val" id="buffer-radius-display">5km</span>
+                            </div>
+                            <input type="range" id="buffer-radius-slider" min="500" max="50000" step="500" value="5000" />
+                            <div class="sa-buffer-row" style="margin-top:8px;">
+                                <label>Species</label>
+                                <span class="sa-buffer-val" id="buffer-species-display" style="font-size:8px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ALL</span>
+                            </div>
+                            <select id="buffer-species-filter" class="sa-buffer-species-sel">
+                                <option value="">All Species</option>
+                            </select>
+                            <div class="sa-buffer-row" style="margin-top:8px;"><label>Center</label></div>
+                            <div style="display:flex;gap:4px;margin-bottom:6px;">
+                                <input type="number" id="buffer-lat" class="sa-buffer-input" placeholder="Lat" step="0.0001" ${_pendingFlyTo ? `value="${_pendingFlyTo.lat.toFixed(5)}"` : ''} />
+                                <input type="number" id="buffer-lng" class="sa-buffer-input" placeholder="Lng" step="0.0001" ${_pendingFlyTo ? `value="${_pendingFlyTo.lng.toFixed(5)}"` : ''} />
+                            </div>
+                            <button class="sa-btn" id="btn-run-buffer" style="width:100%;margin-top:4px;">Run Buffer</button>
+                            <div style="font-size:9px;opacity:0.5;margin-top:6px;text-align:center;">OR draw a marker / line on map</div>
                         </div>
-                    </div>` : ''}
-                </div>
 
-                <div class="sa-buffer-panel" id="sa-buffer-panel">
-                    <h3>Buffer Analysis</h3>
-                    <div class="sa-buffer-row">
-                        <label>Radius</label>
-                        <span class="sa-buffer-val" id="buffer-radius-display">5km</span>
-                    </div>
-                    <input type="range" id="buffer-radius-slider" min="500" max="50000" step="500" value="5000" />
-                    <!-- Species selector — sets the session species context used by
-                         both "Total Records" (buffer zone) and the "SAME SP" viewport
-                         filter on Active Points / Sector Density.  Populated from the
-                         loaded sightings data so every species in the dataset is
-                         available regardless of how the session was opened. -->
-                    <div class="sa-buffer-row" style="margin-top:8px;">
-                        <label>Species</label>
-                        <span class="sa-buffer-val" id="buffer-species-display" style="font-size:8px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ALL</span>
-                    </div>
-                    <select id="buffer-species-filter" class="sa-buffer-species-sel">
-                        <option value="">All Species</option>
-                    </select>
-                    <div class="sa-buffer-row" style="margin-top:8px;"><label>Center</label></div>
-                    <div style="display:flex;gap:4px;margin-bottom:6px;">
-                        <input type="number" id="buffer-lat" class="sa-buffer-input" placeholder="Lat" step="0.0001" ${_pendingFlyTo ? `value="${_pendingFlyTo.lat.toFixed(5)}"` : ''} />
-                        <input type="number" id="buffer-lng" class="sa-buffer-input" placeholder="Lng" step="0.0001" ${_pendingFlyTo ? `value="${_pendingFlyTo.lng.toFixed(5)}"` : ''} />
-                    </div>
-                    <button class="sa-btn" id="btn-run-buffer" style="width:100%;margin-top:4px;">Run Buffer</button>
-                    <div style="font-size:9px;opacity:0.5;margin-top:4px;text-align:center;">OR draw a marker / line on map</div>
-                </div>
+                        <!-- ANALYSIS RESULTS PANEL -->
+                        <div class="sa-dock__panel" id="sa-panel-results">
+                            <div class="sa-dock__panel-hdr" id="sa-tool-title">Analysis Results</div>
+                            <div id="sa-tool-content" style="font-family:var(--font-mono);font-size:10px;color:#aaa;margin-top:8px;line-height:1.6;">
+                                Select or draw an area to analyze.
+                            </div>
+                        </div>
 
-                <div class="sa-timeline">
+                    </div><!-- /drawer -->
+
+                    <!-- Tab strip (rightmost column) -->
+                    <div class="sa-dock__tabs">
+                        <button class="sa-dock__tab active" data-panel="layers" title="Active Layers">
+                            <span class="sa-dock__tab-icon">≡</span>
+                            <span class="sa-dock__tab-label">LAYERS</span>
+                        </button>
+                        ${!_isCommunityRestricted ? `
+                        <button class="sa-dock__tab" data-panel="buffer" title="Buffer / Proximity">
+                            <span class="sa-dock__tab-icon">◎</span>
+                            <span class="sa-dock__tab-label">BUFFER</span>
+                        </button>
+                        <button class="sa-dock__tab" data-panel="results" title="Analysis Results">
+                            <span class="sa-dock__tab-icon">◈</span>
+                            <span class="sa-dock__tab-label">RESULTS</span>
+                        </button>
+                        <div class="sa-dock__tab-sep"></div>
+                        <button class="sa-dock__tab" id="btn-timeline-tab" title="Toggle Timeline">
+                            <span class="sa-dock__tab-icon">▶</span>
+                            <span class="sa-dock__tab-label">TIME</span>
+                        </button>` : ''}
+                    </div>
+
+                </div><!-- /dock -->
+
+                <!-- Timeline strip — hidden by default, toggled via TIME tab -->
+                <div class="sa-timeline" id="sa-timeline">
                     <button class="sa-btn" id="btn-timeline-play">PLAY</button>
                     <div class="sa-timeline-val" id="timeline-val-start">--</div>
                     <input type="range" id="timeline-slider" min="0" max="100" value="100" step="1" />
@@ -1187,6 +1380,10 @@ const SiteAnalysisPage = (() => {
                 preferCanvas: false
             }).setView([defaultLat, defaultLng], 10);
 
+            _map.createPane('geePane');
+            _map.getPane('geePane').style.zIndex = 250;   // above base tile (200), below all data overlays
+            _map.getPane('geePane').style.pointerEvents = 'none';
+
             _map.createPane('gridPane');
             _map.getPane('gridPane').style.zIndex = 450;  // below popupPane (700) so popups render above
             _map.getPane('gridPane').style.pointerEvents = 'auto';
@@ -1210,6 +1407,10 @@ const SiteAnalysisPage = (() => {
                 });
                 _map.addControl(drawControl);
             }
+
+            // GEE Hybrid Zoom Listener
+            _map.on('zoomend', handleGeeZoomChange);
+            _map.on('moveend', computeViewportStats);
 
             // Wait for DOM layout, then invalidate + apply pending flyTo
             setTimeout(() => {
@@ -1282,6 +1483,30 @@ const SiteAnalysisPage = (() => {
                      */
                     if (sessionOptions.speciesId) {
                         setSessionSpecies(sessionOptions.speciesId, sessionOptions.speciesName);
+                    }
+
+                    // Restore GEE layers from session
+                    if (sessionOptions.layers) {
+                        const geeMapping = {
+                            geeVegetation:    'vegetation',
+                            geeWater:         'water',
+                            geeElevation:     'elevation',
+                            geeLandCover:     'land-cover',
+                            geePrecipitation: 'precipitation',
+                            geeTemperature:   'temperature',
+                            geeNdviTrend:     'ndvi-trend',
+                            geeHabitat:       'habitat'
+                        };
+                        Object.entries(geeMapping).forEach(([optKey, geeType]) => {
+                            if (sessionOptions.layers[optKey]) {
+                                const el = document.getElementById(`layer-gee-${geeType}`);
+                                if (el) el.checked = true;
+                                const opacityRow = document.getElementById(`gee-opacity-row-${geeType}`);
+                                if (opacityRow) opacityRow.style.display = 'flex';
+                                _activeGeeTypes.add(geeType);
+                                updateGeeLayer(geeType);
+                            }
+                        });
                     }
 
                     // Restore buffer inputs
@@ -1380,10 +1605,102 @@ const SiteAnalysisPage = (() => {
         });
     }
 
+    /* ── GEE Layer Management ────────────────────────────────── */
+    function attachGeeListeners() {
+        ['vegetation', 'water', 'elevation', 'land-cover', 'precipitation', 'temperature', 'ndvi-trend', 'habitat'].forEach(type => {
+            // Checkbox — toggle layer on/off and show/hide opacity row
+            document.getElementById(`layer-gee-${type}`)?.addEventListener('change', (e) => {
+                const enabled = e.target.checked;
+                const opacityRow = document.getElementById(`gee-opacity-row-${type}`);
+                if (opacityRow) opacityRow.style.display = enabled ? 'flex' : 'none';
+                if (enabled) _activeGeeTypes.add(type);
+                else _activeGeeTypes.delete(type);
+                updateGeeLayer(type);
+            });
+
+            // Opacity slider — live update without reloading tiles
+            document.getElementById(`gee-opacity-${type}`)?.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value, 10);
+                const label = document.getElementById(`gee-opacity-val-${type}`);
+                if (label) label.textContent = `${val}%`;
+                if (_geeLayers[type]) _geeLayers[type].setOpacity(val / 100);
+            });
+        });
+    }
+
+    async function updateGeeLayer(type) {
+        if (!_map) return;
+
+        const enabled = _activeGeeTypes.has(type);
+
+        if (!enabled) {
+            if (_geeLayers[type]) {
+                _map.removeLayer(_geeLayers[type]);
+                delete _geeLayers[type];
+            }
+            if (type === 'vegetation') document.getElementById('badge-gee-veg').style.display = 'none';
+            return;
+        }
+
+        // Determine specific GEE subtype (e.g. high vs low res vegetation)
+        let geeType = type;
+        if (type === 'vegetation') {
+            const zoom = _map.getZoom();
+            geeType = zoom >= 12 ? 'vegetation-high' : 'vegetation-low';
+            document.getElementById('badge-gee-veg').style.display = 'block';
+            document.getElementById('badge-gee-veg').textContent = zoom >= 12 ? 'S2 HIGH-RES' : 'MODIS LOW-RES';
+        }
+
+        try {
+            // Get MapID if not cached or if type changed (veg hybrid)
+            if (!_geeMapIds[geeType]) {
+                const data = await API.post('/gee/mapid', { layerType: geeType });
+                _geeMapIds[geeType] = data;
+            }
+
+            const { urlTemplate } = _geeMapIds[geeType];
+
+            // Remove existing layer for this type to replace it
+            if (_geeLayers[type]) _map.removeLayer(_geeLayers[type]);
+
+            const opacitySlider = document.getElementById(`gee-opacity-${type}`);
+            const opacity = opacitySlider ? parseInt(opacitySlider.value, 10) / 100 : 0.7;
+
+            _geeLayers[type] = L.tileLayer(urlTemplate, {
+                attribution: 'Google Earth Engine',
+                opacity,
+                pane: 'geePane'
+            }).addTo(_map);
+
+        } catch (err) {
+            console.error(`[GEE] Failed to load layer ${type}:`, err);
+            Toast.error(`GEE: Failed to load ${type} insights.`);
+            // Uncheck the box if it failed
+            const el = document.getElementById(`layer-gee-${type}`);
+            if (el) el.checked = false;
+            _activeGeeTypes.delete(type);
+        }
+    }
+
+    function handleGeeZoomChange() {
+        if (_activeGeeTypes.has('vegetation')) {
+            const zoom = _map.getZoom();
+            const currentSubtype = _geeLayers['vegetation']?.options?.urlTemplate?.includes('vegetation-high') ? 'high' : 'low';
+            const neededSubtype = zoom >= 12 ? 'high' : 'low';
+
+            if (currentSubtype !== neededSubtype) {
+                console.log(`[GEE] Auto-switching vegetation resolution for zoom ${zoom}`);
+                updateGeeLayer('vegetation');
+            }
+        }
+    }
+
     /* ══════════════ Data Loading ══════════════════════════════ */
     async function loadData() {
         try {
-            _reports = await API.get('/analysis/sightings');
+            // Community tier: scope to own reports only (server also enforces this).
+            const ownOnly = _isCommunityRestricted ? '?own_only=true' : '';
+            _reports = await API.get(`/analysis/sightings${ownOnly}`);
 
             /*
              * Species auto-detection from report context.
@@ -1695,20 +2012,69 @@ const SiteAnalysisPage = (() => {
     }
 
     /* ══════════════ Analysis Handlers ═════════════════════════ */
+
+    /*
+     * buildTimeSeriesChart(data)
+     *
+     * Renders a compact inline bar chart for monthly NDVI values.
+     * data = Array<{ month: 1-12, ndvi: number|null }>
+     * Demonstrates: Visualization — data exploration within the app UI.
+     */
+    function buildTimeSeriesChart(data) {
+        if (!Array.isArray(data) || data.length === 0) return '';
+        const MONTH_LABELS = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+        const vals = data.map(d => d.ndvi);
+        const maxVal = Math.max(...vals.filter(v => v != null), 0.01);
+
+        const bars = vals.map((val, i) => {
+            const pct  = val != null ? Math.round((val / maxVal) * 100) : 0;
+            const color = val == null ? '#333'
+                : val > 0.5 ? '#56a800'
+                : val > 0.3 ? '#b8f000'
+                : val > 0.1 ? '#fcd163'
+                : '#CE7E45';
+            const tip = val != null ? val.toFixed(3) : 'N/A';
+            return `<div class="sa-chart-col">
+                <div class="sa-chart-bar" style="height:${pct}%;background:${color};" title="${MONTH_LABELS[i]}: ${tip}"></div>
+                <span class="sa-chart-lbl">${MONTH_LABELS[i]}</span>
+            </div>`;
+        }).join('');
+
+        return `<div class="sa-tool-section-label">MONTHLY NDVI 2023</div>
+                <div class="sa-chart">${bars}</div>`;
+    }
+
     async function handleAnalysis(type, geometry) {
         showResultsLoading();
         const radius = parseInt(document.getElementById('buffer-radius-slider')?.value || 5000, 10);
         try {
             if (type === 'polygon') {
-                const data = await API.post('/analysis/ndvi-zonal', { polygon: geometry });
-                const trendRows = Array.isArray(data.trend)
-                    ? data.trend.map(t => `<p><span>${t.date}:</span><span class="val">${parseFloat(t.value).toFixed(3)}</span></p>`).join('')
+                // Parallel: zonal stats (cloud-masked S2) + monthly time series (MODIS)
+                const [data, tsData] = await Promise.all([
+                    API.post('/analysis/ndvi-zonal', { polygon: geometry }),
+                    API.post('/gee/timeseries', { polygon: geometry }).catch(() => null)
+                ]);
+
+                const change = parseFloat(data.change_30_days);
+                const changeStr = !isNaN(change)
+                    ? `${change > 0 ? '+' : ''}${change}`
+                    : '—';
+
+                const trendRows = Array.isArray(data.trend) && data.trend.length > 0
+                    ? data.trend.map(t =>
+                        `<p><span>${t.date}:</span><span class="val">${t.value != null ? parseFloat(t.value).toFixed(3) : '—'}</span></p>`
+                      ).join('')
                     : '';
+
+                const chartHtml = tsData ? buildTimeSeriesChart(tsData) : '';
+
                 showResults('NDVI Zonal Stats', `
-                    <p><span>Mean NDVI:</span><span class="val">${data.mean}</span></p>
-                    <p><span>Min NDVI:</span><span class="val">${data.min}</span></p>
-                    <p><span>Max NDVI:</span><span class="val">${data.max}</span></p>
-                    <p><span>30d Change:</span><span class="val">${data.change_30_days > 0 ? '+' : ''}${data.change_30_days}</span></p>
+                    <p><span>Mean NDVI:</span><span class="val">${data.mean ?? '—'}</span></p>
+                    <p><span>Min NDVI:</span><span class="val">${data.min  ?? '—'}</span></p>
+                    <p><span>Max NDVI:</span><span class="val">${data.max  ?? '—'}</span></p>
+                    ${data.stdDev ? `<p><span>Std Dev:</span><span class="val">${data.stdDev}</span></p>` : ''}
+                    <p><span>6mo Δ:</span><span class="val">${changeStr}</span></p>
+                    ${chartHtml}
                     ${trendRows ? `<div class="sa-tool-section-label">6-MONTH TREND</div>${trendRows}` : ''}
                 `);
             } else {
@@ -1747,26 +2113,45 @@ const SiteAnalysisPage = (() => {
         }
     }
 
+    /* ── Dock panel switcher ─────────────────────────────────── */
+    function openDockTab(panelId) {
+        const drawer = document.getElementById('sa-dock-drawer');
+        if (!drawer) return;
+        const tabs   = document.querySelectorAll('.sa-dock__tab[data-panel]');
+        const panels = document.querySelectorAll('.sa-dock__panel');
+        const targetId = `sa-panel-${panelId}`;
+        const alreadyOpen = drawer.classList.contains('open')
+            && document.getElementById(targetId)?.classList.contains('active');
+
+        if (alreadyOpen) {
+            drawer.classList.remove('open');
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(p => p.classList.remove('active'));
+        } else {
+            drawer.classList.add('open');
+            tabs.forEach(t => t.classList.toggle('active', t.dataset.panel === panelId));
+            panels.forEach(p => p.classList.toggle('active', p.id === targetId));
+        }
+    }
+
     function showResultsLoading() {
-        const p = document.getElementById('sa-tool-results');
         const t = document.getElementById('sa-tool-title');
         const c = document.getElementById('sa-tool-content');
-        if (p) p.classList.add('active');
         if (t) t.textContent = 'Analyzing…';
-        if (c) c.innerHTML = '<p>Computing spatial statistics…</p>';
+        if (c) c.innerHTML = '<p style="font-family:var(--font-mono);font-size:10px;color:#aaa;">Computing spatial statistics…</p>';
+        openDockTab('results');
     }
 
     function showResults(title, html) {
-        const p = document.getElementById('sa-tool-results');
         const t = document.getElementById('sa-tool-title');
         const c = document.getElementById('sa-tool-content');
-        if (p) p.classList.add('active');
         if (t) t.textContent = title;
         if (c) c.innerHTML = html;
+        openDockTab('results');
     }
 
     function hideResults() {
-        document.getElementById('sa-tool-results')?.classList.remove('active');
+        // Results live in the dock panel — no element to toggle
     }
 
     /* ══════════════ Map Listeners ═════════════════════════════ */
@@ -1789,14 +2174,18 @@ const SiteAnalysisPage = (() => {
             Router.navigate('report-detail', { reportId: _sessionReportId });
         });
 
-        // Mode toggles
-        document.getElementById('btn-mode-aesthetic')?.addEventListener('click', () => setMode('aesthetic'));
-        document.getElementById('btn-mode-satellite')?.addEventListener('click', () => setMode('satellite'));
+        // Base map radio buttons (in Layers panel)
+        document.querySelectorAll('input[name="basemap"]').forEach(radio => {
+            radio.addEventListener('change', () => setMode(radio.value));
+        });
 
         // Layer checkboxes — each toggle triggers a full layer re-render
         ['layer-grid', 'layer-tactical', 'layer-sightings', 'layer-heatmap'].forEach(id => {
             document.getElementById(id)?.addEventListener('change', renderLayers);
         });
+
+        // GEE Layers
+        attachGeeListeners();
 
         /*
          * Active Points filter buttons — clicking ALL or SAME SP updates
@@ -1853,7 +2242,21 @@ const SiteAnalysisPage = (() => {
         });
 
         // Close results
-        document.getElementById('btn-close-results')?.addEventListener('click', hideResults);
+        // Dock tab switching (layers / buffer / results)
+        document.querySelectorAll('.sa-dock__tab[data-panel]').forEach(tab => {
+            tab.addEventListener('click', () => openDockTab(tab.dataset.panel));
+        });
+        // Open layers panel by default
+        openDockTab('layers');
+
+        // Timeline tab toggle
+        document.getElementById('btn-timeline-tab')?.addEventListener('click', () => {
+            const tl  = document.getElementById('sa-timeline');
+            const btn = document.getElementById('btn-timeline-tab');
+            if (!tl) return;
+            tl.classList.toggle('open');
+            if (btn) btn.classList.toggle('active', tl.classList.contains('open'));
+        });
 
         // Timeline
         document.getElementById('timeline-slider')?.addEventListener('input', (e) => {
@@ -1978,8 +2381,9 @@ const SiteAnalysisPage = (() => {
     }
 
     function updateModeUI() {
-        document.getElementById('btn-mode-aesthetic')?.classList.toggle('active', _activeMode === 'aesthetic');
-        document.getElementById('btn-mode-satellite')?.classList.toggle('active', _activeMode === 'satellite');
+        document.querySelectorAll('input[name="basemap"]').forEach(radio => {
+            radio.checked = radio.value === _activeMode;
+        });
         renderLayers();
     }
 

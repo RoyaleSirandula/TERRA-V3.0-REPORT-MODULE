@@ -56,22 +56,26 @@ exports.getReportById = async (req, res) => {
 
 exports.getReports = async (req, res) => {
     try {
-        const { status, region_id, limit, offset } = req.query;
+        const { status, region_id, limit, offset, mine } = req.query;
 
-        // RBAC Logic for Filtering
-        // If not Admin or Analyst, user constraints apply?
-        // Actually, middleware protects the route, controller handles logic.
-        // But Ranger should only see their region? The current specs say yes.
-        // Dynamic RBAC checks permissions, but data scoping is logic.
+        const filters = { limit, offset, status, region_id };
 
-        // For now, simple implementation:
-        const filters = {
-            limit, offset, status, region_id
-        };
+        /*
+         * Scope rules (two independent gates, both enforced server-side):
+         *
+         * Gate A — Community-tier hard scope:
+         *   Community accounts have view_own_reports but NOT view_pending_reports.
+         *   They ALWAYS see only their own reports regardless of the ?mine param.
+         *
+         * Gate B — Explicit mine=true param:
+         *   Any role can request ?mine=true to see only their own submissions.
+         *   Used by the My Reports page for ALL roles so Rangers/Analysts/Admins
+         *   also see only their own reports when on the My Reports view.
+         */
+        const isCommunityTier = req.user.permissions.includes('view_own_reports')
+            && !req.user.permissions.includes('view_pending_reports');
 
-        // If user has 'view_own_reports' only, filter by user_id
-        if (req.user.permissions.includes('view_own_reports') && !req.user.permissions.includes('view_pending_reports')) {
-            // Community logic mostly
+        if (isCommunityTier || mine === 'true') {
             filters.user_id = req.user.user_id;
         }
 
