@@ -45,6 +45,138 @@ const ReportDetailPage = (() => {
     },
   ];
 
+  /* ── Internal: build collapsible Intelligence Breakdown ─── */
+  function buildIntelligenceAccordion(report) {
+    const breakdown = Array.isArray(report.confidence_breakdown) ? report.confidence_breakdown : [];
+    const passed    = breakdown.filter(i => i.status === 'PASSED');
+    const count     = passed.length;
+
+    return `
+      <div class="intel-accordion" id="intel-accordion" aria-expanded="false">
+        <button class="intel-accordion__trigger" id="intel-accordion-trigger" type="button">
+          <span class="intel-accordion__label">Intelligence Breakdown</span>
+          <span class="intel-accordion__count">${count} criteria passed</span>
+          <span class="intel-accordion__chevron">▾</span>
+        </button>
+        <div class="intel-accordion__body" id="intel-accordion-body">
+          ${count === 0
+            ? `<div class="intel-item">
+                 <span class="intel-item__label" style="color:var(--clr-text-muted);font-style:italic">
+                   No intelligence criteria met yet.
+                 </span>
+               </div>`
+            : passed.map(item => `
+                <div class="intel-item">
+                  <span class="intel-item__label">
+                    <span class="intel-item__plus">+</span>${item.label}
+                  </span>
+                  <span class="intel-item__boost">${item.boost}</span>
+                </div>
+              `).join('')
+          }
+        </div>
+      </div>
+    `;
+  }
+
+  /* ── Internal: wire accordion, region chip, and AI brief ── */
+  function wireHeaderInteractivity(report) {
+    // Intelligence accordion toggle
+    const trigger   = document.getElementById('intel-accordion-trigger');
+    const body      = document.getElementById('intel-accordion-body');
+    const accordion = document.getElementById('intel-accordion');
+    if (trigger && body && accordion) {
+      trigger.addEventListener('click', () => {
+        const isOpen = accordion.getAttribute('aria-expanded') === 'true';
+        accordion.setAttribute('aria-expanded', String(!isOpen));
+        body.classList.toggle('open', !isOpen);
+      });
+    }
+
+    // Region chip → site analysis with regionId context
+    const regionChip = document.getElementById('btn-region-chip');
+    if (regionChip && report.region_id) {
+      regionChip.addEventListener('click', () => {
+        Router.navigate('site-analysis', {
+          lat:      report.latitude,
+          lng:      report.longitude,
+          reportId: report.report_id,
+          regionId: report.region_id,
+        });
+      });
+    }
+
+    // AI brief panel — always render; backend returns 403 for Community tier
+    fetchAndRenderAIBrief(report);
+  }
+
+  /* ── Internal: fetch AI brief and inject into container ─── */
+  async function fetchAndRenderAIBrief(report) {
+    const container = document.getElementById('ai-brief-container');
+    if (!container) return;
+
+    // Skeleton while loading
+    container.innerHTML = `
+      <div class="ai-brief">
+        <div class="ai-brief__header">
+          <span class="ai-brief__label">AI Field Brief</span>
+        </div>
+        <div class="ai-brief__skeleton">
+          <div class="ai-brief__skeleton-line" style="width:88%"></div>
+          <div class="ai-brief__skeleton-line" style="width:72%"></div>
+          <div class="ai-brief__skeleton-line" style="width:80%"></div>
+          <div class="ai-brief__skeleton-line" style="width:65%"></div>
+        </div>
+      </div>
+    `;
+
+    try {
+      const { brief } = await API.get(`/reports/${report.report_id}/brief`);
+      container.innerHTML = `
+        <div class="ai-brief loaded">
+          <div class="ai-brief__header">
+            <span class="ai-brief__label">AI Field Brief</span>
+            <span class="ai-brief__risk ai-brief__risk--${brief.riskLevel}">
+              ${brief.riskLevel} RISK
+            </span>
+          </div>
+          <div class="ai-brief__body">
+            ${brief.considerations.map(point => `
+              <div class="ai-brief__item">
+                <span class="ai-brief__item-bullet">◆</span>
+                <span>${point}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="ai-brief__ts">
+            Generated ${new Date(brief.generatedAt).toLocaleString().toUpperCase()}
+            &nbsp;·&nbsp; Terra Intelligence Engine v1
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      // 403 → show clearance-restricted panel; other errors → silent remove
+      const is403 = err?.status === 403 || err?.message?.includes('403');
+      if (is403) {
+        container.innerHTML = `
+          <div class="ai-brief">
+            <div class="ai-brief__header">
+              <span class="ai-brief__label">AI Field Brief</span>
+              <span class="ai-brief__risk" style="color:var(--clr-text-muted);border-color:var(--clr-border);">
+                CLEARANCE RESTRICTED
+              </span>
+            </div>
+            <div class="ai-brief__body" style="color:var(--clr-text-dim);font-style:italic;font-size:var(--text-xs);">
+              Intelligence briefs are available to Ranger tier and above.
+            </div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = '';
+      }
+    }
+  }
+
   /* ── Internal: build page header HTML ───────────────────── */
   function buildHeader(report) {
     const status = (report.validation_status || 'PENDING').toUpperCase();
@@ -62,6 +194,8 @@ const ReportDetailPage = (() => {
           <h1 class="report-detail-header__title">
             ${report.species_name || 'Unknown Species'}
           </h1>
+
+          <!-- Meta row — includes region chip beside coordinates -->
           <div class="report-detail-header__meta">
             <span class="badge badge--${status.toLowerCase()}">${status}</span>
             <span class="badge badge--${tierClasses[tier]}">Tier ${tier} – ${tierLabels[tier]}</span>
@@ -69,45 +203,20 @@ const ReportDetailPage = (() => {
               ${new Date(report.created_at).toLocaleDateString()}
             </span>
             <span class="report-detail-header__meta-item">
-              ${Number(report.latitude || 0).toFixed(4)},
-                 ${Number(report.longitude || 0).toFixed(4)}
+              ${Number(report.latitude || 0).toFixed(4)},&nbsp;${Number(report.longitude || 0).toFixed(4)}
             </span>
+            ${report.region_id ? `
+              <button class="region-chip" id="btn-region-chip" title="Open ${report.region_id} in Site Analysis">
+                ◉&nbsp;${report.region_id}
+              </button>
+            ` : ''}
             <span class="report-detail-header__meta-item">
               ${Number(report.ai_confidence_score || 0).toFixed(1)}% AI confidence
             </span>
           </div>
 
-          <!-- Intelligence Engine Breakdown -->
-          <div class="mt-4 anim-fade-in-up" style="animation-delay: 0.2s">
-            <div style="font-size:var(--text-xs); text-transform:uppercase; color:var(--clr-brand); font-weight:var(--fw-bold); margin-bottom:var(--sp-2); letter-spacing:0.05em">
-              Intelligence Breakdown
-            </div>
-            <div style="display:flex; flex-direction:column; gap: var(--sp-2);">
-              ${(Array.isArray(report.confidence_breakdown) ? report.confidence_breakdown : [])
-        .filter(item => item.status === 'PASSED')
-        .map((item, idx) => `
-                  <div class="card p-2 px-3 anim-fade-in-up" style="
-                    display:flex; 
-                    justify-content:space-between; 
-                    align-items:center; 
-                    background: rgba(0,255,153,0.05); 
-                    border: 1px solid var(--clr-brand);
-                    animation-delay: ${0.3 + (idx * 0.1)}s;
-                  ">
-                    <span style="font-size:var(--text-xs); color:var(--clr-text)">
-                      <span style="color:var(--clr-brand); margin-right:var(--sp-2)">+</span> ${item.label}
-                    </span>
-                    <span style="font-family:var(--font-mono); font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--clr-brand)">
-                      ${item.boost}
-                    </span>
-                  </div>
-                `).join('')}
-
-              ${(Array.isArray(report.confidence_breakdown) ? report.confidence_breakdown : []).filter(item => item.status === 'PASSED').length === 0 ? `
-                <div class="text-muted" style="font-size:var(--text-xs); font-style:italic">No intelligence criteria met yet.</div>
-              ` : ''}
-            </div>
-          </div>
+          <!-- Intelligence Breakdown (collapsible) -->
+          ${buildIntelligenceAccordion(report)}
 
           <!-- Sighting Description -->
           <div class="mt-4" style="
@@ -117,14 +226,16 @@ const ReportDetailPage = (() => {
             font-size: 0.95rem;
             background: var(--clr-surface-2);
             padding: var(--sp-4);
-            border-radius: var(--radius-md);
             border-left: 3px solid var(--clr-brand);
           ">
             <div style="font-size:var(--text-xs); text-transform:uppercase; color:var(--clr-text-muted); font-weight:var(--fw-bold); margin-bottom:var(--sp-2)">
-              Sighting Description by ${report.submitter_name || 'Anonymous'} in ${report.region_id}
+              Sighting Description by ${report.submitter_name || 'Anonymous'}
             </div>
             ${report.description || '<em style="color:var(--clr-text-muted)">No description provided.</em>'}
           </div>
+
+          <!-- AI Field Brief (injected async by wireHeaderInteractivity) -->
+          <div id="ai-brief-container"></div>
         </div>
 
         <!-- Right: actions -->
@@ -211,13 +322,16 @@ const ReportDetailPage = (() => {
     const tab = TABS.find(t => t.id === tabId);
     if (!tab) return;
 
-    if (tabId === 'raw') {
-      renderRawTab(widgetGrid, report);
-      return;
-    }
-
-    // Init widget registry for this tab's default layout
-    WidgetRegistry.init(widgetGrid, report, tab.defaultWidgets);
+    // Fade grid out, render, fade back in
+    widgetGrid.classList.add('tab-switching');
+    setTimeout(() => {
+      if (tabId === 'raw') {
+        renderRawTab(widgetGrid, report);
+      } else {
+        WidgetRegistry.init(widgetGrid, report, tab.defaultWidgets);
+      }
+      requestAnimationFrame(() => widgetGrid.classList.remove('tab-switching'));
+    }, 220);
   }
 
   /* ── Internal: wire up validate/reject buttons ───────────── */
@@ -353,6 +467,9 @@ const ReportDetailPage = (() => {
 
     // Action buttons
     attachActionListeners(report);
+
+    // Accordion, region chip, AI brief
+    wireHeaderInteractivity(report);
 
     // Render default Overview tab
     activateTab('overview', widgetGrid, report);

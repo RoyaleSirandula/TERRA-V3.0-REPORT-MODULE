@@ -90,25 +90,20 @@ const WidgetRegistry = (() => {
             if (!def) return;
 
             // Widget shell element
+            // def.extraClass (optional) adds modifier classes, e.g. 'widget--map'
             const shell = document.createElement('div');
-            shell.className = `widget widget--span-${w.span}`;
+            shell.className = `widget widget--span-${w.span}${def.extraClass ? ' ' + def.extraClass : ''}`;
             shell.dataset.instanceId = w.instanceId;
             shell.style.animationDelay = `${delay * 0.07}s`;
 
             shell.innerHTML = `
         <div class="widget__header">
           <div class="widget__title-group">
-            <span class="widget__icon">${def.icon}</span>
             <div>
               <div class="widget__title">${def.name}</div>
             </div>
           </div>
           <div class="widget__actions">
-            <button class="btn btn--icon btn--sm"
-              title="Resize widget"
-              data-resize="${w.instanceId}"
-              aria-label="Resize ${def.name} widget"
-            >⇳</button>
             <button class="btn btn--icon btn--sm"
               title="Remove widget"
               data-remove="${w.instanceId}"
@@ -116,16 +111,12 @@ const WidgetRegistry = (() => {
             >✕</button>
           </div>
         </div>
-        <div class="widget__body ${def.flush ? 'widget--flush' : ''}"></div>
+        <div class="widget__body${def.flush ? ' widget--flush' : ''}"></div>
       `;
 
             // Attach listeners
             shell.querySelector('[data-remove]').addEventListener('click', () => {
                 removeWidget(w.instanceId);
-            });
-
-            shell.querySelector('[data-resize]').addEventListener('click', () => {
-                _cycleSpan(w.instanceId);
             });
 
             _gridContainer.appendChild(shell);

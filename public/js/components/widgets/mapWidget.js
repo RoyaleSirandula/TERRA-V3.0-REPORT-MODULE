@@ -31,7 +31,8 @@ const MapWidget = (() => {
         icon: '🗺️',
         desc: 'Interactive dark map showing the sighting location and observation radius.',
         defaultSpan: 8,
-        flush: true,   // No body padding so map fills edge-to-edge
+        flush: true,      // No body padding so map fills edge-to-edge
+        extraClass: 'widget--map',  // Overrides uniform bento height for map
 
         render(container, report) {
             const lat = Number(report?.latitude ?? -1.2921);

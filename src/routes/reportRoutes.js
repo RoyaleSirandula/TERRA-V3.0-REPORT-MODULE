@@ -18,6 +18,9 @@ router.get('/', authenticate, reportController.getReports);
 // Get aggregate stats (must be before /:id to avoid conflict)
 router.get('/stats', authenticate, reportController.getStats);
 
+// AI brief — must be declared before /:id to avoid Express matching 'brief' as an id
+router.get('/:id/brief', authenticate, reportController.getAIBrief);
+
 // Get single report
 router.get('/:id', authenticate, reportController.getReportById);
 

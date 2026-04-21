@@ -56,6 +56,7 @@ const SiteAnalysisPage = (() => {
     let _sessionReportId   = null;
     let _sessionSpeciesId  = null;
     let _sessionSpeciesName = null;
+    let _sessionRegionId   = null;  // Set when opened via a Report Detail region chip
 
     /*
      * _viewportSpeciesFilter — governs whether "Active Points" and
@@ -964,11 +965,11 @@ const SiteAnalysisPage = (() => {
     function renderMapView(container, options = {}) {
         _container = container;
 
-        // Reset species state for the new view so stale data from the
-        // previous session never bleeds into a fresh one.
-        _sessionReportId    = options.reportId || null;
+        // Reset session state for the new view so stale data never bleeds in.
+        _sessionReportId    = options.reportId  || null;
         _sessionSpeciesId   = options.speciesId  || null;
         _sessionSpeciesName = options.speciesName || null;
+        _sessionRegionId    = options.regionId   || null;
 
         // Restore viewport species filter from session, or default to 'all'
         // for every fresh session so the dropdown starts in a clean state.
@@ -1008,7 +1009,10 @@ const SiteAnalysisPage = (() => {
                 </div>
                 <div class="sa-header__right">
                     <div class="sa-header__meta" id="sa-meta">
-                        ${options.reportId ? `Origin: Report ${String(options.reportId).slice(0, 8)}` : 'Mara-Serengeti Sector'}
+                        ${options.reportId
+                            ? `Origin: Report ${String(options.reportId).slice(0, 8)}${_sessionRegionId ? ` · ${escapeHtml(_sessionRegionId)}` : ''}`
+                            : 'Mara-Serengeti Sector'
+                        }
                     </div>
                     <button class="sa-session-save" id="btn-save-session">SAVE SESSION</button>
                 </div>
@@ -1018,6 +1022,16 @@ const SiteAnalysisPage = (() => {
             <div class="sa-tier-banner">
                 <span class="sa-tier-banner__icon">◈</span>
                 <span>Community view — showing your reports in satellite mode only. Upgrade to Ranger for full analytical tools.</span>
+            </div>` : ''}
+
+            ${_sessionRegionId ? `
+            <div class="sa-tier-banner" style="
+                background: rgba(184,240,0,0.06);
+                border-color: rgba(184,240,0,0.2);
+                color: var(--clr-brand);
+            ">
+                <span>◉</span>
+                <span>Region context: <strong>${escapeHtml(_sessionRegionId)}</strong> — navigated from Report Detail</span>
             </div>` : ''}
 
             <div class="sa-map-wrap">

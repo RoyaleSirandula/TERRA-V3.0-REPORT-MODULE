@@ -51,11 +51,13 @@
 /* 2. Widget Grid System                                        */
 /* ──────────────────────────────────────────────────────────── */
 
-/* The main responsive grid that holds widgets */
+/* The main responsive grid that holds widgets — gap-trick creates hairline separators */
 .widget-grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    gap: var(--sp-5);
+    gap: 1px;
+    background: var(--clr-border);
+    border: 1px solid var(--clr-border);
     align-items: start;
 }
 
@@ -103,16 +105,45 @@
 }
 
 /* ──────────────────────────────────────────────────────────── */
+/* 2b. Tab-switch fade — applied by activateTab() in JS         */
+/* ──────────────────────────────────────────────────────────── */
+.widget-grid {
+    transition: opacity 0.22s var(--ease), transform 0.22s var(--ease);
+}
+
+.widget-grid.tab-switching {
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+}
+
+/* Tab button — add background flash on active change */
+.detail-tab {
+    transition: color var(--transition-fast), border-color var(--transition-fast),
+                background var(--transition-fast);
+}
+
+.detail-tab:active {
+    background: rgba(184, 240, 0, 0.05);
+}
+
+/* ──────────────────────────────────────────────────────────── */
 /* 3. Base Widget Shell                                         */
 /* ──────────────────────────────────────────────────────────── */
 .widget {
     background: var(--clr-surface);
-    border: 1px solid var(--clr-border);
-    border-radius: var(--radius-lg);
+    border: none;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    height: 380px;
     animation: fadeInUp var(--transition-slow) both;
+    transition: background var(--transition-normal);
+}
+
+/* Map widget is exempt from uniform bento height */
+.widget--map {
+    height: 460px;
 }
 
 .widget__header {
@@ -136,9 +167,12 @@
 }
 
 .widget__title {
-    font-size: var(--text-sm);
-    font-weight: var(--fw-semibold);
-    color: var(--clr-text);
+    font-family: var(--font-label);
+    font-size: 11px;
+    font-weight: var(--fw-bold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--clr-text-muted);
 }
 
 .widget__subtitle {
@@ -157,18 +191,19 @@
     flex: 1;
     padding: var(--sp-5);
     position: relative;
+    overflow-y: auto;
 }
 
-/* Variant: no padding (e.g. map widgets) */
-.widget--flush .widget__body {
+/* Flush variant: body carries the class directly (e.g. map widgets) */
+.widget__body.widget--flush {
     padding: 0;
+    overflow: hidden;
 }
 
-/* Hover glow border */
+/* Hover — dark tint with 1px inset brand accent (gap-trick compatible) */
 .widget:hover {
-    border-color: var(--clr-brand-dim);
-    box-shadow: var(--shadow-glow);
-    transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+    background: #0a1418;
+    box-shadow: inset 0 0 0 1px var(--clr-brand-dim);
 }
 
 /* ──────────────────────────────────────────────────────────── */
@@ -500,9 +535,8 @@
 /* 10. "Add Widget" Panel                                       */
 /* ──────────────────────────────────────────────────────────── */
 .add-widget-btn {
-    border: 2px dashed var(--clr-border);
-    border-radius: var(--radius-lg);
-    background: none;
+    border: 1px dashed var(--clr-border);
+    background: var(--clr-surface);
     color: var(--clr-text-muted);
     cursor: pointer;
     padding: var(--sp-6);
@@ -511,8 +545,11 @@
     align-items: center;
     justify-content: center;
     gap: var(--sp-3);
-    font-size: var(--text-sm);
-    min-height: 140px;
+    font-family: var(--font-label);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    height: 380px;
     width: 100%;
     transition: border-color var(--transition-normal), color var(--transition-normal), background var(--transition-normal);
 }
@@ -567,4 +604,241 @@
 .widget-picker-option__desc {
     font-size: var(--text-xs);
     color: var(--clr-text-muted);
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 11. Intelligence Accordion                                   */
+/* ──────────────────────────────────────────────────────────── */
+.intel-accordion {
+    margin-top: var(--sp-5);
+    border: 1px solid var(--clr-border);
+    max-width: 640px;
+}
+
+.intel-accordion__trigger {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--clr-surface);
+    border: none;
+    cursor: pointer;
+    gap: var(--sp-3);
+    transition: background var(--transition-fast);
+}
+
+.intel-accordion__trigger:hover {
+    background: #0a1418;
+}
+
+.intel-accordion__label {
+    font-family: var(--font-label);
+    font-size: 11px;
+    font-weight: var(--fw-bold);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--clr-brand);
+}
+
+.intel-accordion__count {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--clr-text-muted);
+    flex: 1;
+    text-align: left;
+}
+
+.intel-accordion__chevron {
+    font-size: 10px;
+    color: var(--clr-text-muted);
+    transition: transform var(--transition-normal);
+    flex-shrink: 0;
+}
+
+.intel-accordion[aria-expanded="true"] .intel-accordion__chevron {
+    transform: rotate(180deg);
+}
+
+.intel-accordion__body {
+    border-top: 0 solid var(--clr-border);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--clr-border);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s var(--ease), border-top-width 0.4s ease;
+}
+
+.intel-accordion__body.open {
+    max-height: 480px;
+    border-top-width: 1px;
+}
+
+.intel-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--clr-surface-2);
+    gap: var(--sp-4);
+}
+
+.intel-item__label {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    font-size: var(--text-xs);
+    color: var(--clr-text);
+}
+
+.intel-item__plus {
+    color: var(--clr-brand);
+    font-weight: var(--fw-bold);
+    flex-shrink: 0;
+}
+
+.intel-item__boost {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: var(--fw-bold);
+    color: var(--clr-brand);
+    flex-shrink: 0;
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 12. Region ID Chip                                           */
+/* ──────────────────────────────────────────────────────────── */
+.region-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+    background: rgba(184, 240, 0, 0.06);
+    border: 1px solid rgba(184, 240, 0, 0.25);
+    color: var(--clr-brand);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.06em;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.region-chip:hover {
+    background: rgba(184, 240, 0, 0.13);
+    border-color: rgba(184, 240, 0, 0.5);
+    color: var(--clr-brand);
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/* 13. AI Field Brief Panel                                     */
+/* ──────────────────────────────────────────────────────────── */
+.ai-brief {
+    margin-top: var(--sp-5);
+    max-width: 800px;
+    border: 1px solid var(--clr-border);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Accent underline animates in once content is loaded */
+.ai-brief::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: var(--clr-brand);
+    width: 0;
+    transition: width 1.2s var(--ease);
+}
+
+.ai-brief.loaded::after {
+    width: 100%;
+}
+
+.ai-brief__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--clr-surface);
+    border-bottom: 1px solid var(--clr-border);
+}
+
+.ai-brief__label {
+    font-family: var(--font-label);
+    font-size: 11px;
+    font-weight: var(--fw-bold);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--clr-brand);
+}
+
+.ai-brief__risk {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.08em;
+    padding: 2px 10px;
+    border: 1px solid;
+}
+
+.ai-brief__risk--LOW      { color: var(--clr-brand);   border-color: rgba(184,240,0,.3);  background: rgba(184,240,0,.05); }
+.ai-brief__risk--MODERATE { color: var(--clr-warning); border-color: rgba(217,140,0,.3); background: rgba(217,140,0,.05); }
+.ai-brief__risk--HIGH     { color: var(--clr-danger);  border-color: rgba(224,60,60,.3);  background: rgba(224,60,60,.05); }
+
+.ai-brief__body {
+    background: var(--clr-surface-2);
+    padding: var(--sp-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+}
+
+.ai-brief__item {
+    display: flex;
+    gap: var(--sp-3);
+    align-items: flex-start;
+    font-size: var(--text-xs);
+    color: var(--clr-text-muted);
+    line-height: 1.75;
+}
+
+.ai-brief__item-bullet {
+    color: var(--clr-brand);
+    flex-shrink: 0;
+    margin-top: 3px;
+    font-size: 8px;
+}
+
+.ai-brief__ts {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--clr-text-dim);
+    padding: var(--sp-2) var(--sp-4);
+    border-top: 1px solid var(--clr-border);
+    background: var(--clr-surface);
+    letter-spacing: 0.06em;
+}
+
+/* Skeleton loader */
+.ai-brief__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    padding: var(--sp-4);
+    background: var(--clr-surface-2);
+}
+
+.ai-brief__skeleton-line {
+    height: 11px;
+    background: var(--clr-surface-3);
+    animation: aiBriefShimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes aiBriefShimmer {
+    0%, 100% { opacity: 0.35; }
+    50%       { opacity: 0.65; }
 }

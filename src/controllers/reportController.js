@@ -117,6 +117,89 @@ exports.getStats = async (req, res) => {
     }
 };
 
+/* ── AI Brief: rule-based intelligence synthesis ──────────── */
+function generateAIBrief(report) {
+    const score      = Number(report.ai_confidence_score || 0);
+    const tier       = Number(report.sensitivity_tier || 1);
+    const breakdown  = Array.isArray(report.confidence_breakdown) ? report.confidence_breakdown : [];
+    const passed     = breakdown.filter(i => i.status === 'PASSED');
+    const unmet      = breakdown.filter(i => i.status !== 'PASSED');
+    const tierLabels = ['', 'Public', 'Protected', 'Restricted', 'Confidential'];
+
+    const riskLevel      = score >= 70 ? 'LOW' : score >= 40 ? 'MODERATE' : 'HIGH';
+    const considerations = [];
+
+    // Confidence assessment
+    if (score >= 70) {
+        considerations.push(`Confidence score of ${score.toFixed(1)}% meets the validation threshold. Report is suitable for immediate field action.`);
+    } else if (score >= 40) {
+        considerations.push(`Moderate confidence score of ${score.toFixed(1)}%. Cross-reference with adjacent sightings before escalating.`);
+    } else {
+        considerations.push(`Low confidence score of ${score.toFixed(1)}%. Manual verification strongly recommended before acting on this report.`);
+    }
+
+    // Sensitivity classification
+    if (tier >= 3) {
+        considerations.push(`Sensitivity classification: Tier ${tier} – ${tierLabels[tier] || 'Sensitive'}. Restrict dissemination to authorised personnel only.`);
+    } else if (tier === 2) {
+        considerations.push(`Tier 2 Protected classification — exercise caution when sharing location data externally.`);
+    }
+
+    // Passed intelligence criteria
+    if (passed.length > 0) {
+        considerations.push(`${passed.length} intelligence ${passed.length === 1 ? 'criterion' : 'criteria'} confirmed: ${passed.map(p => p.label).join(', ')}.`);
+    }
+
+    // Unmet criteria
+    if (unmet.length > 0) {
+        considerations.push(`${unmet.length} unmet ${unmet.length === 1 ? 'criterion' : 'criteria'} — ${unmet.map(f => f.label).join(', ')} — may reduce operational confidence.`);
+    }
+
+    // Region context
+    if (report.region_id && report.region_id !== 'Unknown Region') {
+        considerations.push(`Report originates from region "${report.region_id}". Cross-reference with the regional threat matrix for baseline activity levels.`);
+    }
+
+    // Validation status
+    const statusMessages = {
+        PENDING:   'Status: PENDING validation. Do not treat as confirmed intelligence until reviewed by a field officer.',
+        VALIDATED: 'Status: VALIDATED. Cleared by a field officer and approved for operational use.',
+        REJECTED:  'Status: REJECTED. Data has been flagged and is excluded from the active intelligence feed.',
+    };
+    const statusMsg = statusMessages[(report.validation_status || '').toUpperCase()];
+    if (statusMsg) considerations.push(statusMsg);
+
+    // Threat keyword scan on description
+    if (report.description) {
+        const desc    = report.description.toLowerCase();
+        const threats = ['fire', 'smoke', 'illegal', 'poach', 'hunt', 'trap', 'snare', 'camp', 'vehicle', 'armed', 'shot', 'gun'];
+        const flagged = threats.filter(k => desc.includes(k));
+        if (flagged.length > 0) {
+            considerations.push(`Description flags potential threat indicators: ${flagged.join(', ')}. Recommend immediate ranger dispatch to verify.`);
+        }
+    }
+
+    return { riskLevel, score, tier, considerations, generatedAt: new Date().toISOString() };
+}
+
+exports.getAIBrief = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const report = await Report.findById(id);
+        if (!report) return res.status(404).json({ error: 'Report not found' });
+
+        // Community tier is excluded from AI brief access
+        const isCommunity = req.user.permissions.includes('view_own_reports')
+            && !req.user.permissions.includes('view_pending_reports');
+        if (isCommunity) return res.status(403).json({ error: 'Access denied' });
+
+        res.json({ brief: generateAIBrief(report) });
+    } catch (err) {
+        console.error('[AI-BRIEF] Error generating brief:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
 exports.validateReport = async (req, res) => {
     try {
         const { id } = req.params;
