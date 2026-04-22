@@ -530,3 +530,34 @@
         gap: var(--sp-4);
     }
 }
+
+/* ── Light Mode Overrides ───────────────────────────────────── */
+body.light .an-hero {
+    background: var(--clr-surface);
+    color: var(--clr-text);
+    border-bottom-color: var(--clr-border);
+}
+
+body.light .an-hero__title {
+    color: var(--clr-text);
+}
+
+body.light .an-hero__range {
+    color: var(--clr-text-dim);
+}
+
+body.light .an-hero__fig-label {
+    color: var(--clr-text-muted);
+}
+
+body.light .an-hero__divider {
+    background: var(--clr-border);
+}
+
+body.light .an-tr__bar {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+body.light .an-progress {
+    background: rgba(0, 0, 0, 0.07);
+}

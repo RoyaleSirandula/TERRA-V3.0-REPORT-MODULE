@@ -293,3 +293,39 @@
     border-color: rgba(217, 140, 0, 0.4);
     box-shadow: 0 0 8px rgba(217, 140, 0, 0.25);
 }
+
+/* ── Light Mode Overrides ───────────────────────────────────── */
+body.light .leaflet-control-attribution {
+    background: rgba(240, 242, 245, 0.88) !important;
+    color: var(--clr-text-dim) !important;
+    border-color: var(--clr-border) !important;
+}
+
+body.light .leaflet-control-attribution a {
+    color: var(--clr-text-muted) !important;
+}
+
+body.light .map-overlay-badge {
+    background: rgba(240, 242, 245, 0.90);
+    color: var(--clr-text-muted);
+}
+
+body.light .leaflet-bar a {
+    background: var(--clr-surface) !important;
+    color: var(--clr-text-muted) !important;
+    border-bottom-color: var(--clr-border) !important;
+}
+
+body.light .leaflet-bar a:hover {
+    background: var(--clr-surface-2) !important;
+}
+
+body.light .leaflet-draw-toolbar a {
+    background-color: var(--clr-surface) !important;
+    color: var(--clr-text-muted) !important;
+}
+
+body.light .leaflet-tooltip {
+    background: var(--clr-surface) !important;
+    color: var(--clr-text) !important;
+}

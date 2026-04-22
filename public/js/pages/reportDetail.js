@@ -188,8 +188,31 @@ const ReportDetailPage = (() => {
 
     return `
       <div class="report-detail-header anim-fade-in">
-        <!-- Left: metadata -->
-        <div style="flex:1">
+        <!-- Actions toolbar — sits at top, full width -->
+        <div class="report-detail-header__actions">
+          ${canValidate ? `
+            <button class="btn btn--primary" id="btn-validate-report" data-id="${report.report_id}">
+              VALIDATE
+            </button>
+            <button class="btn btn--danger" id="btn-reject-report" data-id="${report.report_id}">
+              REJECT
+            </button>
+          ` : ''}
+          ${Auth.hasPermission('export_data') ? `
+            <button class="btn btn--secondary" id="btn-export-report">
+              EXPORT
+            </button>
+          ` : ''}
+          <button class="btn btn--secondary" id="btn-analyse-site" title="Open this location in Site Analysis">
+            ANALYSE SITE
+          </button>
+          <button class="btn btn--secondary" id="btn-back-reports">
+            BACK
+          </button>
+        </div>
+
+        <!-- Full-width content -->
+        <div>
           <div class="report-detail-header__id">REPORT ID: ${report.report_id}</div>
           <h1 class="report-detail-header__title">
             ${report.species_name || 'Unknown Species'}
@@ -220,7 +243,6 @@ const ReportDetailPage = (() => {
 
           <!-- Sighting Description -->
           <div class="mt-4" style="
-            max-width: 800px;
             color: var(--clr-text);
             line-height: 1.6;
             font-size: 0.95rem;
@@ -236,29 +258,6 @@ const ReportDetailPage = (() => {
 
           <!-- AI Field Brief (injected async by wireHeaderInteractivity) -->
           <div id="ai-brief-container"></div>
-        </div>
-
-        <!-- Right: actions -->
-        <div class="report-detail-header__actions">
-          ${canValidate ? `
-            <button class="btn btn--primary" id="btn-validate-report" data-id="${report.report_id}">
-              VALIDATE
-            </button>
-            <button class="btn btn--danger" id="btn-reject-report" data-id="${report.report_id}">
-              REJECT
-            </button>
-          ` : ''}
-          ${Auth.hasPermission('export_data') ? `
-            <button class="btn btn--secondary" id="btn-export-report">
-              EXPORT
-            </button>
-          ` : ''}
-          <button class="btn btn--secondary" id="btn-analyse-site" title="Open this location in Site Analysis">
-            ANALYSE SITE
-          </button>
-          <button class="btn btn--secondary" id="btn-back-reports">
-            BACK
-          </button>
         </div>
       </div>
     `;

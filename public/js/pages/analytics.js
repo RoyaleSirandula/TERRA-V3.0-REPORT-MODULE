@@ -21,6 +21,7 @@ const AnalyticsPage = (() => {
 
     /* ── Chart instance tracker — destroyed on every re-render ── */
     let _charts = [];
+    let _themeListener = null;
 
     function destroyCharts() {
         _charts.forEach(c => { try { c.destroy(); } catch (e) {} });
@@ -56,24 +57,45 @@ const AnalyticsPage = (() => {
     }
 
     /* ── Shared Chart.js aesthetic config ───────────────────── */
+    function isLight() { return document.body.classList.contains('light'); }
+
     function applyChartDefaults() {
-        Chart.defaults.color = '#7d8693';
+        Chart.defaults.color = isLight() ? '#5a6373' : '#7d8693';
         Chart.defaults.font.family = "'JetBrains Mono', monospace";
         Chart.defaults.font.size = 10;
     }
 
-    const TOOLTIP = {
-        backgroundColor: '#161b22',
-        borderColor: 'rgba(255,255,255,0.10)',
-        borderWidth: 1,
-        titleColor: '#b8f000',
-        bodyColor: '#7d8693',
-        padding: 10,
-        cornerRadius: 0,
-    };
+    function getTooltip() {
+        return isLight() ? {
+            backgroundColor: '#ffffff',
+            borderColor: 'rgba(0,0,0,0.10)',
+            borderWidth: 1,
+            titleColor: '#6aa800',
+            bodyColor: '#5a6373',
+            padding: 10,
+            cornerRadius: 0,
+        } : {
+            backgroundColor: '#161b22',
+            borderColor: 'rgba(255,255,255,0.10)',
+            borderWidth: 1,
+            titleColor: '#b8f000',
+            bodyColor: '#7d8693',
+            padding: 10,
+            cornerRadius: 0,
+        };
+    }
 
-    const GRID  = { color: 'rgba(255,255,255,0.05)', borderColor: 'transparent', drawTicks: false };
-    const TICKS = { padding: 8, color: 'rgba(255,255,255,0.25)' };
+    function getGrid() {
+        return isLight()
+            ? { color: 'rgba(0,0,0,0.06)', borderColor: 'transparent', drawTicks: false }
+            : { color: 'rgba(255,255,255,0.05)', borderColor: 'transparent', drawTicks: false };
+    }
+
+    function getTicks() {
+        return isLight()
+            ? { padding: 8, color: 'rgba(0,0,0,0.35)' }
+            : { padding: 8, color: 'rgba(255,255,255,0.25)' };
+    }
 
     /* ══════════════════════════════════════════════════════════
        DATA ANALYSIS
@@ -311,6 +333,11 @@ const AnalyticsPage = (() => {
     ══════════════════════════════════════════════════════════ */
 
     function mountCharts(stats) {
+        const TOOLTIP = getTooltip();
+        const GRID    = getGrid();
+        const TICKS   = getTicks();
+        const light   = isLight();
+
         /* ── Month axis labels ── */
         const monthLabels = stats.months.map(m => {
             const [y, mo] = m.split('-');
@@ -321,20 +348,23 @@ const AnalyticsPage = (() => {
         /* ── Trend line ── */
         const trendCanvas = document.getElementById('an-chart-trend');
         if (trendCanvas) {
+            const brandColor  = light ? '#6aa800' : '#b8f000';
+            const brandFill   = light ? 'rgba(26,31,39,0.10)' : 'rgba(184,240,0,0.06)';
+            const ptBorder    = light ? '#f0f2f5' : '#0d1117';
             makeChart(trendCanvas.getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: monthLabels,
                     datasets: [{
                         data: stats.months.map(m => stats.monthCounts[m] || 0),
-                        borderColor: '#b8f000',
-                        backgroundColor: 'rgba(184,240,0,0.06)',
+                        borderColor: brandColor,
+                        backgroundColor: brandFill,
                         fill: true,
                         tension: 0.4,
                         pointRadius: 3,
                         pointHoverRadius: 5,
-                        pointBackgroundColor: '#b8f000',
-                        pointBorderColor: '#0d1117',
+                        pointBackgroundColor: brandColor,
+                        pointBorderColor: ptBorder,
                         pointBorderWidth: 2,
                         borderWidth: 2,
                     }]
@@ -364,6 +394,7 @@ const AnalyticsPage = (() => {
         const speciesCanvas = document.getElementById('an-chart-species');
         if (speciesCanvas && stats.topSpecies.length > 0) {
             const maxC = stats.topSpecies[0]?.[1] || 1;
+            const [r, g, b] = light ? [106, 168, 0] : [184, 240, 0];
             makeChart(speciesCanvas.getContext('2d'), {
                 type: 'bar',
                 data: {
@@ -371,9 +402,9 @@ const AnalyticsPage = (() => {
                     datasets: [{
                         data: stats.topSpecies.map(([, c]) => c),
                         backgroundColor: stats.topSpecies.map(([, c]) =>
-                            `rgba(184,240,0,${0.20 + (c / maxC) * 0.70})`
+                            `rgba(${r},${g},${b},${0.20 + (c / maxC) * 0.70})`
                         ),
-                        borderColor: 'rgba(184,240,0,0.30)',
+                        borderColor: `rgba(${r},${g},${b},0.30)`,
                         borderWidth: 1,
                     }]
                 },
@@ -402,7 +433,9 @@ const AnalyticsPage = (() => {
         const tierCanvas = document.getElementById('an-chart-tier');
         if (tierCanvas) {
             const tierLabels = ['T1 Public', 'T2 Protected', 'T3 Restricted', 'T4 Confidential'];
-            const tierColors = ['#b8f000', '#00c8e0', '#d98c00', '#e03c3c'];
+            const tierColors = light
+                ? ['#6aa800', '#0099b0', '#b36a00', '#c0392b']
+                : ['#b8f000', '#00c8e0', '#d98c00', '#e03c3c'];
             makeChart(tierCanvas.getContext('2d'), {
                 type: 'doughnut',
                 data: {
@@ -425,7 +458,10 @@ const AnalyticsPage = (() => {
                     plugins: {
                         legend: {
                             position: 'bottom',
-                            labels: { boxWidth: 8, padding: 14, color: '#7d8693', font: { size: 9 } }
+                            labels: {
+                                boxWidth: 8, padding: 14, font: { size: 9 },
+                                color: light ? '#5a6373' : '#7d8693',
+                            }
                         },
                         tooltip: { ...TOOLTIP },
                     },
@@ -436,6 +472,7 @@ const AnalyticsPage = (() => {
         /* ── Confidence histogram ── */
         const confCanvas = document.getElementById('an-chart-conf');
         if (confCanvas) {
+            const barBorder = light ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)';
             makeChart(confCanvas.getContext('2d'), {
                 type: 'bar',
                 data: {
@@ -447,10 +484,10 @@ const AnalyticsPage = (() => {
                             'rgba(224,60,60,0.75)',
                             'rgba(217,140,0,0.75)',
                             'rgba(0,200,224,0.65)',
-                            'rgba(184,240,0,0.55)',
-                            'rgba(184,240,0,0.90)',
+                            light ? 'rgba(106,168,0,0.55)' : 'rgba(184,240,0,0.55)',
+                            light ? 'rgba(106,168,0,0.90)' : 'rgba(184,240,0,0.90)',
                         ],
-                        borderColor: 'rgba(255,255,255,0.04)',
+                        borderColor: barBorder,
                         borderWidth: 1,
                     }]
                 },
@@ -597,6 +634,20 @@ const AnalyticsPage = (() => {
         setTimeout(() => {
             mountCharts(stats);
             initReveals();
+
+            /* Re-render charts when theme toggles (keeps calibrations + tooltips correct) */
+            if (_themeListener) window.removeEventListener('terra:themechange', _themeListener);
+            _themeListener = () => {
+                if (!document.getElementById('an-chart-trend')) {
+                    window.removeEventListener('terra:themechange', _themeListener);
+                    _themeListener = null;
+                    return;
+                }
+                destroyCharts();
+                applyChartDefaults();
+                mountCharts(stats);
+            };
+            window.addEventListener('terra:themechange', _themeListener);
         }, 60);
     }
 

@@ -53,55 +53,16 @@
 
 /* The main responsive grid that holds widgets — gap-trick creates hairline separators */
 .widget-grid {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 1px;
     background: var(--clr-border);
     border: 1px solid var(--clr-border);
-    align-items: start;
 }
 
-/* Widget span helpers (column widths) */
-.widget--span-3 {
-    grid-column: span 3;
-}
-
-.widget--span-4 {
-    grid-column: span 4;
-}
-
-.widget--span-6 {
-    grid-column: span 6;
-}
-
-.widget--span-8 {
-    grid-column: span 8;
-}
-
-.widget--span-12 {
-    grid-column: span 12;
-}
-
-@media (max-width: 1100px) {
-
-    .widget--span-3,
-    .widget--span-4 {
-        grid-column: span 6;
-    }
-
-    .widget--span-8 {
-        grid-column: span 12;
-    }
-}
-
-@media (max-width: 700px) {
-    .widget-grid {
-        grid-template-columns: 1fr;
-    }
-
-    [class*="widget--span-"] {
-        grid-column: span 1;
-    }
+/* Span classes are no-ops in vertical flow — kept so JS references don't break */
+[class*="widget--span-"] {
+    width: 100%;
 }
 
 /* ──────────────────────────────────────────────────────────── */
@@ -144,6 +105,23 @@
 /* Map widget is exempt from uniform bento height */
 .widget--map {
     height: 460px;
+}
+
+/* Timeline widgets hug their content instead of fixed bento height */
+.widget--timeline {
+    height: auto;
+    min-height: 0;
+}
+
+/* Widget row/cell hover — theme-aware via CSS instead of inline JS handlers */
+.tl-row:hover,
+.stat-cell:hover {
+    background: #0a1418 !important;
+}
+
+body.light .tl-row:hover,
+body.light .stat-cell:hover {
+    background: var(--clr-surface-2) !important;
 }
 
 .widget__header {
@@ -437,11 +415,9 @@
 /* ──────────────────────────────────────────────────────────── */
 .report-detail-header {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--sp-6);
+    flex-direction: column;
+    gap: var(--sp-5);
     margin-bottom: var(--sp-6);
-    flex-wrap: wrap;
 }
 
 .report-detail-header__id {
@@ -476,8 +452,8 @@
 .report-detail-header__actions {
     display: flex;
     gap: var(--sp-3);
-    flex-shrink: 0;
-    align-items: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 /* ──────────────────────────────────────────────────────────── */
@@ -539,17 +515,17 @@
     background: var(--clr-surface);
     color: var(--clr-text-muted);
     cursor: pointer;
-    padding: var(--sp-6);
+    padding: 7px var(--sp-5);
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: var(--sp-3);
+    gap: var(--sp-2);
     font-family: var(--font-label);
     font-size: 11px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    height: 380px;
+    height: 36px;
     width: 100%;
     transition: border-color var(--transition-normal), color var(--transition-normal), background var(--transition-normal);
 }
@@ -561,7 +537,7 @@
 }
 
 .add-widget-btn__icon {
-    font-size: 1.8rem;
+    font-size: 1rem;
 }
 
 /* Add-widget picker modal grid */
@@ -612,7 +588,6 @@
 .intel-accordion {
     margin-top: var(--sp-5);
     border: 1px solid var(--clr-border);
-    max-width: 640px;
 }
 
 .intel-accordion__trigger {
@@ -737,7 +712,6 @@
 /* ──────────────────────────────────────────────────────────── */
 .ai-brief {
     margin-top: var(--sp-5);
-    max-width: 800px;
     border: 1px solid var(--clr-border);
     position: relative;
     overflow: hidden;
@@ -841,4 +815,23 @@
 @keyframes aiBriefShimmer {
     0%, 100% { opacity: 0.35; }
     50%       { opacity: 0.65; }
+}
+
+/* ── Light Mode Overrides ───────────────────────────────────── */
+body.light .widget:hover {
+    background: var(--clr-surface-2) !important;
+    box-shadow: inset 0 0 0 1px var(--clr-brand-dim);
+}
+
+body.light .intel-accordion__trigger:hover {
+    background: var(--clr-surface-2) !important;
+}
+
+body.light .map-overlay-badge {
+    background: rgba(240, 242, 245, 0.90);
+    color: var(--clr-text-muted);
+}
+
+body.light .map-widget-container {
+    background: var(--clr-surface);
 }

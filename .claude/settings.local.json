@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(node --check public/js/pages/siteAnalysis.js)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Read(//c/Users/User/**)"
     ]
   }
 }

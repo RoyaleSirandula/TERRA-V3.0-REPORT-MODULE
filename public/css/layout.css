@@ -327,8 +327,8 @@
 
 /* ── Nav icon (monospace glyph, visible in both states) ─────── */
 .nav-icon {
-    font-size: 0.75rem;
-    width: 14px;
+    font-size: 1rem;
+    width: 18px;
     text-align: center;
     flex-shrink: 0;
     font-family: var(--font-mono);
@@ -389,7 +389,7 @@
 
 .sidebar--collapsed .nav-icon {
     width: auto;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     opacity: 0.6;
 }
 
@@ -419,4 +419,25 @@
     .sidebar {
         display: none;
     }
+}
+
+/* ── Light Mode Overrides ───────────────────────────────────── */
+body.light .topbar {
+    background: rgba(240, 242, 245, 0.92);
+}
+
+body.light .nav-link:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+body.light .nav-link.active {
+    background: rgba(106, 168, 0, 0.09);
+}
+
+body.light .sidebar__avatar {
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+body.light .main-content::before {
+    background: radial-gradient(ellipse at top right, rgba(106, 168, 0, 0.05) 0%, transparent 65%);
 }

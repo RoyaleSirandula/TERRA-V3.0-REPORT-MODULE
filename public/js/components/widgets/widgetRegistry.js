@@ -137,7 +137,7 @@ const WidgetRegistry = (() => {
     /* ── Internal: append the "+" add widget button ──────────── */
     function _appendAddWidgetButton() {
         const btn = document.createElement('button');
-        btn.className = 'add-widget-btn widget--span-3';
+        btn.className = 'add-widget-btn widget--span-12';
         btn.innerHTML = `
       <span class="add-widget-btn__icon">＋</span>
       <span>Add Widget</span>

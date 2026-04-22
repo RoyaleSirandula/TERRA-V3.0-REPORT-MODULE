@@ -71,3 +71,8 @@
     border-radius: 0 !important;
     border-left: 4px solid var(--clr-brand) !important;
 }
+
+/* ── Light Mode Overrides ───────────────────────────────────── */
+body.light .table-tactical tbody tr:hover {
+    background: var(--clr-surface-2) !important;
+}

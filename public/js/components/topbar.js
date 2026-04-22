@@ -6,6 +6,27 @@
 
 const Topbar = (() => {
 
+  /* ── Theme persistence ───────────────────────────────────── */
+  const THEME_KEY = 'terra_theme';
+
+  function applyTheme(theme) {
+    document.body.classList.toggle('light', theme === 'light');
+  }
+
+  function toggleTheme() {
+    const next = document.body.classList.contains('light') ? 'dark' : 'light';
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+    const btn = document.getElementById('topbar-theme-btn');
+    if (btn) btn.textContent = next === 'light' ? '☾' : '☀';
+    window.dispatchEvent(new CustomEvent('terra:themechange', { detail: { theme: next } }));
+  }
+
+  function initTheme() {
+    const saved = localStorage.getItem(THEME_KEY) || 'dark';
+    applyTheme(saved);
+  }
+
   /* ── Internal: build action buttons based on context ─────── */
   function getActionsForPage(pageId) {
     const actionMap = {
@@ -47,6 +68,7 @@ const Topbar = (() => {
       </div>
       <div class="topbar__right">
         ${actions}
+        <button class="btn btn--icon" id="topbar-theme-btn" title="Toggle light / dark mode">${document.body.classList.contains('light') ? '☾' : '☀'}</button>
         ${buildProfilePill(user)}
         <button class="btn btn--secondary btn--sm" id="topbar-logout-btn" title="Sign out">⏻ Sign Out</button>
       </div>
@@ -57,6 +79,9 @@ const Topbar = (() => {
       btn.addEventListener('click', () => Router.navigate(btn.dataset.page));
     });
 
+    // Theme toggle
+    document.getElementById('topbar-theme-btn')?.addEventListener('click', toggleTheme);
+
     // Logout
     document.getElementById('topbar-logout-btn')?.addEventListener('click', () => {
       Auth.clearSession();
@@ -64,5 +89,5 @@ const Topbar = (() => {
     });
   }
 
-  return { render };
+  return { render, initTheme };
 })();

@@ -1729,3 +1729,49 @@
     letter-spacing: 0.08em;
     line-height: 1.5;
 }
+
+/* ── Light Mode Overrides ───────────────────────────────────── */
+
+/* Sessions dashboard — most components use CSS vars and auto-adapt.
+   Only override what uses hardcoded values. */
+
+body.light .sa-session-card:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Tier banner */
+body.light .sa-tier-banner {
+    background: var(--clr-surface-2);
+    border-bottom-color: var(--clr-border);
+}
+
+body.light .sa-tier-lock {
+    border-color: var(--clr-border);
+}
+
+body.light .sa-tier-lock__icon {
+    color: var(--clr-text-dim);
+}
+
+/* Map view — dock panels stay dark (overlays on white map tile).
+   Adjust the tab strip so it reads clearly against a lighter chrome. */
+body.light .sa-dock__tabs {
+    background: rgba(20, 24, 33, 0.95);
+    border-left-color: rgba(0, 0, 0, 0.15);
+}
+
+body.light .sa-dock__drawer.open {
+    border-left-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Map header stays black — it's an intentional full-bleed band */
+/* sa-header background: #000 is correct on both themes */
+
+/* Analysis panel (bottom stats bar) is already white — fine in light mode */
+
+/* Active Points filter buttons — sit on the white analysis panel */
+body.light .sa-ap-btn:hover:not(:disabled) {
+    background: #d4d8de;
+    color: #000;
+    border-color: #aaa;
+}

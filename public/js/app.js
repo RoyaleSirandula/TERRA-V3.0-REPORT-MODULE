@@ -257,5 +257,7 @@ const Router = (() => {
 
 /* ── Kick off the app on DOM ready ──────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+    Topbar.initTheme();
+    CustomScrollbar.init();
     Router.boot();
 });

@@ -11,7 +11,7 @@ const TimelineWidget = (() => {
     function buildRow(phase, title, desc, dotAccent = true, delay = 0) {
         const dotColor = dotAccent ? 'var(--clr-brand)' : 'var(--clr-border)';
         return `
-            <div style="
+            <div class="tl-row" style="
                 display: grid;
                 grid-template-columns: 120px 1fr;
                 align-items: start;
@@ -23,8 +23,6 @@ const TimelineWidget = (() => {
                 animation: fadeInUp var(--transition-slow) both;
                 animation-delay: ${delay}s;
             "
-            onmouseenter="this.style.background='#0a1418'"
-            onmouseleave="this.style.background='var(--clr-surface)'"
             >
                 <div style="
                     font-family: var(--font-mono);
@@ -134,7 +132,8 @@ const TimelineWidget = (() => {
         name:        'Report Lifecycle',
         icon:        '',
         desc:        'Chronological event timeline from submission to analyst access.',
-        defaultSpan: 4,
+        defaultSpan: 12,
+        extraClass:  'widget--timeline',
         flush:       false,
 
         render(container, report) {
@@ -151,7 +150,8 @@ const TimelineWidget = (() => {
         name:        'Audit Log',
         icon:        '',
         desc:        'Audit events associated with this report.',
-        defaultSpan: 4,
+        defaultSpan: 12,
+        extraClass:  'widget--timeline',
         flush:       false,
 
         render(container, report) {

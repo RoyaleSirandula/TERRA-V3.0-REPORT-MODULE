@@ -10,13 +10,13 @@ const StatsWidget = (() => {
     /* ── Internal: render a single impact-stat cell ──────────── */
     function statCell(label, num, unit, accent = false) {
         return `
-            <div style="
+            <div class="stat-cell" style="
                 background: var(--clr-surface);
                 padding: 28px 24px;
                 transition: background var(--transition-normal);
                 border-bottom: 1px solid var(--clr-border);
                 border-right: 1px solid var(--clr-border);
-            " onmouseenter="this.style.background='#0a1418'" onmouseleave="this.style.background='var(--clr-surface)'">
+            ">
                 <div style="
                     font-family: var(--font-label);
                     font-size: 10px;

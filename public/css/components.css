@@ -193,7 +193,7 @@
 
 .card__subtitle {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--text-xs);
     color: var(--clr-text-dim);
     margin-top: 3px;
     letter-spacing: 0.02em;
@@ -231,7 +231,7 @@
 
 .stat-card__label {
     font-family: var(--font-mono);
-    font-size: 0.625rem;
+    font-size: var(--text-xs);
     color: var(--clr-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.16em;
@@ -247,7 +247,7 @@
 
 .stat-card__meta {
     font-family: var(--font-mono);
-    font-size: 0.625rem;
+    font-size: var(--text-xs);
     color: var(--clr-text-dim);
     letter-spacing: 0.06em;
 }
@@ -532,6 +532,24 @@
     border: none;
     border-top: 1px solid var(--clr-border);
     margin: var(--sp-6) 0;
+}
+
+/* ── Light Mode Overrides ───────────────────────────────────── */
+body.light .btn--secondary::before {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+body.light .btn--secondary:hover {
+    border-color: rgba(0, 0, 0, 0.22);
+    color: var(--clr-text);
+}
+
+body.light .btn--icon:hover {
+    border-color: rgba(0, 0, 0, 0.22);
+}
+
+body.light .drop-zone {
+    border-color: rgba(106, 168, 0, 0.28);
 }
 
 .text-muted   { color: var(--clr-text-muted); }
