@@ -14,6 +14,8 @@ const geeRoutes           = require('./routes/gee.routes');
 const sharingRoutes       = require('./routes/sharingRoutes');
 const teamsRoutes         = require('./routes/teamsRoutes');
 const notificationsRoutes = require('./routes/notificationsRoutes');
+const movebankRoutes      = require('./routes/movebankRoutes');
+const portalDataRoutes    = require('./routes/portalDataRoutes');
 
 
 const app = express();
@@ -45,6 +47,8 @@ app.use('/api/gee',           geeRoutes);
 app.use('/api/shares',        sharingRoutes);
 app.use('/api/teams',         teamsRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/movebank',      movebankRoutes);
+app.use('/api/portal-data',  portalDataRoutes);
 
 
 // Health Check

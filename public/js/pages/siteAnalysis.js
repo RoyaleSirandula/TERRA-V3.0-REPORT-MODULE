@@ -20,7 +20,30 @@ const SiteAnalysisPage = (() => {
     let _bufferLayer = null;
     let _drawnItems = null;
     let _activeMode = 'aesthetic';
+
+    /* ── Animal Tracker State ────────────────────────────────── */
+    let _trackerLayer       = null;
+    let _trackerCanvas      = null;   // shared L.canvas() renderer
+    let _trackerData        = [];     // raw parsed fixes (decimated)
+    let _trackerByInd       = {};     // pre-grouped & pre-sorted by individual
+    let _trackerVisible     = true;
+    let _trackerIndividuals = {};
+    let _trackerIntensity   = 'speed'; // 'speed' | 'error' | 'time_gap'
+    let _trackerShowArrows  = true;
+    let _trackerShowNodes   = true;
+    let _trackerShowHeatmap = false;
+    // Playback: null = show all; otherwise ISO date ceiling
+    let _trackerPlayDate    = null;
+    let _trackerPlaying     = false;
+    let _trackerPlayTimer   = null;
+    let _trackerMinTs       = 0;
+    let _trackerMaxTs       = 0;
     let _pendingFlyTo = null;     // Queued flyTo once map is confirmed ready
+
+    /* ── CSV / Portal Data Layer State ──────────────────────── */
+    let _csvLayer   = null;   // L.featureGroup for uploaded CSV points
+    let _csvRows    = [];     // parsed rows from active CSV
+    let _csvColumns = [];     // column names from header row
 
     /* ── GEE Layer State ─────────────────────────────────────── */
     let _geeLayers = {};          // { vegetation: L.tileLayer, water: L.tileLayer, ... }
@@ -206,23 +229,24 @@ const SiteAnalysisPage = (() => {
         // Sort: starred first, then by date
         active.sort((a, b) => (b.isStarred ? 1 : 0) - (a.isStarred ? 1 : 0) || new Date(b.savedAt) - new Date(a.savedAt));
 
-        const renderCard = (s) => `
-            <div class="sa-session-card ${s.isStarred ? 'sa-session-card--starred' : ''}" data-id="${s.id}">
+        const renderCard = (s) => {
+            const metaLine = s.isTrackerSession && s.trackerMeta
+                ? `${s.trackerMeta.individuals} individuals · ${s.trackerMeta.fixes.toLocaleString()} fixes · ${new Date(s.trackerMeta.minTs).toLocaleDateString()} – ${new Date(s.trackerMeta.maxTs).toLocaleDateString()}`
+                : `${new Date(s.savedAt).toLocaleString()} · ${s.mode === 'satellite' ? 'Satellite' : 'Minimal'} · Zoom ${s.viewport?.zoom ?? '–'}`;
+            const badge = s.isTrackerSession
+                ? `<span class="sa-session-card__badge sa-session-card__badge--tracker">Animal Tracker</span>`
+                : s.reportId ? `<span class="sa-session-card__badge">From Report</span>` : '';
+            return `
+            <div class="sa-session-card ${s.isStarred ? 'sa-session-card--starred' : ''} ${s.isTrackerSession ? 'sa-session-card--tracker' : ''}" data-id="${s.id}">
                 <div class="sa-session-card__star" data-action="star" data-id="${s.id}" title="${s.isStarred ? 'Unstar' : 'Star'}">
                     ${s.isStarred ? '★' : '☆'}
                 </div>
                 <div class="sa-session-card__body">
                     <div class="sa-session-card__name">${escapeHtml(s.name)}</div>
-                    <div class="sa-session-card__meta">
-                        <span>${new Date(s.savedAt).toLocaleString()}</span>
-                        <span class="sa-session-card__dot">·</span>
-                        <span>${s.mode === 'satellite' ? 'Satellite' : 'Minimal'} Mode</span>
-                        <span class="sa-session-card__dot">·</span>
-                        <span>Zoom ${s.viewport?.zoom ?? '–'}</span>
-                    </div>
+                    <div class="sa-session-card__meta">${metaLine}</div>
                     <div class="sa-session-card__coords">
                         ${s.viewport ? `${Number(s.viewport.lat).toFixed(4)}, ${Number(s.viewport.lng).toFixed(4)}` : '–'}
-                        ${s.reportId ? `<span class="sa-session-card__badge">From Report</span>` : ''}
+                        ${badge}
                     </div>
                 </div>
                 <div class="sa-session-card__actions">
@@ -238,7 +262,7 @@ const SiteAnalysisPage = (() => {
                     </div>
                 </div>
             </div>
-        `;
+        `; };
 
         let html = `<div class="sa-sessions-list">` + active.map(renderCard).join('') + `</div>`;
 
@@ -1247,6 +1271,70 @@ const SiteAnalysisPage = (() => {
                             <div style="font-size:9px;opacity:0.5;margin-top:6px;text-align:center;">OR draw a marker / line on map</div>
                         </div>
 
+                        <!-- TRACKER PANEL -->
+                        <div class="sa-dock__panel" id="sa-panel-tracker">
+                            <div class="sa-dock__panel-hdr">Animal Tracker</div>
+
+                            <!-- Playback controls -->
+                            <div class="trk-play-row">
+                                <button class="trk-play-btn" id="trk-play-btn" title="Play / Pause track evolution">▶</button>
+                                <button class="trk-mini-btn" id="trk-play-reset" title="Reset to start">↺</button>
+                                <span class="trk-play-date" id="trk-play-date">—</span>
+                            </div>
+                            <input type="range" id="trk-play-slider" class="trk-play-slider" min="0" max="100" value="100" step="1" />
+
+                            <div class="trk-section-lbl" style="margin-top:8px;">Intensity metric</div>
+                            <select id="trk-intensity" class="trk-sel">
+                                <option value="speed">Speed (m/s)</option>
+                                <option value="error">GPS Error (m)</option>
+                                <option value="time_gap">Time Gap (h)</option>
+                            </select>
+
+                            <div style="display:flex;gap:10px;margin-top:8px;margin-bottom:8px;">
+                                <label class="trk-radio-lbl"><input type="checkbox" id="trk-show-arrows" checked> Arrows</label>
+                                <label class="trk-radio-lbl"><input type="checkbox" id="trk-show-nodes" checked> Nodes</label>
+                                <label class="trk-radio-lbl"><input type="checkbox" id="trk-show-heatmap"> Heatmap</label>
+                            </div>
+
+                            <div class="trk-section-lbl">Individuals</div>
+                            <div style="display:flex;gap:6px;margin-bottom:4px;">
+                                <button class="trk-mini-btn" id="trk-sel-all">All</button>
+                                <button class="trk-mini-btn" id="trk-sel-none">None</button>
+                            </div>
+                            <div id="trk-individuals" class="trk-individuals"></div>
+                        </div>
+
+                        <!-- CSV DATA UPLOAD PANEL -->
+                        <div class="sa-dock__panel" id="sa-panel-data">
+                            <div class="sa-dock__panel-hdr">Portal Data</div>
+
+                            <!-- Drop zone -->
+                            <div class="csv-dropzone" id="csv-dropzone" title="Drop a CSV file here or click to browse">
+                                <div class="csv-dropzone__icon">⇪</div>
+                                <div class="csv-dropzone__label">Drop CSV or click to upload</div>
+                                <input type="file" id="csv-file-input" accept=".csv,text/csv" style="display:none" />
+                            </div>
+
+                            <!-- Uploaded files list -->
+                            <div class="trk-section-lbl" style="margin-top:10px;">Uploaded Datasets</div>
+                            <div id="csv-file-list" class="csv-file-list">
+                                <div style="color:#666;font-size:10px;font-style:italic;">Loading…</div>
+                            </div>
+
+                            <!-- Active CSV layer controls (shown when a CSV is active) -->
+                            <div id="csv-layer-controls" style="display:none;margin-top:10px;">
+                                <div class="trk-section-lbl">Active: <span id="csv-active-name" style="color:#f5a623;"></span></div>
+                                <div class="trk-section-lbl" style="margin-top:6px;">Lat column</div>
+                                <select id="csv-col-lat" class="trk-sel"></select>
+                                <div class="trk-section-lbl" style="margin-top:6px;">Lng column</div>
+                                <select id="csv-col-lng" class="trk-sel"></select>
+                                <div class="trk-section-lbl" style="margin-top:6px;">Label column (optional)</div>
+                                <select id="csv-col-label" class="trk-sel"></select>
+                                <button class="sa-btn" id="btn-csv-render" style="width:100%;margin-top:8px;">Show on Map</button>
+                                <button class="sa-btn" id="btn-csv-clear" style="width:100%;margin-top:4px;opacity:0.6;">Clear Layer</button>
+                            </div>
+                        </div>
+
                         <!-- ANALYSIS RESULTS PANEL -->
                         <div class="sa-dock__panel" id="sa-panel-results">
                             <div class="sa-dock__panel-hdr" id="sa-tool-title">Analysis Results</div>
@@ -1262,6 +1350,14 @@ const SiteAnalysisPage = (() => {
                         <button class="sa-dock__tab active" data-panel="layers" title="Active Layers">
                             <span class="sa-dock__tab-icon">≡</span>
                             <span class="sa-dock__tab-label">LAYERS</span>
+                        </button>
+                        <button class="sa-dock__tab" data-panel="tracker" title="Animal Tracker">
+                            <span class="sa-dock__tab-icon">⟳</span>
+                            <span class="sa-dock__tab-label">TRACK</span>
+                        </button>
+                        <button class="sa-dock__tab" data-panel="data" title="Upload CSV Data">
+                            <span class="sa-dock__tab-icon">↑</span>
+                            <span class="sa-dock__tab-label">DATA</span>
                         </button>
                         ${!_isCommunityRestricted ? `
                         <button class="sa-dock__tab" data-panel="buffer" title="Buffer / Proximity">
@@ -1350,9 +1446,14 @@ const SiteAnalysisPage = (() => {
      * setSessionSpecies() once the species name is available — the popup
      * content is updated in-place without recreating the marker.
      */
-    function buildOriginPopupHtml(lat, lng, reportId, speciesName) {
+    function buildOriginPopupHtml(lat, lng, reportId, speciesName, mediaUrl) {
+        const imgUrl = mediaUrl ? '/' + mediaUrl.replace(/^\//, '') : null;
         return `
-            <div class="terra-popup">
+            <div class="terra-popup" style="min-width:200px;">
+                ${imgUrl ? `<div class="terra-popup__photo-stem">
+                    <img src="${imgUrl}" alt="Field evidence" class="terra-popup__photo"
+                         onclick="(function(src){var b=document.createElement('div');b.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';var i=document.createElement('img');i.src=src;i.style.cssText='max-width:92vw;max-height:88vh;border-radius:4px;box-shadow:0 0 60px rgba(0,0,0,0.9);';b.appendChild(i);b.addEventListener('click',function(){b.remove();});document.body.appendChild(b);})(this.src)" />
+                </div>` : ''}
                 <div class="terra-popup__header">
                     <span class="terra-popup__species" style="color:var(--clr-danger);">Report Origin</span>
                 </div>
@@ -1385,8 +1486,9 @@ const SiteAnalysisPage = (() => {
             if (!mapEl) return;
 
             if (_map) { _map.remove(); _map = null; }
-            _originMarker = null; // Clear stale reference on every new map init
-            _bufferRing   = null; // Clear stale buffer ring reference
+            _originMarker = null;
+            _bufferRing   = null;
+            _trackerCanvas = null; // Reset canvas renderer on map reinit
 
             _map = L.map('sa-map', {
                 zoomControl: true,
@@ -1406,6 +1508,7 @@ const SiteAnalysisPage = (() => {
 
             _gridLayer = L.featureGroup({ pane: 'gridPane' }).addTo(_map);
             _sightingsLayer = L.featureGroup().addTo(_map);
+            _trackerLayer = L.featureGroup().addTo(_map);
             _drawnItems = new L.FeatureGroup().addTo(_map);
             _bufferLayer = new L.FeatureGroup().addTo(_map);
 
@@ -1463,13 +1566,14 @@ const SiteAnalysisPage = (() => {
                     });
                     // Attach an update helper that re-sets popup content without
                     // recreating the marker or losing its position on the map.
+                    _originMarker._mediaUrl = null; // populated by loadData() once report is found
                     _originMarker._updatePopup = (speciesName) => {
                         _originMarker.setPopupContent(
-                            buildOriginPopupHtml(lat, lng, reportId, speciesName)
+                            buildOriginPopupHtml(lat, lng, reportId, speciesName, _originMarker._mediaUrl)
                         );
                     };
                     _originMarker
-                        .bindPopup(buildOriginPopupHtml(lat, lng, reportId, null), { maxWidth: 240 })
+                        .bindPopup(buildOriginPopupHtml(lat, lng, reportId, null, null), { maxWidth: 260 })
                         .addTo(_bufferLayer)
                         .openPopup();
 
@@ -1746,6 +1850,12 @@ const SiteAnalysisPage = (() => {
                     if (effectiveKey && effectiveKey !== 'Unknown Species') {
                         setSessionSpecies(effectiveKey, origin.species_name || origin.species_id);
                     }
+
+                    // Attach photo evidence to the origin marker popup if available
+                    if (origin.media_url && _originMarker) {
+                        _originMarker._mediaUrl = origin.media_url;
+                        _originMarker._updatePopup(_sessionSpeciesName);
+                    }
                 }
             }
 
@@ -1778,6 +1888,63 @@ const SiteAnalysisPage = (() => {
             }
         } catch (err) {
             console.error('[SITE ANALYSIS] Data fetch failed:', err);
+        }
+
+        // Load animal tracker data from CSV
+        try {
+            const csvText = await fetch('/data/wild_pigs.csv').then(r => r.text());
+            const lines   = csvText.trim().split('\n');
+            const hdrs    = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            const col     = name => hdrs.indexOf(name);
+            const iTs = col('timestamp'), iLat = col('location-lat'), iLng = col('location-long');
+            const iInd = col('individual-local-identifier'), iErr = col('location-error-numerical');
+            const iTag = col('tag-local-identifier'), iSen = col('sensor-type');
+
+            _trackerData = [];
+            for (let i = 1; i < lines.length; i++) {
+                const c   = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                const lat = parseFloat(c[iLat]), lng = parseFloat(c[iLng]);
+                if (isNaN(lat) || isNaN(lng)) continue;
+                const ts = new Date(c[iTs]).getTime();
+                if (isNaN(ts)) continue;
+                _trackerData.push({ lat, lng, ts,
+                    individual: c[iInd] || 'unknown',
+                    error: parseFloat(c[iErr]) || 0,
+                    tag_id: c[iTag] || '', sensor: c[iSen] || '' });
+            }
+
+            // Pre-group and sort by individual
+            _trackerByInd = {};
+            _trackerData.forEach(d => { (_trackerByInd[d.individual] ??= []).push(d); });
+            Object.values(_trackerByInd).forEach(arr => arr.sort((a, b) => a.ts - b.ts));
+
+            // Global time bounds for playback slider
+            const allTs = _trackerData.map(d => d.ts);
+            _trackerMinTs = Math.min(...allTs);
+            _trackerMaxTs = Math.max(...allTs);
+
+            // Default play cursor to start
+            _trackerPlayDate = null; // null = show all
+
+            // Seed individual visibility
+            const inds = Object.keys(_trackerByInd).sort();
+            inds.forEach(id => { _trackerIndividuals[id] = true; });
+
+            // Create/update the tracker saved session so it appears on the Sessions page
+            _ensureTrackerSession();
+
+            populateTrackerPanel();
+            renderTracker();
+
+            // Auto-fit map to pig bounding box on first load
+            if (!_skipAutofit && _trackerData.length > 0) {
+                const lats = _trackerData.map(d => d.lat);
+                const lngs = _trackerData.map(d => d.lng);
+                const bounds = [[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]];
+                setTimeout(() => { if (_map) { try { _map.fitBounds(bounds, { padding: [60, 60], maxZoom: 12 }); } catch (_) {} } }, 800);
+            }
+        } catch (e) {
+            console.warn('[Tracker] CSV load failed:', e.message);
         }
     }
 
@@ -1989,8 +2156,10 @@ const SiteAnalysisPage = (() => {
             const speciesDisplay = r.species_name
                 || (window.SpeciesRegistry && window.SpeciesRegistry[r.species_id]?.common_name)
                 || r.species_id || 'Unknown';
+            const sImgUrl = r.media_url ? '/' + r.media_url.replace(/^\//, '') : null;
             marker.bindPopup(`
-                <div class="terra-popup">
+                <div class="terra-popup" style="min-width:180px;">
+                    ${sImgUrl ? `<div class="terra-popup__photo-stem"><img src="${sImgUrl}" alt="Evidence" class="terra-popup__photo" onclick="(function(src){var b=document.createElement('div');b.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';var i=document.createElement('img');i.src=src;i.style.cssText='max-width:92vw;max-height:88vh;border-radius:4px;box-shadow:0 0 60px rgba(0,0,0,0.9);';b.appendChild(i);b.addEventListener('click',function(){b.remove();});document.body.appendChild(b);})(this.src)" /></div>` : ''}
                     <div class="terra-popup__header">
                         <span class="terra-popup__species">${escapeHtml(speciesDisplay)}</span>
                     </div>
@@ -2009,7 +2178,7 @@ const SiteAnalysisPage = (() => {
                         </div>
                     </div>
                 </div>
-            `, { maxWidth: 240 });
+            `, { maxWidth: 260 });
             marker.addTo(_sightingsLayer);
         });
     }
@@ -2169,6 +2338,298 @@ const SiteAnalysisPage = (() => {
     }
 
     /* ══════════════ Map Listeners ═════════════════════════════ */
+    /* ══════════════ Animal Tracker ════════════════════════════ */
+
+    function _haversineM(lat1, lng1, lat2, lng2) {
+        const R = 6_371_000, toR = d => d * Math.PI / 180;
+        const dLat = toR(lat2 - lat1), dLng = toR(lng2 - lng1);
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(toR(lat1)) * Math.cos(toR(lat2)) * Math.sin(dLng / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function _bearing(lat1, lng1, lat2, lng2) {
+        const toR = d => d * Math.PI / 180;
+        const y = Math.sin(toR(lng2 - lng1)) * Math.cos(toR(lat2));
+        const x = Math.cos(toR(lat1)) * Math.sin(toR(lat2)) - Math.sin(toR(lat1)) * Math.cos(toR(lat2)) * Math.cos(toR(lng2 - lng1));
+        return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    }
+
+    // Map intensity 0→1 to orange scale: dark burnt (#7a2e00) → pale amber (#ffe8b0)
+    // Higher value = lighter/brighter shade
+    function _intensityColor(t) {
+        const r = Math.round(122 + t * (255 - 122));
+        const g = Math.round(46  + t * (232 - 46));
+        const b = Math.round(0   + t * (176 - 0));
+        return `rgb(${r},${g},${b})`;
+    }
+
+    // Decimate a sorted track: keep one fix per `bucketMs` per individual
+    function _decimate(track, bucketMs = 60_000) {
+        const out = [];
+        let lastTs = -Infinity;
+        for (const fix of track) {
+            if (fix.ts - lastTs >= bucketMs) { out.push(fix); lastTs = fix.ts; }
+        }
+        // Always include last fix
+        if (out[out.length - 1] !== track[track.length - 1]) out.push(track[track.length - 1]);
+        return out;
+    }
+
+    // Pre-compute per-fix intensity on a sorted, decimated track; return max
+    function _annotateIntensity(track) {
+        let max = 0;
+        track.forEach((fix, i) => {
+            if (i === 0) { fix._iv = 0; return; }
+            const prev = track[i - 1];
+            const dt   = (fix.ts - prev.ts) / 1000;
+            if (_trackerIntensity === 'speed') {
+                fix._iv = dt > 0 ? _haversineM(prev.lat, prev.lng, fix.lat, fix.lng) / dt : 0;
+            } else if (_trackerIntensity === 'error') {
+                fix._iv = fix.error;
+            } else {
+                fix._iv = dt / 3600;
+            }
+            if (fix._iv > max) max = fix._iv;
+        });
+        return max;
+    }
+
+    // Create (or refresh) the pinned Wild Pigs tracker session in localStorage
+    function _ensureTrackerSession() {
+        const TRACKER_SESSION_ID = 'sa-tracker-wild-pigs';
+        const sessions = loadSessions();
+        const existing = sessions.find(s => s.id === TRACKER_SESSION_ID);
+
+        const bounds = _trackerData.length > 0 ? (() => {
+            const lats = _trackerData.map(d => d.lat);
+            const lngs = _trackerData.map(d => d.lng);
+            return {
+                lat: (Math.min(...lats) + Math.max(...lats)) / 2,
+                lng: (Math.min(...lngs) + Math.max(...lngs)) / 2,
+            };
+        })() : { lat: 34.7, lng: -82.8 };
+
+        const session = {
+            id:          TRACKER_SESSION_ID,
+            name:        'Wild Pigs — Clemson Forest Tracker',
+            savedAt:     existing?.savedAt || new Date().toISOString(),
+            isStarred:   existing?.isStarred ?? true,
+            isArchived:  false,
+            isTrackerSession: true,
+            viewport:    { lat: bounds.lat, lng: bounds.lng, zoom: 11 },
+            mode:        'satellite',
+            gridResolution: 'standard',
+            speciesId:   null, speciesName: null,
+            viewportSpeciesFilter: 'all',
+            layers:      { grid: false, tactical: false, sightings: false, heatmap: false,
+                           geeVegetation: false, geeWater: false, geeElevation: false,
+                           geeLandCover: false, geePrecipitation: false, geeTemperature: false,
+                           geeNdviTrend: false, geeHabitat: false },
+            timeline:    { currentDate: _trackerMaxTs },
+            drawnItems:  [], buffer: { radius: 5000, lat: '', lng: '' },
+            trackerMeta: {
+                individuals: Object.keys(_trackerByInd).length,
+                fixes:       _trackerData.length,
+                minTs:       _trackerMinTs,
+                maxTs:       _trackerMaxTs,
+            }
+        };
+
+        if (existing) {
+            Object.assign(existing, session);
+        } else {
+            sessions.unshift(session);
+        }
+        saveSessions(sessions);
+    }
+
+    function populateTrackerPanel() {
+        const wrap = document.getElementById('trk-individuals');
+        if (!wrap) return;
+        const inds = Object.keys(_trackerIndividuals).sort();
+        wrap.innerHTML = inds.map(id => {
+            return `<label class="trk-ind-row">
+                <input type="checkbox" class="trk-ind-cb" data-id="${id}" ${_trackerIndividuals[id] ? 'checked' : ''}>
+                <span class="trk-ind-swatch"></span>
+                <span class="trk-ind-name">${id}</span>
+            </label>`;
+        }).join('');
+        // Update tracker play range display
+        if (_trackerMinTs && _trackerMaxTs) {
+            const el = document.getElementById('trk-play-date');
+            if (el) el.textContent = new Date(_trackerMinTs).toLocaleDateString();
+        }
+    }
+
+    function renderTracker() {
+        if (!_trackerLayer) return;
+        _trackerLayer.clearLayers();
+        if (!_trackerVisible || _trackerData.length === 0) return;
+
+        // Ceiling timestamp for playback — null means show everything
+        const ceiling = _trackerPlayDate;
+
+        // Build per-individual decimated tracks (1 fix/min), apply time ceiling
+        const byInd = {};
+        for (const fix of _trackerData) {
+            if (!_trackerIndividuals[fix.individual]) continue;
+            if (ceiling !== null && fix.ts > ceiling) continue;
+            (byInd[fix.individual] ??= []).push(fix);
+        }
+        // Sort and decimate
+        for (const id of Object.keys(byInd)) {
+            byInd[id].sort((a, b) => a.ts - b.ts);
+            byInd[id] = _decimate(byInd[id], 60_000);
+        }
+
+        // Compute global max intensity for normalisation
+        let globalMax = 0;
+        for (const track of Object.values(byInd)) {
+            const m = _annotateIntensity(track);
+            if (m > globalMax) globalMax = m;
+        }
+        if (globalMax === 0) globalMax = 1;
+
+        // Heatmap (canvas-backed, single layer)
+        if (_trackerShowHeatmap && window.L && L.heatLayer) {
+            const pts = [];
+            for (const track of Object.values(byInd)) {
+                for (const f of track) pts.push([f.lat, f.lng, (f._iv || 0) / globalMax]);
+            }
+            L.heatLayer(pts, {
+                radius: 20, blur: 24, maxZoom: 17,
+                gradient: { 0.0: '#7a2e00', 0.4: '#c85a00', 0.75: '#f5a623', 1.0: '#ffe8b0' }
+            }).addTo(_trackerLayer);
+        }
+
+        const zoom = _map ? _map.getZoom() : 10;
+        const showArrowsAtZoom = zoom >= 12;
+        const showNodesAtZoom  = zoom >= 11;
+
+        // One canvas renderer shared across all vector layers — critical for perf
+        if (!_trackerCanvas) _trackerCanvas = L.canvas({ padding: 0.5 });
+
+        for (const [id, track] of Object.entries(byInd)) {
+            if (track.length < 2) {
+                // Single fix — just a node
+                if (_trackerShowNodes && showNodesAtZoom && track.length === 1) {
+                    const f = track[0];
+                    L.circleMarker([f.lat, f.lng], {
+                        renderer: _trackerCanvas, radius: 4,
+                        color: '#ffe8b0', weight: 1, fillColor: '#ffe8b0', fillOpacity: 0.9,
+                        interactive: false
+                    }).addTo(_trackerLayer);
+                }
+                continue;
+            }
+
+            // Build one multi-segment polyline per individual (single DOM element)
+            const latlngs = track.map(f => [f.lat, f.lng]);
+            L.polyline(latlngs, {
+                renderer: _trackerCanvas,
+                color: '#c85a00', weight: 2, opacity: 0.55,
+                lineCap: 'round', lineJoin: 'round', interactive: false
+            }).addTo(_trackerLayer);
+
+            // Intensity-shaded segments (draw only every Nth for perf)
+            const step = Math.max(1, Math.floor(track.length / 80));
+            for (let i = 1; i < track.length; i += step) {
+                const prev = track[i - 1], curr = track[i];
+                const t = Math.min(1, (curr._iv || 0) / globalMax);
+                const col = _intensityColor(t);
+
+                // Glow aura
+                L.polyline([[prev.lat, prev.lng], [curr.lat, curr.lng]], {
+                    renderer: _trackerCanvas,
+                    color: col, weight: 5 + t * 6, opacity: 0.18 + t * 0.22,
+                    lineCap: 'round', interactive: false
+                }).addTo(_trackerLayer);
+
+                // Core
+                L.polyline([[prev.lat, prev.lng], [curr.lat, curr.lng]], {
+                    renderer: _trackerCanvas,
+                    color: col, weight: 1.5, opacity: 0.55 + t * 0.45,
+                    lineCap: 'round', interactive: false
+                }).addTo(_trackerLayer);
+
+                // Arrow chevron (every 10th visible segment, only when zoomed in)
+                if (_trackerShowArrows && showArrowsAtZoom && i % 10 === 0) {
+                    const b   = _bearing(prev.lat, prev.lng, curr.lat, curr.lng);
+                    const mid = [(prev.lat + curr.lat) / 2, (prev.lng + curr.lng) / 2];
+                    L.marker(mid, {
+                        icon: L.divIcon({
+                            className: '',
+                            html: `<svg width="10" height="10" viewBox="0 0 10 10" style="transform:rotate(${b}deg);display:block;overflow:visible"><polygon points="5,0 0,10 10,10" fill="${col}" opacity="${0.5 + t * 0.5}"/></svg>`,
+                            iconSize: [10, 10], iconAnchor: [5, 5]
+                        }),
+                        interactive: false
+                    }).addTo(_trackerLayer);
+                }
+            }
+
+            // Nodes: start, end, and thinned intermediates
+            if (_trackerShowNodes && showNodesAtZoom) {
+                const nodeStep = Math.max(1, Math.floor(track.length / 40));
+                track.forEach((fix, i) => {
+                    const isEndpoint = i === 0 || i === track.length - 1;
+                    if (!isEndpoint && i % nodeStep !== 0) return;
+                    const t   = Math.min(1, (fix._iv || 0) / globalMax);
+                    const col = _intensityColor(t);
+                    const r   = isEndpoint ? 5 : 3;
+                    const ts  = new Date(fix.ts).toLocaleString();
+                    const val = _trackerIntensity === 'speed'    ? `${(fix._iv || 0).toFixed(1)} m/s`
+                              : _trackerIntensity === 'error'    ? `${(fix.error || 0).toFixed(0)} m GPS err`
+                              :                                    `${(fix._iv || 0).toFixed(1)} h gap`;
+                    L.circleMarker([fix.lat, fix.lng], {
+                        renderer: _trackerCanvas,
+                        radius: r, color: col, weight: 1.5,
+                        fillColor: col, fillOpacity: 0.35 + t * 0.55
+                    }).bindTooltip(`<b>${id}</b> · ${ts}<br>${val}`, { sticky: true })
+                      .addTo(_trackerLayer);
+                });
+            }
+        }
+
+        // Update play date label
+        const el = document.getElementById('trk-play-date');
+        if (el) {
+            el.textContent = ceiling
+                ? new Date(ceiling).toLocaleDateString()
+                : (_trackerMaxTs ? new Date(_trackerMaxTs).toLocaleDateString() : '—');
+        }
+    }
+
+    /* ── Tracker playback ──────────────────────────────────── */
+    function _trackerStep() {
+        if (!_trackerPlaying) return;
+        const window7d = 7 * 86_400_000;
+        _trackerPlayDate = Math.min((_trackerPlayDate || _trackerMinTs) + window7d, _trackerMaxTs);
+        renderTracker();
+        if (_trackerPlayDate >= _trackerMaxTs) {
+            _stopTrackerPlay();
+        } else {
+            _trackerPlayTimer = setTimeout(_trackerStep, 350);
+        }
+    }
+
+    function _startTrackerPlay() {
+        if (_trackerMinTs === 0) return;
+        _trackerPlaying  = true;
+        _trackerPlayDate = _trackerPlayDate ?? _trackerMinTs;
+        document.getElementById('trk-play-btn')?.classList.add('active');
+        _trackerStep();
+    }
+
+    function _stopTrackerPlay() {
+        _trackerPlaying = false;
+        clearTimeout(_trackerPlayTimer);
+        document.getElementById('trk-play-btn')?.classList.remove('active');
+    }
+
+    function _toggleTrackerPlay() {
+        if (_trackerPlaying) { _stopTrackerPlay(); } else { _startTrackerPlay(); }
+    }
+
     function attachMapListeners(_container, options) {
         // Back to sessions dashboard
         document.getElementById('btn-back-dashboard')?.addEventListener('click', () => {
@@ -2314,6 +2775,65 @@ const SiteAnalysisPage = (() => {
             await runBufferOnGeometry({ type: 'Point', coordinates: [lng, lat] }, radius);
         });
 
+        // Tracker controls
+        document.getElementById('trk-play-btn')?.addEventListener('click', _toggleTrackerPlay);
+
+        document.getElementById('trk-play-reset')?.addEventListener('click', () => {
+            _stopTrackerPlay();
+            _trackerPlayDate = null;
+            const slider = document.getElementById('trk-play-slider');
+            if (slider) slider.value = 100;
+            renderTracker();
+        });
+
+        // Manual scrub via slider
+        const trkSlider = document.getElementById('trk-play-slider');
+        if (trkSlider) {
+            trkSlider.addEventListener('input', () => {
+                _stopTrackerPlay();
+                const pct = parseInt(trkSlider.value, 10) / 100;
+                _trackerPlayDate = pct >= 1
+                    ? null
+                    : _trackerMinTs + pct * (_trackerMaxTs - _trackerMinTs);
+                renderTracker();
+            });
+        }
+
+        document.getElementById('trk-intensity')?.addEventListener('change', e => {
+            _trackerIntensity = e.target.value;
+            renderTracker();
+        });
+        document.getElementById('trk-show-arrows')?.addEventListener('change', e => {
+            _trackerShowArrows = e.target.checked; renderTracker();
+        });
+        document.getElementById('trk-show-nodes')?.addEventListener('change', e => {
+            _trackerShowNodes = e.target.checked; renderTracker();
+        });
+        document.getElementById('trk-show-heatmap')?.addEventListener('change', e => {
+            _trackerShowHeatmap = e.target.checked; renderTracker();
+        });
+        document.getElementById('trk-sel-all')?.addEventListener('click', () => {
+            Object.keys(_trackerIndividuals).forEach(id => { _trackerIndividuals[id] = true; });
+            document.querySelectorAll('.trk-ind-cb').forEach(cb => { cb.checked = true; });
+            renderTracker();
+        });
+        document.getElementById('trk-sel-none')?.addEventListener('click', () => {
+            Object.keys(_trackerIndividuals).forEach(id => { _trackerIndividuals[id] = false; });
+            document.querySelectorAll('.trk-ind-cb').forEach(cb => { cb.checked = false; });
+            renderTracker();
+        });
+        document.getElementById('trk-individuals')?.addEventListener('change', e => {
+            const cb = e.target.closest('.trk-ind-cb');
+            if (!cb) return;
+            _trackerIndividuals[cb.dataset.id] = cb.checked;
+            renderTracker();
+        });
+        // Re-render on zoom changes so arrow/node density adapts
+        if (_map) _map.on('zoomend', () => { if (_trackerData.length > 0) renderTracker(); });
+
+        // ── CSV / Portal Data panel ───────────────────────────
+        _initCsvPanel();
+
         // Save session
         document.getElementById('btn-save-session')?.addEventListener('click', () => {
             Modal.open({
@@ -2399,6 +2919,202 @@ const SiteAnalysisPage = (() => {
             radio.checked = radio.value === _activeMode;
         });
         renderLayers();
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       CSV / PORTAL DATA PANEL
+    ═══════════════════════════════════════════════════════════ */
+
+    function _parseCsv(text) {
+        const lines = text.trim().split(/\r?\n/);
+        if (lines.length < 2) return { columns: [], rows: [] };
+        const columns = lines[0].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+        const rows = lines.slice(1).map(line => {
+            const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+            const obj = {};
+            columns.forEach((col, i) => { obj[col] = vals[i] ?? ''; });
+            return obj;
+        });
+        return { columns, rows };
+    }
+
+    function _populateCsvColumnSelects(columns) {
+        const latSel   = document.getElementById('csv-col-lat');
+        const lngSel   = document.getElementById('csv-col-lng');
+        const labelSel = document.getElementById('csv-col-label');
+        if (!latSel || !lngSel || !labelSel) return;
+        const opts = columns.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        const none = `<option value="">— none —</option>`;
+        latSel.innerHTML   = opts;
+        lngSel.innerHTML   = opts;
+        labelSel.innerHTML = none + opts;
+        // Auto-detect common column names
+        const tryPick = (sel, candidates) => {
+            for (const c of candidates) {
+                const opt = [...sel.options].find(o => o.value.toLowerCase() === c);
+                if (opt) { sel.value = opt.value; return; }
+            }
+        };
+        tryPick(latSel,   ['lat', 'latitude', 'location-lat', 'y']);
+        tryPick(lngSel,   ['lng', 'lon', 'long', 'longitude', 'location-long', 'x']);
+        tryPick(labelSel, ['name', 'label', 'individual-local-identifier', 'id', 'species']);
+    }
+
+    function _renderCsvOnMap() {
+        if (_csvLayer) { _csvLayer.clearLayers(); }
+        else {
+            _csvLayer = L.featureGroup().addTo(_map);
+        }
+
+        const latCol   = document.getElementById('csv-col-lat')?.value;
+        const lngCol   = document.getElementById('csv-col-lng')?.value;
+        const labelCol = document.getElementById('csv-col-label')?.value;
+
+        let count = 0;
+        for (const row of _csvRows) {
+            const lat = parseFloat(row[latCol]);
+            const lng = parseFloat(row[lngCol]);
+            if (isNaN(lat) || isNaN(lng)) continue;
+            const label = labelCol ? (row[labelCol] || '') : '';
+            const marker = L.circleMarker([lat, lng], {
+                radius: 5,
+                color: '#f5a623',
+                fillColor: '#f5a623',
+                fillOpacity: 0.7,
+                weight: 1,
+            });
+            if (label) marker.bindPopup(`<div style="font-family:monospace;font-size:12px;">${escapeHtml(label)}</div>`);
+            _csvLayer.addLayer(marker);
+            count++;
+        }
+
+        if (count === 0) {
+            Toast.error('No valid lat/lng rows found. Check column selection.');
+            return;
+        }
+
+        _map.fitBounds(_csvLayer.getBounds().pad(0.1));
+        Toast.success(`${count.toLocaleString()} points plotted from CSV.`);
+    }
+
+    async function _loadCsvFileList() {
+        const listEl = document.getElementById('csv-file-list');
+        if (!listEl) return;
+        try {
+            const { files } = await API.get('/portal-data/list');
+            if (!files || files.length === 0) {
+                listEl.innerHTML = `<div style="color:#666;font-size:10px;font-style:italic;">No uploads yet.</div>`;
+                return;
+            }
+            listEl.innerHTML = files.map(f => `
+                <div class="csv-file-row" data-url="${escapeHtml(f.url)}" data-name="${escapeHtml(f.originalName)}">
+                    <span class="csv-file-row__name" title="${escapeHtml(f.originalName)}">${escapeHtml(f.originalName)}</span>
+                    <span class="csv-file-row__size">${(f.size / 1024).toFixed(0)}KB</span>
+                    <button class="csv-file-row__load" data-url="${escapeHtml(f.url)}" data-name="${escapeHtml(f.originalName)}" title="Load onto map">▶</button>
+                    <button class="csv-file-row__del" data-filename="${escapeHtml(f.filename)}" title="Delete">✕</button>
+                </div>
+            `).join('');
+
+            // Load button
+            listEl.querySelectorAll('.csv-file-row__load').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    try {
+                        const resp = await fetch(btn.dataset.url);
+                        const text = await resp.text();
+                        const { columns, rows } = _parseCsv(text);
+                        _csvRows    = rows;
+                        _csvColumns = columns;
+                        const nameEl = document.getElementById('csv-active-name');
+                        if (nameEl) nameEl.textContent = btn.dataset.name;
+                        _populateCsvColumnSelects(columns);
+                        document.getElementById('csv-layer-controls').style.display = '';
+                        Toast.success(`Loaded ${rows.length.toLocaleString()} rows.`);
+                    } catch (e) {
+                        Toast.error('Failed to load CSV.');
+                    }
+                });
+            });
+
+            // Delete button
+            listEl.querySelectorAll('.csv-file-row__del').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    try {
+                        await API.delete(`/portal-data/${encodeURIComponent(btn.dataset.filename)}`);
+                        Toast.success('File deleted.');
+                        _loadCsvFileList();
+                    } catch (e) {
+                        Toast.error('Delete failed.');
+                    }
+                });
+            });
+        } catch (e) {
+            listEl.innerHTML = `<div style="color:#e55;font-size:10px;">Failed to load file list.</div>`;
+        }
+    }
+
+    function _initCsvPanel() {
+        const dropzone = document.getElementById('csv-dropzone');
+        const fileInput = document.getElementById('csv-file-input');
+
+        if (!dropzone || !fileInput) return;
+
+        // Click to browse
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        // Drag-over highlight
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('csv-dropzone--over'); });
+        dropzone.addEventListener('dragleave', ()  => dropzone.classList.remove('csv-dropzone--over'));
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('csv-dropzone--over');
+            const file = e.dataTransfer.files[0];
+            if (file) _uploadCsvFile(file);
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files[0]) _uploadCsvFile(fileInput.files[0]);
+            fileInput.value = '';
+        });
+
+        document.getElementById('btn-csv-render')?.addEventListener('click', _renderCsvOnMap);
+
+        document.getElementById('btn-csv-clear')?.addEventListener('click', () => {
+            if (_csvLayer) { _csvLayer.clearLayers(); }
+            _csvRows = [];
+            _csvColumns = [];
+            document.getElementById('csv-layer-controls').style.display = 'none';
+            const nameEl = document.getElementById('csv-active-name');
+            if (nameEl) nameEl.textContent = '';
+            Toast.success('CSV layer cleared.');
+        });
+
+        // Load file list on first open of this tab
+        document.querySelector('.sa-dock__tab[data-panel="data"]')?.addEventListener('click', () => {
+            _loadCsvFileList();
+        }, { once: true });
+    }
+
+    async function _uploadCsvFile(file) {
+        if (!file.name.endsWith('.csv')) {
+            Toast.error('Only CSV files are accepted.');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('csvfile', file);
+        try {
+            const token = Auth.getToken();
+            const resp = await fetch('/api/portal-data/upload', {
+                method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                body: formData,
+            });
+            if (!resp.ok) throw new Error(await resp.text());
+            const data = await resp.json();
+            Toast.success(`Uploaded: ${data.file.originalName}`);
+            _loadCsvFileList();
+        } catch (e) {
+            Toast.error('Upload failed: ' + e.message);
+        }
     }
 
     return { render };

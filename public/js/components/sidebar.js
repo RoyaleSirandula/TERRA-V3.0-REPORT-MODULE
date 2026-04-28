@@ -29,9 +29,11 @@ const Sidebar = (() => {
     {
       section: 'Analysis',
       items: [
-        { id: 'site-analysis', label: 'Site Analysis', icon: '◈', permission: 'export_data' },
-        { id: 'analytics',     label: 'Analytics',     icon: '◆', permission: 'export_data' },
-        { id: 'export',        label: 'Export Data',   icon: '↗', permission: 'export_data' },
+        { id: 'site-analysis',         label: 'Site Analysis',  icon: '◈', permission: 'export_data' },
+        { id: 'site-analysis--tracker', label: 'Animal Tracker', icon: '⟳', permission: 'export_data' },
+        { id: 'site-analysis--data',   label: 'Upload Data',    icon: '↑', permission: 'export_data' },
+        { id: 'analytics',             label: 'Analytics',      icon: '◆', permission: 'export_data' },
+        { id: 'export',                label: 'Export Data',    icon: '↗', permission: 'export_data' },
       ],
     },
     {

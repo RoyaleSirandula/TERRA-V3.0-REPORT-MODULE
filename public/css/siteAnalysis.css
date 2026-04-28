@@ -1775,3 +1775,226 @@ body.light .sa-ap-btn:hover:not(:disabled) {
     color: #000;
     border-color: #aaa;
 }
+
+/* ── Animal Tracker Panel ─────────────────────────────────── */
+.trk-section-lbl {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #888;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.trk-sel {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #e0e0e0;
+    font-size: 10px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    appearance: none;
+}
+
+.trk-radio-lbl {
+    font-size: 10px;
+    color: #bbb;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.trk-mini-btn {
+    font-size: 9px;
+    padding: 2px 8px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #ccc;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.trk-mini-btn:hover { background: rgba(255,255,255,0.14); }
+
+.trk-individuals {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-height: 220px;
+    overflow-y: auto;
+    margin-top: 2px;
+}
+
+.trk-ind-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: #ccc;
+    cursor: pointer;
+    padding: 2px 0;
+}
+
+.trk-ind-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.trk-ind-name {
+    font-family: var(--font-mono, monospace);
+    font-size: 10px;
+}
+
+/* ── Tracker: play controls ───────────────────────────────── */
+.trk-play-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.trk-play-btn {
+    font-size: 11px;
+    padding: 3px 10px;
+    background: #c85a00;
+    border: none;
+    color: #fff;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background 0.15s;
+}
+.trk-play-btn:hover, .trk-play-btn.active { background: #f5a623; color: #000; }
+
+.trk-play-date {
+    font-size: 9px;
+    font-family: var(--font-mono, monospace);
+    color: #f5a623;
+    flex: 1;
+    text-align: right;
+}
+
+.trk-play-slider {
+    width: 100%;
+    margin-bottom: 2px;
+    accent-color: #c85a00;
+}
+
+/* ── Tracker: individual rows — orange swatch gradient ────── */
+.trk-ind-row .trk-ind-swatch {
+    background: linear-gradient(135deg, #7a2e00 0%, #ffe8b0 100%);
+}
+
+/* ── Tracker session card accent ─────────────────────────── */
+.sa-session-card--tracker {
+    border-left: 3px solid #c85a00;
+}
+
+.sa-session-card__badge--tracker {
+    background: rgba(200, 90, 0, 0.25);
+    color: #f5a623;
+    border: 1px solid rgba(200, 90, 0, 0.4);
+    font-size: 8px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: 4px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   CSV / PORTAL DATA PANEL
+══════════════════════════════════════════════════════════ */
+
+.csv-dropzone {
+    border: 1px dashed rgba(245,166,35,0.5);
+    border-radius: 4px;
+    padding: 14px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    margin-top: 4px;
+}
+.csv-dropzone:hover,
+.csv-dropzone--over {
+    border-color: #f5a623;
+    background: rgba(245,166,35,0.06);
+}
+.csv-dropzone__icon {
+    font-size: 20px;
+    color: #f5a623;
+    line-height: 1;
+}
+.csv-dropzone__label {
+    font-size: 9px;
+    color: #999;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.csv-file-list {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 160px;
+    overflow-y: auto;
+}
+.csv-file-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 3px;
+    padding: 4px 6px;
+    font-size: 9px;
+}
+.csv-file-row__name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #ccc;
+}
+.csv-file-row__size {
+    color: #666;
+    white-space: nowrap;
+    font-size: 8px;
+}
+.csv-file-row__load,
+.csv-file-row__del {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 3px;
+    color: #aaa;
+    cursor: pointer;
+    padding: 1px 5px;
+    font-size: 9px;
+    line-height: 1.4;
+    transition: color 0.15s, border-color 0.15s;
+}
+.csv-file-row__load:hover { color: #f5a623; border-color: #f5a623; }
+.csv-file-row__del:hover  { color: #e55; border-color: #e55; }
+
+/* ── Origin Marker Popup Photo ──────────────────────────────── */
+.terra-popup__photo-stem {
+    width: 100%;
+    margin-bottom: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.terra-popup__photo {
+    display: block;
+    width: 100%;
+    max-height: 140px;
+    object-fit: cover;
+    cursor: zoom-in;
+    transition: filter 0.2s;
+}
+.terra-popup__photo:hover {
+    filter: brightness(0.85);
+}

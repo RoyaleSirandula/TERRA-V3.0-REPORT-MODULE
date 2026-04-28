@@ -30,6 +30,9 @@ const Router = (() => {
         'validated': { title: 'Validated Reports', render: (c) => ReportsPage.render(c, 'validated') },
         'report-detail': { title: 'Report Detail', render: (c, opts) => ReportDetailPage.render(c, opts || {}) },
         'site-analysis': { title: 'Site Analysis', render: (c, opts) => SiteAnalysisPage.render(c, opts || {}) },
+        // Ranger shortcut — open map view then switch to the named dock tab
+        'site-analysis--tracker': { title: 'Animal Tracker', render: (c) => { SiteAnalysisPage.render(c, {}); setTimeout(() => { document.querySelector('.sa-dock__tab[data-panel="tracker"]')?.click(); }, 800); } },
+        'site-analysis--data':    { title: 'Upload Data',    render: (c) => { SiteAnalysisPage.render(c, {}); setTimeout(() => { document.querySelector('.sa-dock__tab[data-panel="data"]')?.click(); }, 800); } },
         // Sidebar nav targets
         'map': { title: 'Live Map', render: (c) => renderPlaceholder(c, '🗺️', 'Live Geospatial Map', 'Leaflet.js integration coming soon.') },
         'analytics': { title: 'Analytics', render: (c) => AnalyticsPage.render(c) },

@@ -3,7 +3,13 @@
     "allow": [
       "Bash(node --check public/js/pages/siteAnalysis.js)",
       "Bash(xargs grep:*)",
-      "Read(//c/Users/User/**)"
+      "Read(//c/Users/User/**)",
+      "Read(//c/Program Files/PostgreSQL/**)",
+      "Bash(\"C:/Program Files/PostgreSQL/18/bin/psql.exe\" -U postgres -d terra_db -f \"scripts/movebank_migration.sql\")",
+      "Bash(\"C:/Program Files/PostgreSQL/18/bin/psql.exe\" --version)",
+      "WebFetch(domain:github.com)",
+      "Bash(xargs wc *)",
+      "Read(//c/c/Users/User/TERRA REPORT/**)"
     ]
   }
 }

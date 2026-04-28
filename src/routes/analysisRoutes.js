@@ -29,6 +29,7 @@ router.get('/sightings', async (req, res) => {
                    COALESCE(s.common_name, r.species_name_custom, 'Unknown Species') as species_name,
                    r.validation_status, r.sensitivity_tier, r.ai_confidence_score,
                    r.sighting_timestamp as created_at,
+                   r.media_url,
                    ST_X(r.geom) as longitude, ST_Y(r.geom) as latitude
             FROM reports r
             LEFT JOIN species s ON r.species_id = s.species_id

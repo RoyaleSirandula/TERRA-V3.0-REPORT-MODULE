@@ -200,4 +200,8 @@ Report.registerIntelligenceEngine({
 });
 
 
+// ── Movebank Species Tracker engine ──────────────────────────
+const MovebankEngine = require('../intelligence/movebank.engine');
+Report.registerIntelligenceEngine(MovebankEngine);
+
 module.exports = Report;

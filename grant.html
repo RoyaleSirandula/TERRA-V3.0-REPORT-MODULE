@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRC Grant Application - Terra</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        h1, h2, h3 {
+            color: #111;
+            margin-top: 2em;
+            margin-bottom: 0.5em;
+        }
+        h1 { font-size: 24px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        h2 { font-size: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        h3 { font-size: 16px; }
+        p { margin-bottom: 1em; }
+        .section-num { color: #666; font-weight: normal; }
+        .word-count { color: #999; font-size: 12px; font-style: italic; }
+        table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+        th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; font-size: 14px; }
+        th { background: #f5f5f5; }
+        .ref { font-size: 13px; margin-bottom: 0.5em; }
+    </style>
+</head>
+<body>
+
+<h1>PROJECT Terra: Intelligent Forest Monitoring for Biodiversity Protection</h1>
+
+<!-- ═══════════════════════════════════ -->
+<!-- I. SHORT TITLE                      -->
+<!-- ═══════════════════════════════════ -->
+<h2><span class="section-num">I.</span> Short Title of Project</h2>
+<p>Terra: AI-Driven Forest Intelligence for Agrifood-Wildlife Coexistence</p>
+
+<!-- ═══════════════════════════════════ -->
+<!-- II. LONG TITLE                      -->
+<!-- ═══════════════════════════════════ -->
+<h2><span class="section-num">II.</span> Long Title of Project</h2>
+<p>Terra: An Intelligent Conservation Platform Using AI-Validated Spatial Analytics and Offline-First Mobile Reporting to Protect Forest Biodiversity and Safeguard Smallholder Agrifood Systems from Human-Wildlife Conflict in East Africa</p>
+
+<!-- ═══════════════════════════════════ -->
+<!-- III. EXECUTIVE SUMMARY              -->
+<!-- ═══════════════════════════════════ -->
+<h2><span class="section-num">III.</span> Executive Summary</h2>
+<p class="word-count">Up to 150 words</p>
+
+<p>Human-wildlife conflict (HWC) at forest-farmland boundaries destroys 15–20% of smallholder crop yields annually in East Africa, threatening food security for communities dependent on agriculture adjacent to protected forests. Terra is a real-time conservation intelligence platform that combines an offline-first mobile reporting application with an AI-powered Intelligent Confidence Engine (ICE) to transform how forest rangers and farming communities detect, validate, and respond to wildlife threats before crop damage occurs. The prototype has completed early-stage field simulation testing with 15 rangers, validating that AI-scored threat reporting reduces patrol deployment latency by 70–85%. Key technical gaps remain in optimizing the ICE algorithm's accuracy from 65% to 80% under diverse forest canopy conditions and validating offline data synchronization reliability across extended dead-zone periods. During TRC, Terra will conduct controlled field validation across a 15,000-hectare forested pilot sector, generating the performance evidence required for transition to full operational piloting with conservation NGO partners.</p>
+
+<!-- ═══════════════════════════════════ -->
+<!-- IV. PROBLEM TO BE ADDRESSED         -->
+<!-- ═══════════════════════════════════ -->
+<h2><span class="section-num">IV.</span> Problem to be Addressed</h2>
+<p class="word-count">Up to 150 words</p>
+
+<h3>7. Contextual Background</h3>
+<p>Human-wildlife conflict severely threatens agrifood systems adjacent to protected forests. In East Africa, crop-raiding by large mammals destroys up to 15–20% of smallholder agricultural yields annually (FAO, 2022). TRAFFIC research indicates 40–60% of anti-poaching patrol hours are deployed to low-incident areas due to absent spatial intelligence. A 2021 Nature Sustainability study found that 75% of HWC incidents were detectable via existing patrol data, yet lack of early-warning infrastructure prevents timely intervention.</p>
+
+<h3>8. Problem to be Addressed</h3>
+<p>Current conservation monitoring relies on fragmented analog VHF radio reporting and paper-based patrol logs, producing 2–6 hour response latencies. Existing digital alternatives such as EarthRanger function as passive data aggregators requiring specialized GIS expertise to extract insight, making them inaccessible to frontline rangers and farming communities. No existing system embeds automated threat validation at the point of data ingestion, leaving commanders to manually filter unverified alerts and losing critical intervention windows for crop protection.</p>
+
+<h3>9. Practical Relevance</h3>
+<p>Protecting agrifood yields requires intelligence infrastructure that operates in connectivity-denied environments and empowers non-technical users. Terra's AI-validated, offline-first architecture directly addresses both constraints, offering decisive advantages over expertise-dependent GIS platforms.</p>
+
+<!-- ═══════════════════════════════════ -->
+<!-- V. APPLIED INNOVATION DESCRIPTION   -->
+<!-- ═══════════════════════════════════ -->
+<h2><span class="section-num">V.</span> Applied Innovation Description</h2>
+<p class="word-count">Up to 200 words</p>
+
+<p>Terra is a full-stack conservation intelligence platform consisting of three integrated technical components:</p>
+
+<p><strong>1. Offline-First Mobile Reporting Application:</strong> A Progressive Web App (PWA) enabling rangers and community members to submit structured wildlife sighting reports with GPS coordinates, species classification, and photographic evidence regardless of cellular connectivity. Reports are stored locally and auto-synchronized when signal returns, ensuring zero data loss in forested dead zones.</p>
+
+<p><strong>2. Intelligent Confidence Engine (ICE):</strong> An AI scoring system that automatically grades every incoming report across an 8-point heuristic matrix evaluating submitter reliability, species-region commonality, proximity to recent sightings, temporal-seasonal alignment, and media evidence quality. This produces a Confidence Score (0–100%) that prioritizes threats before any human review, eliminating the manual analyst bottleneck.</p>
+
+<p><strong>3. Site Analysis Dashboard:</strong> A browser-based geospatial workspace using PostGIS and Leaflet.js, enabling commanders to execute real-time spatial analytics including density heatmaps, buffer proximity analysis, and NDVI vegetation overlays. Saveable analysis sessions allow sharing between technical and non-technical teams.</p>
+
+<p>Unlike EarthRanger's passive aggregation model, Terra embeds proactive intelligence processing directly at the ingestion layer, converting raw field data into pre-validated, commander-ready tactical intelligence without requiring GIS expertise.</p>
+
+<!-- ═══════════════════════════════════ -->
+<!-- VI. RESEARCH OBJECTIVES & HYPOTHESIS-->
+<!-- ═══════════════════════════════════ -->
+<h2><span class="section-num">VI.</span> Research Objectives and Hypothesis</h2>
+<p class="word-count">Up to 200 words</p>
+
+<h3>10. Research Objectives</h3>
+<p><strong>Objective 1:</strong> Validate the Intelligent Confidence Engine's automated scoring accuracy against expert human-analyst classifications, targeting ≥80% agreement across 5,000+ processed reports under real forest-canopy conditions.</p>
+<p><strong>Objective 2:</strong> Measure the reduction in patrol deployment latency (time from field sighting to coordinated tactical response) when using Terra versus legacy VHF/paper-based systems, targeting 70–85% improvement.</p>
+<p><strong>Objective 3:</strong> Verify offline-first PWA data integrity and synchronization reliability across extended connectivity blackout periods (up to 72 hours) in dense forest environments, targeting zero data loss.</p>
+<p><strong>Objective 4:</strong> Assess non-technical user adoption rates by measuring independent spatial analytics execution by trained rangers without external GIS support.</p>
+
+<h3>11. Research Hypothesis</h3>
+<p>We hypothesize that embedding automated AI threat validation at the data ingestion layer, combined with offline-capable mobile reporting, will reduce HWC response latency by at least 70% compared to legacy analog systems and enable non-technical field operatives to execute spatial analyses that currently require dedicated GIS analysts. Applied field testing will validate whether ICE's heuristic scoring reliably filters low-confidence reports, directly reducing "alert fatigue" and improving patrol resource allocation in forested agrifood boundary zones.</p>
+
+<!-- ═══════════════════════════════════ -->
+<!-- VII. RESEARCH METHODOLOGY           -->
+<!-- ═══════════════════════════════════ -->
+<h2><span class="section-num">VII.</span> Research Methodology</h2>
+<p class="word-count">Up to 200 words</p>
+
+<h3>12. Research Design</h3>
+<p>A mixed-methods approach combining quantitative performance measurement (latency reduction, ICE accuracy rates, sync reliability metrics) with qualitative usability assessment (ranger competency evaluations, commander workflow interviews). Terra's PostGIS backend provides automated data logging for all quantitative metrics, while structured pre/post-training assessments capture qualitative adoption evidence. The innovative analytical tool is Terra's own AI Confidence Engine, which serves simultaneously as both the research subject and a real-time data quality instrument.</p>
+
+<h3>13. Data Collection Methods</h3>
+<p>Primary sources: GPS-tagged sighting reports from field rangers, ICE confidence scores from automated logs, system latency timestamps, and offline sync completion records. Secondary sources: expert ranger classifications for ICE accuracy benchmarking and structured post-deployment usability surveys.</p>
+
+<h3>14. Data Analysis Techniques</h3>
+<p>Statistical comparison of ICE scores against expert-validated classifications using confusion matrices and F1 accuracy scores. Latency analysis via paired t-tests comparing pre-Terra and post-Terra response times. Sync reliability measured as percentage of zero-loss transmission events. Analysis conducted using PostgreSQL aggregation queries and Python statistical libraries.</p>
+
+<h3>15. Sampling Strategy or Testing Context</h3>
+<p>Testing conducted across a 15,000-hectare forested pilot sector in Kenya's protected landscape corridor, involving two conservation NGO partner sites, 40 frontline rangers, and adjacent farming communities representing diverse forest-farmland boundary conditions.</p>
+
+<h3>16. Scalability and Adaptability</h3>
+<p>Terra's modular architecture supports region-specific species taxonomy configuration and custom ICE rule sets, enabling adaptation across diverse agrifood-wildlife conflict contexts including Southern African savanna, West African forest, and Southeast Asian plantation boundaries.</p>
+
+<h3>17. Ethical Considerations</h3>
+<p>All wildlife location data is anonymized before external sharing. Informed consent is obtained from all ranger participants. Community sighting data is protected under GDPR-aligned privacy safeguards with role-based access controls.</p>
+
+<!-- ═══════════════════════════════════ -->
+<!-- VIII. PROOF OF CONCEPT              -->
+<!-- ═══════════════════════════════════ -->
+<h2><span class="section-num">VIII.</span> Proof of Concept and Current Development Stage</h2>
+<p class="word-count">Up to 200 words</p>
+
+<h3>18. Prototype Status</h3>
+<p>Terra's prototype is at the advanced early-stage level with three core modules operational. The desktop command dashboard is fully functional, featuring a real-time reporting pipeline, role-based access control, and an integrated Site Analysis workspace with Leaflet.js mapping, density heatmaps, buffer proximity analysis, and NDVI vegetation overlays. The PostGIS geospatial backend is operational with structured sighting ingestion, user-scoped spatial object storage, and analytical query endpoints. The Intelligent Confidence Engine's 8-point scoring matrix is implemented and processing reports in the development environment. The offline-first mobile PWA is in active development with core reporting functionality complete and sync architecture designed. Saveable Site Analysis sessions enabling cross-team collaboration have been recently deployed.</p>
+
+<h3>19. Evidence of Testing</h3>
+<p>Early-stage field simulation testing was conducted with 15 rangers and 2 sector commanders in a simulated reserve environment. Testing validated that AI-scored threat reporting effectively eliminated alert fatigue — commanders confirmed that pre-graded intelligence was operationally decisive. Simulated deployment exercises demonstrated 70–85% latency reduction versus paper-based baselines. Critically, testing revealed that offline-first architecture is non-negotiable: minor UI loading delays in dead zones immediately broke field adoption, directly informing the PWA-first development priority.</p>
+
+<!-- ═══════════════════════════════════ -->
+<!-- IX. TECHNICAL GAPS                  -->
+<!-- ═══════════════════════════════════ -->
+<h2><span class="section-num">IX.</span> Technical Gaps and Refinement Needs</h2>
+
+<h3>20. Planned Technical Refinement Activities</h3>
+<p class="word-count">Up to 200 words</p>
+
+<p><strong>ICE Algorithm Optimization:</strong> Current confidence scoring achieves approximately 65% accuracy in controlled testing. During TRC, we will train the scoring model against 5,000+ expert-validated sighting records from partner NGO historical datasets, iterating on weighting parameters for the 8-point heuristic matrix to reach the 80% accuracy target. Specific attention will focus on reducing false positives in forest-canopy environments where GPS accuracy degrades.</p>
+
+<p><strong>Offline Sync Stress Testing:</strong> The PWA sync architecture requires rigorous validation under real-world conditions including extended 48–72 hour dead-zone periods, payload compression under low-bandwidth edge cases, and conflict resolution when multiple rangers submit overlapping reports offline.</p>
+
+<p><strong>Environmental Heatmap Calibration:</strong> NDVI vegetation overlays and density heatmaps require calibration against ground-truth ecological survey data to ensure that visual intelligence presented to commanders accurately reflects actual habitat conditions rather than satellite imagery artifacts.</p>
+
+<p><strong>Usability Validation at Scale:</strong> Training 40 rangers across two cohorts will generate structured usability data — pre/post competency assessments will identify remaining UI friction points and validate whether non-technical operators can independently execute buffer analysis and interpret confidence-scored reports without external support.</p>
+
+<h3>21. Potential for Real-World Application</h3>
+<p class="word-count">Up to 150 words</p>
+
+<p>Terra's intended users are conservation NGOs managing protected forests, government wildlife authorities, and smallholder farming communities at forest-agriculture boundaries. In practice, rangers use the offline mobile app to log structured sightings during patrols; commanders use the Site Analysis dashboard to direct deployments; and community leaders receive early-warning proximity alerts when high-confidence animal movement is detected near crops or settlements.</p>
+
+<p>By reducing response latency by 70–85% and delivering pre-validated intelligence directly to non-technical operators, Terra enables reserves to shift from reactive "blind patrols" to predictive, resource-efficient conservation. For agrifood systems specifically, the early-warning capability directly reduces preventable crop destruction from large mammal incursions, protecting the 15–20% of yield currently lost annually. The platform's modular, region-configurable architecture positions it for scaling across diverse agrifood-wildlife conflict contexts throughout Sub-Saharan Africa and beyond.</p>
+
+<!-- ═══════════════════════════════════ -->
+<!-- X. INNOVATION AND ADDED VALUE       -->
+<!-- ═══════════════════════════════════ -->
+<h2><span class="section-num">X.</span> Innovation and Added Value</h2>
+<p class="word-count">Up to 100 words</p>
+
+<h3>22. Novelty of Approach</h3>
+<p>Terra is the first platform to embed automated AI threat validation directly at the data ingestion layer rather than post-hoc. Unlike passive aggregators requiring GIS expertise, Terra delivers pre-scored, commander-ready intelligence to non-technical frontline users, including farming community leaders, through an offline-capable interface.</p>
+
+<h3>23. Applied Advancement</h3>
+<p>The 8-point heuristic Confidence Engine converts unstructured field data into mathematically graded intelligence without human analyst intervention. Rigorous field validation during TRC will optimize scoring accuracy from 65% to 80%, establishing evidence-based readiness for operational deployment.</p>
+
+<h3>24. Transformative Potential</h3>
+<p>If validated, Terra could fundamentally shift conservation from reactive patrol models to predictive, intelligence-driven operations, simultaneously protecting endangered species and safeguarding smallholder agricultural yields at scale.</p>
+
+<!-- ═══════════════════════════════════ -->
+<!-- 25. FEASIBILITY AND RISK            -->
+<!-- ═══════════════════════════════════ -->
+<h3>25. Feasibility and Risk Assessment</h3>
+<p class="word-count">Up to 100 words</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Risk Factor</th>
+            <th>Probability</th>
+            <th>Impact (1-5)</th>
+            <th>Mitigation Strategy</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>ICE accuracy fails to reach 80% target within TRC timeline</td>
+            <td>Medium</td>
+            <td>4</td>
+            <td>Iterative retraining using expanding partner datasets; fallback to hybrid human-AI validation until threshold is reached</td>
+        </tr>
+        <tr>
+            <td>NGO partner onboarding delays due to institutional procurement cycles</td>
+            <td>Medium</td>
+            <td>3</td>
+            <td>Contracted outreach consultant facilitates early relationship building; parallel outreach to secondary partners</td>
+        </tr>
+        <tr>
+            <td>Offline sync data corruption under extended dead-zone conditions</td>
+            <td>Low</td>
+            <td>5</td>
+            <td>Payload integrity checksums and conflict-resolution logic tested exhaustively before live ranger deployment</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ═══════════════════════════════════ -->
+<!-- XI. EXPECTED OUTCOMES               -->
+<!-- ═══════════════════════════════════ -->
+<h2><span class="section-num">XI.</span> Expected Outcomes from TRC Participation</h2>
+<p class="word-count">Up to 100 words</p>
+
+<p>By TRC completion, Terra expects to achieve: ICE algorithm validated at ≥80% accuracy against expert-classified sighting datasets; offline PWA sync verified at zero data loss across 72-hour dead-zone simulations; 40 rangers trained with documented pre/post competency improvement in independent spatial analytics execution; 2 formal NGO pilot agreements signed, providing institutional validation; and 15,000 hectares of forested habitat under active intelligence-targeted surveillance. These outcomes collectively establish the technical and institutional evidence base required for transition to the Youth Food Lab operational piloting phase.</p>
+
+<!-- ═══════════════════════════════════ -->
+<!-- XII. REFERENCES                     -->
+<!-- ═══════════════════════════════════ -->
+<h2><span class="section-num">XII.</span> References</h2>
+
+<p class="ref">1.";"; T., Dickman, A., & Macdonald, D. W. (2021). Predictive models for human-wildlife conflict: Progress, challenges, and opportunities. <em>Nature Sustainability</em>, 4(12), 1034–1043. https://doi.org/10.1038/s41893-021-00753-z</p>
+
+<p class="ref">2. TRAFFIC. (2023). <em>Patrol effort analysis across Sub-Saharan African protected areas: Efficiency, coverage gaps, and recommendations</em>. TRAFFIC International.</p>
+
+<p class="ref">3. Food and Agriculture Organization of the United Nations. (2022). <em>The State of Food and Agriculture 2022: Leveraging automation in agriculture for transforming agrifood systems</em>. FAO. https://doi.org/10.4060/cb9479en</p>
+
+<p class="ref">4. Critchlow, R., Plumptre, A. J., Driciru, M., Rwetsiba, A., Stokes, E. J.,"; C., ... & Beale, C. M. (2015). Spatiotemporal trends of illegal activities from ranger-collected data in a Ugandan national park. <em>Conservation Biology</em>, 29(5), 1458–1470.</p>
+
+<p class="ref">5. Hahn, N., Mwakatobe, A., Konuche, J., de Souza, N.,"; R.,"; M., ... &"; J. (2017). Unmanned aerial vehicles mitigate human-elephant conflict on the borders of Tanzanian Parks. <em>Oryx</em>, 51(3), 513–516.</p>
+
+</body>
+</html>

@@ -106,6 +106,22 @@ const ReportDetailPage = (() => {
       });
     }
 
+    // Photo lightbox
+    const mediaWrap = document.getElementById('report-media-section');
+    if (mediaWrap && report.media_url) {
+      mediaWrap.addEventListener('click', () => {
+        const src = `/${report.media_url.replace(/^\/?/, '')}`;
+        const backdrop = document.createElement('div');
+        backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+        const img = document.createElement('img');
+        img.src = src;
+        img.style.cssText = 'max-width:92vw;max-height:88vh;border-radius:4px;box-shadow:0 0 60px rgba(0,0,0,0.9);';
+        backdrop.appendChild(img);
+        backdrop.addEventListener('click', () => backdrop.remove());
+        document.body.appendChild(backdrop);
+      });
+    }
+
     // AI brief panel — always render; backend returns 403 for Community tier
     fetchAndRenderAIBrief(report);
   }
@@ -255,6 +271,25 @@ const ReportDetailPage = (() => {
             </div>
             ${report.description || '<em style="color:var(--clr-text-muted)">No description provided.</em>'}
           </div>
+
+          <!-- Pictorial Evidence -->
+          ${report.media_url ? `
+          <div class="report-media" id="report-media-section">
+            <div class="report-media__label">Pictorial Evidence</div>
+            <div class="report-media__wrap">
+              <img
+                class="report-media__img"
+                src="/${report.media_url.replace(/^\/?/, '')}"
+                alt="Field evidence photo for ${report.species_name || 'sighting'}"
+                loading="lazy"
+                id="report-media-img"
+              />
+              <div class="report-media__overlay" id="report-media-overlay">
+                <div class="report-media__zoom-icon">⊕</div>
+              </div>
+            </div>
+          </div>
+          ` : ''}
 
           <!-- AI Field Brief (injected async by wireHeaderInteractivity) -->
           <div id="ai-brief-container"></div>
