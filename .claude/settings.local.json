@@ -9,7 +9,9 @@
       "Bash(\"C:/Program Files/PostgreSQL/18/bin/psql.exe\" --version)",
       "WebFetch(domain:github.com)",
       "Bash(xargs wc *)",
-      "Read(//c/c/Users/User/TERRA REPORT/**)"
+      "Read(//c/c/Users/User/TERRA REPORT/**)",
+      "Bash(git rm *)",
+      "Bash(git commit *)"
     ]
   }
 }
