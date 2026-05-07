@@ -351,11 +351,19 @@
     </p>
 
     <!-- Action -->
-    <a href="testing2.html" class="enter-btn">
+    <a href="terra.html" class="enter-btn">
       Initialize
     </a>
 
   </div>
+
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .catch(err => console.warn('[Terra SW] Registration failed:', err));
+    }
+  </script>
 
 </body>
 

@@ -14,7 +14,7 @@ const Sidebar = (() => {
       section: 'Overview',
       items: [
         { id: 'dashboard',     label: 'Dashboard',    icon: '■', permission: null },
-        { id: 'map',           label: 'Live Map',     icon: '○', permission: null },
+        { id: 'map',           label: 'Ops Console',  icon: '◉', permission: null },
       ],
     },
     {
@@ -30,6 +30,7 @@ const Sidebar = (() => {
       section: 'Analysis',
       items: [
         { id: 'site-analysis',         label: 'Site Analysis',  icon: '◈', permission: 'export_data' },
+        { id: 'test-site',             label: 'Test Site',      icon: '◎', permission: 'export_data' },
         { id: 'site-analysis--tracker', label: 'Animal Tracker', icon: '⟳', permission: 'export_data' },
         { id: 'site-analysis--data',   label: 'Upload Data',    icon: '↑', permission: 'export_data' },
         { id: 'analytics',             label: 'Analytics',      icon: '◆', permission: 'export_data' },

@@ -34,7 +34,8 @@ const Router = (() => {
         'site-analysis--tracker': { title: 'Animal Tracker', render: (c) => { SiteAnalysisPage.render(c, {}); setTimeout(() => { document.querySelector('.sa-dock__tab[data-panel="tracker"]')?.click(); }, 800); } },
         'site-analysis--data':    { title: 'Upload Data',    render: (c) => { SiteAnalysisPage.render(c, {}); setTimeout(() => { document.querySelector('.sa-dock__tab[data-panel="data"]')?.click(); }, 800); } },
         // Sidebar nav targets
-        'map': { title: 'Live Map', render: (c) => renderPlaceholder(c, '🗺️', 'Live Geospatial Map', 'Leaflet.js integration coming soon.') },
+        'map': { title: 'Ops Console', render: (c) => MapPage.render(c) },
+        'test-site': { title: 'Test Site', render: (c) => TestSitePage.render(c) },
         'analytics': { title: 'Analytics', render: (c) => AnalyticsPage.render(c) },
         'export': { title: 'Export Data', render: (c) => renderPlaceholder(c, '📤', 'Export Datasets', 'CSV / GeoJSON export coming soon.') },
         'users': { title: 'Manage Users', render: (c) => UsersPage.render(c) },
@@ -153,6 +154,14 @@ const Router = (() => {
         if (!container) {
             console.error('[ROUTER] Page content container not found!');
             return;
+        }
+
+        // Teardown map page if leaving it
+        if (pageId !== 'map') {
+            MapPage.destroy();
+            container.style.padding  = '';
+            container.style.overflow = '';
+            container.style.position = '';
         }
 
         // Scroll to top

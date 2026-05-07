@@ -13,14 +13,36 @@ const MapWidget = (() => {
     const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
     const ATTRIBUTION = '&copy; <a href="https://carto.com/">CARTO</a>';
 
-    /* ── Internal: build custom Leaflet HTML marker ──────────── */
-    function buildMarker(colorClass = 'brand') {
+    /* ── Internal: build reticle icon (corner-bracket targeting box) ── */
+    const RETICLE_COLORS = {
+        brand:   { stroke: 'rgba(255,255,255,0.85)', fill: 'rgba(255,255,255,0.07)' },
+        warning: { stroke: 'rgba(255,51,51,0.9)',    fill: 'rgba(255,40,40,0.09)'   },
+        accent:  { stroke: 'rgba(0,255,136,0.9)',    fill: 'rgba(0,255,120,0.07)'   },
+        report:  { stroke: 'rgba(102,204,255,0.9)',  fill: 'rgba(80,180,255,0.08)'  },
+    };
+
+    function buildMarker(colorClass = 'brand', size = 44) {
+        const s = size;
+        const h = s / 2;
+        const pad = 2;
+        const arm = s * 0.28;
+        const t = s * 0.025;
+        const c = RETICLE_COLORS[colorClass] || RETICLE_COLORS.brand;
+
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" style="display:block;overflow:visible">
+  <rect x="${pad}" y="${pad}" width="${s - pad * 2}" height="${s - pad * 2}" fill="${c.fill}"/>
+  <polyline points="${arm},${pad} ${pad},${pad} ${pad},${arm}" fill="none" stroke="${c.stroke}" stroke-width="${t}" stroke-linecap="square"/>
+  <polyline points="${s - arm},${pad} ${s - pad},${pad} ${s - pad},${arm}" fill="none" stroke="${c.stroke}" stroke-width="${t}" stroke-linecap="square"/>
+  <polyline points="${pad},${s - arm} ${pad},${s - pad} ${arm},${s - pad}" fill="none" stroke="${c.stroke}" stroke-width="${t}" stroke-linecap="square"/>
+  <polyline points="${s - pad},${s - arm} ${s - pad},${s - pad} ${s - arm},${s - pad}" fill="none" stroke="${c.stroke}" stroke-width="${t}" stroke-linecap="square"/>
+</svg>`;
+
         return L.divIcon({
-            className: '',
-            html: `<div class="map-pin map-pin--${colorClass}"></div>`,
-            iconSize: [18, 18],
-            iconAnchor: [9, 9],
-            popupAnchor: [0, -12],
+            className: 'terra-reticle-icon',
+            html: svg,
+            iconSize: [s, s],
+            iconAnchor: [h, h],
+            popupAnchor: [h, 0],
         });
     }
 
@@ -81,76 +103,6 @@ const MapWidget = (() => {
                     maxZoom: 19,
                     subdomains: 'abcd',
                 }).addTo(map);
-
-                const statusKey = (report?.validation_status || 'pending').toLowerCase();
-                const dateStr = new Date(report?.created_at || Date.now()).toLocaleString();
-                const coordStr = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-
-                // Primary sighting pin
-                L.marker([lat, lng], { icon: buildMarker('brand') })
-                    .addTo(map)
-                    .bindPopup(`
-                        <div class="terra-popup">
-                            <div class="terra-popup__header">
-                                <span class="terra-popup__species">${report?.species_name || 'Unknown Species'}</span>
-                                <span class="badge badge--${statusKey}">${report?.validation_status || 'PENDING'}</span>
-                            </div>
-                            <div class="terra-popup__body">
-                                <div class="terra-popup__row">
-                                    <span class="terra-popup__label">Coords</span>
-                                    <span class="terra-popup__value">${coordStr}</span>
-                                </div>
-                                <div class="terra-popup__row">
-                                    <span class="terra-popup__label">Date</span>
-                                    <span class="terra-popup__value">${dateStr}</span>
-                                </div>
-                                ${report?.region_id ? `
-                                <div class="terra-popup__row">
-                                    <span class="terra-popup__label">Region</span>
-                                    <span class="terra-popup__value">${report.region_id.slice(0, 8)}</span>
-                                </div>` : ''}
-                            </div>
-                        </div>
-                    `, { maxWidth: 280 });
-
-                // Observation radius circle (1 km default)
-                L.circle([lat, lng], {
-                    radius: 1000,
-                    color: '#b8f000',
-                    fillColor: '#b8f000',
-                    fillOpacity: 0.04,
-                    weight: 1,
-                    dashArray: '4 6',
-                    opacity: 0.5,
-                }).addTo(map);
-
-                // Nearby sighting markers (placeholder)
-                const nearbyMock = [
-                    { lat: lat + 0.008, lng: lng - 0.012, color: 'warning', label: 'Nearby sighting' },
-                    { lat: lat - 0.011, lng: lng + 0.009, color: 'accent',  label: 'Nearby sighting' },
-                ];
-
-                nearbyMock.forEach(pt => {
-                    L.marker([pt.lat, pt.lng], { icon: buildMarker(pt.color) })
-                        .addTo(map)
-                        .bindPopup(`
-                            <div class="terra-popup">
-                                <div class="terra-popup__header">
-                                    <span class="terra-popup__species">Nearby Sighting</span>
-                                </div>
-                                <div class="terra-popup__body">
-                                    <div class="terra-popup__row">
-                                        <span class="terra-popup__label">Coords</span>
-                                        <span class="terra-popup__value">${pt.lat.toFixed(5)}, ${pt.lng.toFixed(5)}</span>
-                                    </div>
-                                    <div class="terra-popup__row">
-                                        <span class="terra-popup__label">Type</span>
-                                        <span class="terra-popup__value">Cluster point</span>
-                                    </div>
-                                </div>
-                            </div>
-                        `, { maxWidth: 240 });
-                });
 
                 // Move attribution to bottom-left to avoid crowding actions
                 map.attributionControl.setPrefix('');

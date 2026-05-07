@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- Corner brackets -->
+  <polyline stroke="#ffffff" stroke-width="1.5" fill="none" points="10,25 10,10 25,10"/>
+  <polyline stroke="#ffffff" stroke-width="1.5" fill="none" points="95,10 110,10 110,25"/>
+  <polyline stroke="#ffffff" stroke-width="1.5" fill="none" points="10,95 10,110 25,110"/>
+  <polyline stroke="#ffffff" stroke-width="1.5" fill="none" points="95,110 110,110 110,95"/>
+  <!-- Center dot and ring -->
+  <circle fill="#ffffff" cx="60" cy="60" r="1.8"/>
+  <circle stroke="#ffffff" stroke-width="1" fill="none" opacity="0.6" cx="60" cy="60" r="8"/>
+  <!-- Confidence bar track -->
+  <rect stroke="#ffffff" stroke-width="0.8" fill="none" opacity="0.25" x="114" y="10" width="4" height="100" rx="1"/>
+  <!-- Fill ~72% from bottom -->
+  <rect fill="#ffffff" opacity="0.85" x="114" y="38" width="4" height="72" rx="1"/>
+  <!-- Tick marks -->
+  <line stroke="#ffffff" stroke-width="0.5" opacity="0.5" x1="112" y1="35" x2="114" y2="35"/>
+  <line stroke="#ffffff" stroke-width="0.5" opacity="0.5" x1="112" y1="60" x2="114" y2="114"/>
+  <line stroke="#ffffff" stroke-width="0.5" opacity="0.5" x1="112" y1="85" x2="114" y2="85"/>
+</svg>

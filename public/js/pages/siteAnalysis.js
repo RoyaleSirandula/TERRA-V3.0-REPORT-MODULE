@@ -19,30 +19,32 @@ const SiteAnalysisPage = (() => {
     let _heatmapLayer = null;
     let _bufferLayer = null;
     let _drawnItems = null;
-    let _activeMode = 'aesthetic';
+    let _activeMode = 'satellite';
 
     /* ── Animal Tracker State ────────────────────────────────── */
-    let _trackerLayer       = null;
-    let _trackerCanvas      = null;   // shared L.canvas() renderer
-    let _trackerData        = [];     // raw parsed fixes (decimated)
-    let _trackerByInd       = {};     // pre-grouped & pre-sorted by individual
-    let _trackerVisible     = true;
+    let _trackerLayer = null;
+    let _trackerCanvas = null;   // shared L.canvas() renderer
+    let _trackerData = [];     // raw parsed fixes (decimated)
+    let _trackerByInd = {};     // pre-grouped & pre-sorted by individual
+    let _trackerVisible = true;
     let _trackerIndividuals = {};
-    let _trackerIntensity   = 'speed'; // 'speed' | 'error' | 'time_gap'
-    let _trackerShowArrows  = true;
-    let _trackerShowNodes   = true;
+    let _trackerIntensity = 'speed'; // 'speed' | 'error' | 'time_gap'
+    let _trackerShowArrows = true;
+    let _trackerShowNodes = true;
     let _trackerShowHeatmap = false;
     // Playback: null = show all; otherwise ISO date ceiling
-    let _trackerPlayDate    = null;
-    let _trackerPlaying     = false;
-    let _trackerPlayTimer   = null;
-    let _trackerMinTs       = 0;
-    let _trackerMaxTs       = 0;
+    let _trackerPlayDate = null;
+    let _trackerPlaying = false;
+    let _trackerPlayTimer = null;
+    let _trackerMinTs = 0;
+    let _trackerMaxTs = 0;
+    let _trackerCsvPath = '/data/wild_pigs.csv';  // active tracker dataset path
+    let _trackerSessionId = 'sa-tracker-wild-pigs'; // which _ensure* to call after load
     let _pendingFlyTo = null;     // Queued flyTo once map is confirmed ready
 
     /* ── CSV / Portal Data Layer State ──────────────────────── */
-    let _csvLayer   = null;   // L.featureGroup for uploaded CSV points
-    let _csvRows    = [];     // parsed rows from active CSV
+    let _csvLayer = null;   // L.featureGroup for uploaded CSV points
+    let _csvRows = [];     // parsed rows from active CSV
     let _csvColumns = [];     // column names from header row
 
     /* ── GEE Layer State ─────────────────────────────────────── */
@@ -76,10 +78,10 @@ const SiteAnalysisPage = (() => {
      * session.  Once set, "Total Records" filters to this species inside the
      * buffer zone.  Both are null for fresh sessions with no report context.
      */
-    let _sessionReportId   = null;
-    let _sessionSpeciesId  = null;
+    let _sessionReportId = null;
+    let _sessionSpeciesId = null;
     let _sessionSpeciesName = null;
-    let _sessionRegionId   = null;  // Set when opened via a Report Detail region chip
+    let _sessionRegionId = null;  // Set when opened via a Report Detail region chip
 
     /*
      * _viewportSpeciesFilter — governs whether "Active Points" and
@@ -131,11 +133,11 @@ const SiteAnalysisPage = (() => {
      *              to the next coarser resolution instead of freezing the browser.
      */
     const GRID_RESOLUTIONS = {
-        fine:     { label: 'Fine',     cellSize: 0.001, display: '~100m',  maxCells: 300 },
-        standard: { label: 'Standard', cellSize: 0.005, display: '~500m',  maxCells: 400 },
-        medium:   { label: 'Medium',   cellSize: 0.010, display: '~1km',   maxCells: 500 },
-        coarse:   { label: 'Coarse',   cellSize: 0.025, display: '~2.5km', maxCells: 600 },
-        regional: { label: 'Regional', cellSize: 0.050, display: '~5km',   maxCells: Infinity },
+        fine: { label: 'Fine', cellSize: 0.001, display: '~100m', maxCells: 300 },
+        standard: { label: 'Standard', cellSize: 0.005, display: '~500m', maxCells: 400 },
+        medium: { label: 'Medium', cellSize: 0.010, display: '~1km', maxCells: 500 },
+        coarse: { label: 'Coarse', cellSize: 0.025, display: '~2.5km', maxCells: 600 },
+        regional: { label: 'Regional', cellSize: 0.050, display: '~5km', maxCells: Infinity },
     };
 
     /*
@@ -204,6 +206,7 @@ const SiteAnalysisPage = (() => {
             renderMapView(container, {});
         });
 
+        _seedWildebeestSession();
         renderSessionsList();
     }
 
@@ -262,7 +265,8 @@ const SiteAnalysisPage = (() => {
                     </div>
                 </div>
             </div>
-        `; };
+        `;
+        };
 
         let html = `<div class="sa-sessions-list">` + active.map(renderCard).join('') + `</div>`;
 
@@ -397,15 +401,15 @@ const SiteAnalysisPage = (() => {
                     geoJson.properties = geoJson.properties || {};
                     geoJson.properties._dbId = layer._dbId;
                 }
-                
+
                 let drawType = 'unknown';
                 if (layer instanceof L.Polygon) drawType = 'polygon';
                 else if (layer instanceof L.Polyline) drawType = 'polyline';
                 else if (layer instanceof L.Marker) drawType = 'marker';
-                
+
                 geoJson.properties = geoJson.properties || {};
                 geoJson.properties.drawType = drawType;
-                
+
                 drawnFeatures.push(geoJson);
             });
         }
@@ -421,7 +425,7 @@ const SiteAnalysisPage = (() => {
             // Persist the active resolution so opening this session restores the exact view
             gridResolution: _gridResolution,
             // Persist species context so "Total Records" restores to the same species filter
-            speciesId:   _sessionSpeciesId,
+            speciesId: _sessionSpeciesId,
             speciesName: _sessionSpeciesName,
             // Persist viewport species filter so Active Points / Density restore identically
             viewportSpeciesFilter: _viewportSpeciesFilter,
@@ -429,15 +433,15 @@ const SiteAnalysisPage = (() => {
                 grid: document.getElementById('layer-grid')?.checked ?? true,
                 tactical: document.getElementById('layer-tactical')?.checked ?? true,
                 sightings: document.getElementById('layer-sightings')?.checked ?? true,
-                heatmap: document.getElementById('layer-heatmap')?.checked ?? true,
-                geeVegetation:    document.getElementById('layer-gee-vegetation')?.checked    ?? false,
-                geeWater:         document.getElementById('layer-gee-water')?.checked         ?? false,
-                geeElevation:     document.getElementById('layer-gee-elevation')?.checked     ?? false,
-                geeLandCover:     document.getElementById('layer-gee-land-cover')?.checked    ?? false,
+                heatmap: document.getElementById('layer-heatmap')?.checked ?? false,
+                geeVegetation: document.getElementById('layer-gee-vegetation')?.checked ?? false,
+                geeWater: document.getElementById('layer-gee-water')?.checked ?? false,
+                geeElevation: document.getElementById('layer-gee-elevation')?.checked ?? false,
+                geeLandCover: document.getElementById('layer-gee-land-cover')?.checked ?? false,
                 geePrecipitation: document.getElementById('layer-gee-precipitation')?.checked ?? false,
-                geeTemperature:   document.getElementById('layer-gee-temperature')?.checked   ?? false,
-                geeNdviTrend:     document.getElementById('layer-gee-ndvi-trend')?.checked    ?? false,
-                geeHabitat:       document.getElementById('layer-gee-habitat')?.checked       ?? false
+                geeTemperature: document.getElementById('layer-gee-temperature')?.checked ?? false,
+                geeNdviTrend: document.getElementById('layer-gee-ndvi-trend')?.checked ?? false,
+                geeHabitat: document.getElementById('layer-gee-habitat')?.checked ?? false
             },
             timeline: { currentDate: _timeline.currentDate },
             drawnItems: drawnFeatures,
@@ -447,6 +451,164 @@ const SiteAnalysisPage = (() => {
                 lng: document.getElementById('buffer-lng')?.value
             }
         };
+    }
+
+    /* ── AI Targeting Reticle Icon ───────────────────────────────
+       Renders the corner-bracket reticle used in the drone feed
+       as a Leaflet divIcon. size = outer px dimension, color = stroke.
+
+       RETICLE COLOUR: change RETICLE_COLOR below.
+       Format: rgba(R, G, B, A) — A controls transparency (0=invisible, 1=solid).
+       Current: translucent grey at 70% opacity.
+    ── */
+    // ← RETICLE COLOUR for sighting markers: white
+    const RETICLE_COLOR = 'rgba(255, 255, 255, 0.85)';
+    // ← ORIGIN RETICLE COLOUR: neon-green for the report-assigned point
+    const ORIGIN_RETICLE_COLOR = 'rgba(184, 240, 0, 1.0)';
+
+    function createReticleIcon(size, color) {
+        const s = size;
+        const h = s / 2;
+        const pad = 2;
+        const arm = s * 0.28;
+        const t = s * 0.025;
+        const col = color || RETICLE_COLOR;
+
+        // Derive a translucent fill from the stroke colour
+        const fillCol = col.startsWith('rgba')
+            ? col.replace(/[\d.]+\)$/, '0.07)')
+            : col.replace('rgb(', 'rgba(').replace(')', ', 0.07)');
+
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" style="display:block;overflow:visible">
+  <!-- Translucent fill -->
+  <rect x="${pad}" y="${pad}" width="${s - pad * 2}" height="${s - pad * 2}" fill="${fillCol}"/>
+  <!-- Corner brackets (no crosshairs, no center dot) -->
+  <polyline points="${arm},${pad} ${pad},${pad} ${pad},${arm}" fill="none" stroke="${col}" stroke-width="${t}" stroke-linecap="square"/>
+  <polyline points="${s - arm},${pad} ${s - pad},${pad} ${s - pad},${arm}" fill="none" stroke="${col}" stroke-width="${t}" stroke-linecap="square"/>
+  <polyline points="${pad},${s - arm} ${pad},${s - pad} ${arm},${s - pad}" fill="none" stroke="${col}" stroke-width="${t}" stroke-linecap="square"/>
+  <polyline points="${s - pad},${s - arm} ${s - pad},${s - pad} ${s - arm},${s - pad}" fill="none" stroke="${col}" stroke-width="${t}" stroke-linecap="square"/>
+</svg>`;
+
+        return L.divIcon({
+            className: 'sa-reticle-icon',
+            html: svg,
+            iconSize: [s, s],
+            iconAnchor: [h, h],
+            popupAnchor: [h, 0],
+        });
+    }
+
+
+    /* ── Reticle zoom: close view ↔ ring-fills-viewport ────────
+       If the current zoom is at or above MAX_CLOSE_ZOOM (i.e. we
+       are already in close-up mode), zoom OUT so the buffer ring
+       fills RING_VIEWPORT_FILL of the viewport height.
+       Otherwise zoom IN to MAX_CLOSE_ZOOM (closest view).
+       ← MAX_CLOSE_ZOOM: adjust closest altitude.
+       ← RING_VIEWPORT_FILL (0–1): fraction of viewport the ring
+         should fill on zoom-out.                               */
+    const MAX_CLOSE_ZOOM = 18;          // ← closest zoom level
+    const RING_VIEWPORT_FILL = 0.95;    // ← fraction of viewport height the ring fills on zoom-out
+
+    function _ringFitZoom(latlng) {
+        // Compute zoom where the buffer ring diameter = RING_VIEWPORT_FILL × viewport height.
+        // Formula: zoom = log2( (mapHeightPx * cos(lat) * EARTH_CIRC) /
+        //                       (256 * radiusMeters * 2 / RING_VIEWPORT_FILL) )
+        const radiusM = parseInt(document.getElementById('buffer-radius-slider')?.value || 5000, 10);
+        const mapH = _map.getSize().y;
+        const lat = (latlng.lat ?? latlng[0]) * Math.PI / 180;
+        // metres-per-pixel at zoom 0: 156543.03392 * cos(lat)
+        // pixels for ring diameter at zoom z: radiusM * 2 / (156543.03392 * cos(lat) / 2^z)
+        // solve for z where pixels = mapH * RING_VIEWPORT_FILL:
+        // 2^z = (mapH * RING_VIEWPORT_FILL * 156543.03392 * cos(lat)) / (radiusM * 2)
+        const mpp0 = 156543.03392 * Math.cos(lat);
+        const z = Math.log2((mapH * RING_VIEWPORT_FILL * mpp0) / (radiusM * 2));
+        return Math.max(1, Math.min(z, 18));
+    }
+
+    /* Zoom in to closest view, or zoom out so ring fills 95% of viewport.
+       Decision is based on current map zoom, not a toggled flag. */
+    function flyToZoom(latlng) {
+        const currentZoom = _map.getZoom();
+        const targetZoom = currentZoom >= MAX_CLOSE_ZOOM
+            ? _ringFitZoom(latlng)   // already close → zoom out to ring view
+            : MAX_CLOSE_ZOOM;        // far view → zoom in to closest
+        const dur = 1.0;
+        _map.flyTo(latlng, targetZoom, { animate: true, duration: dur, easeLinearity: 0.25 });
+        return dur * 1000;
+    }
+
+    /* ── Zoom grid cell to fill 95% of viewport ───────────────
+       Uses Leaflet's getBoundsZoom to compute the zoom where the
+       cell just fits, then subtracts a tiny offset so there is
+       always a sliver of context around it.                    */
+    function flyToGridBounds(bounds) {
+        // getBoundsZoom(bounds, inside=false) = largest zoom where bounds fit viewport
+        const fitZoom = _map.getBoundsZoom(bounds, false);
+        // Pull back ~0.4 stops so cell occupies ≈95 % of the smaller dimension
+        const targetZoom = Math.max(fitZoom - 0.4, 1);
+        const center = bounds.getCenter();
+        const dur = 1.0;
+        _map.flyTo(center, targetZoom, { animate: true, duration: dur, easeLinearity: 0.25 });
+        return dur * 1000;
+    }
+
+    /* ── Sequential flash of all visible grids, then reticles ──
+       Called after a flyTo settles. Collects every grid rect and
+       every marker currently in the map viewport, flashes grids
+       one-by-one, then markers one-by-one. Each flash completes
+       before the next starts.
+       ← FLASH DURATION: adjust flashDuration below (ms).       */
+    function flashAllVisible(flyDurationMs) {
+        const flashDuration = 400; // ← ms per element flash cycle
+
+        function flashEl(el, cb) {
+            if (!el) { cb(); return; }
+            el.style.transition = 'none';
+            el.style.opacity = '0.08';
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                el.style.transition = `opacity ${flashDuration}ms ease-out`;
+                el.style.opacity = '';
+                setTimeout(cb, flashDuration + 40);
+            }));
+        }
+
+        const delay = (flyDurationMs || 1000) + 120;
+        setTimeout(() => {
+            if (!_map) return;
+            const bounds = _map.getBounds();
+
+            // Collect visible grid SVG paths (Leaflet rectangle → SVG path element)
+            const gridEls = [];
+            if (_gridLayer) {
+                _gridLayer.eachLayer(layer => {
+                    if (!layer.getBounds) return; // skip polylines/dots
+                    try { if (!bounds.intersects(layer.getBounds())) return; } catch (_) { return; }
+                    const el = layer.getElement?.();
+                    if (el) gridEls.push(el);
+                });
+            }
+
+            // Collect visible reticle marker SVG elements
+            const markerEls = [];
+            [_sightingsLayer, _bufferLayer].forEach(grp => {
+                if (!grp) return;
+                grp.eachLayer(layer => {
+                    if (!layer.getLatLng) return;
+                    if (!bounds.contains(layer.getLatLng())) return;
+                    const el = layer.getElement?.()?.querySelector('svg');
+                    if (el) markerEls.push(el);
+                });
+            });
+
+            // Chain: grids then markers, one at a time
+            const all = [...gridEls, ...markerEls];
+            function next(i) {
+                if (i >= all.length) return;
+                flashEl(all[i], () => next(i + 1));
+            }
+            next(0);
+        }, delay);
     }
 
     function escapeHtml(str) {
@@ -490,7 +652,7 @@ const SiteAnalysisPage = (() => {
         if (!_map) return 0;
         const b = _map.getBounds();
         const latSpan = b.getNorth() - b.getSouth();
-        const lngSpan = b.getEast()  - b.getWest();
+        const lngSpan = b.getEast() - b.getWest();
         return Math.ceil(latSpan / cellSize) * Math.ceil(lngSpan / cellSize);
     }
 
@@ -565,13 +727,13 @@ const SiteAnalysisPage = (() => {
      * buffer radii up to 50 km.
      */
     function haversineDistanceMeters(lat1, lng1, lat2, lng2) {
-        const R      = 6371000;                          // Earth mean radius, metres
-        const toRad  = deg => deg * Math.PI / 180;
-        const dLat   = toRad(lat2 - lat1);
-        const dLng   = toRad(lng2 - lng1);
-        const a      = Math.sin(dLat / 2) ** 2
-                     + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2))
-                     * Math.sin(dLng / 2) ** 2;
+        const R = 6371000;                          // Earth mean radius, metres
+        const toRad = deg => deg * Math.PI / 180;
+        const dLat = toRad(lat2 - lat1);
+        const dLng = toRad(lng2 - lng1);
+        const a = Math.sin(dLat / 2) ** 2
+            + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2))
+            * Math.sin(dLng / 2) ** 2;
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
@@ -589,12 +751,12 @@ const SiteAnalysisPage = (() => {
      */
     function getViewportAreaKm2() {
         if (!_map) return 1;
-        const b          = _map.getBounds();
-        const latSpan    = b.getNorth() - b.getSouth();
-        const lngSpan    = b.getEast()  - b.getWest();
-        const centreLat  = (b.getNorth() + b.getSouth()) / 2;
-        const heightKm   = latSpan * 111.32;
-        const widthKm    = lngSpan * 111.32 * Math.abs(Math.cos(centreLat * Math.PI / 180));
+        const b = _map.getBounds();
+        const latSpan = b.getNorth() - b.getSouth();
+        const lngSpan = b.getEast() - b.getWest();
+        const centreLat = (b.getNorth() + b.getSouth()) / 2;
+        const heightKm = latSpan * 111.32;
+        const widthKm = lngSpan * 111.32 * Math.abs(Math.cos(centreLat * Math.PI / 180));
         return Math.max(heightKm * widthKm, 0.001);
     }
 
@@ -635,8 +797,8 @@ const SiteAnalysisPage = (() => {
         } else {
             const b = _map.getBounds();
             pool = _filteredReports.filter(r =>
-                r.latitude  >= b.getSouth() && r.latitude  <= b.getNorth() &&
-                r.longitude >= b.getWest()  && r.longitude <= b.getEast()
+                r.latitude >= b.getSouth() && r.latitude <= b.getNorth() &&
+                r.longitude >= b.getWest() && r.longitude <= b.getEast()
             );
         }
 
@@ -667,14 +829,14 @@ const SiteAnalysisPage = (() => {
      */
     function computeViewportStats() {
         const viewport = getViewportSightings();
-        const count    = viewport.length;
-        const density  = count / getViewportAreaKm2();
+        const count = viewport.length;
+        const density = count / getViewportAreaKm2();
 
-        const pointsEl      = document.getElementById('sa-val-points');
-        const densityEl     = document.getElementById('sa-val-density');
+        const pointsEl = document.getElementById('sa-val-points');
+        const densityEl = document.getElementById('sa-val-density');
         const densityDeltaEl = document.getElementById('sa-delta-density');
 
-        if (pointsEl)  pointsEl.textContent  = count;
+        if (pointsEl) pointsEl.textContent = count;
         if (densityEl) densityEl.textContent = density < 10
             ? density.toFixed(2)
             : density.toFixed(1);
@@ -711,9 +873,9 @@ const SiteAnalysisPage = (() => {
      *   #sa-delta-total  — small descriptor label (species + radius context)
      */
     function computeBufferRecords() {
-        const bufLat   = parseFloat(document.getElementById('buffer-lat')?.value);
-        const bufLng   = parseFloat(document.getElementById('buffer-lng')?.value);
-        const radius   = parseInt(document.getElementById('buffer-radius-slider')?.value || 5000, 10);
+        const bufLat = parseFloat(document.getElementById('buffer-lat')?.value);
+        const bufLng = parseFloat(document.getElementById('buffer-lng')?.value);
+        const radius = parseInt(document.getElementById('buffer-radius-slider')?.value || 5000, 10);
 
         // If a session species is set, narrow the candidate pool to that species only
         const pool = _sessionSpeciesId
@@ -744,9 +906,9 @@ const SiteAnalysisPage = (() => {
                 : 'ALL VALIDATED';
         }
 
-        const valEl   = document.getElementById('sa-val-total');
+        const valEl = document.getElementById('sa-val-total');
         const deltaEl = document.getElementById('sa-delta-total');
-        if (valEl)   valEl.textContent   = count;
+        if (valEl) valEl.textContent = count;
         if (deltaEl) deltaEl.textContent = label;
     }
 
@@ -765,7 +927,7 @@ const SiteAnalysisPage = (() => {
      * Passing null clears the filter (all-species mode).
      */
     function setSessionSpecies(speciesId, speciesName) {
-        _sessionSpeciesId   = speciesId  || null;
+        _sessionSpeciesId = speciesId || null;
         _sessionSpeciesName = speciesName || null;
         // Recompute immediately so the stat reflects the new species context
         computeBufferRecords();
@@ -795,7 +957,7 @@ const SiteAnalysisPage = (() => {
      *      immediately consistent with the new dropdown state.
      */
     function syncActivePointsFilter() {
-        const allBtn  = document.querySelector('#sa-ap-filter-btns [data-filter="all"]');
+        const allBtn = document.querySelector('#sa-ap-filter-btns [data-filter="all"]');
         const sameBtn = document.getElementById('sa-ap-btn-same');
         if (!allBtn || !sameBtn) return;
 
@@ -810,7 +972,7 @@ const SiteAnalysisPage = (() => {
         }
 
         // Reflect active state visually on the two buttons
-        allBtn.classList.toggle('active',  _viewportSpeciesFilter === 'all');
+        allBtn.classList.toggle('active', _viewportSpeciesFilter === 'all');
         sameBtn.classList.toggle('active', _viewportSpeciesFilter === 'same');
 
         // Recompute so Active Points and Sector Density immediately match
@@ -834,7 +996,7 @@ const SiteAnalysisPage = (() => {
      * sessions show the correct species immediately.
      */
     function populateSpeciesSelector() {
-        const sel  = document.getElementById('buffer-species-filter');
+        const sel = document.getElementById('buffer-species-filter');
         if (!sel || _reports.length === 0) return;
 
         /*
@@ -853,10 +1015,10 @@ const SiteAnalysisPage = (() => {
         const speciesMap = {};
         _reports.forEach(r => {
             const effectiveKey = r.species_id || r.species_name;
-            const displayName  = (window.SpeciesRegistry && r.species_id &&
-                                  window.SpeciesRegistry[r.species_id]?.common_name)
-                               || r.species_name
-                               || r.species_id;
+            const displayName = (window.SpeciesRegistry && r.species_id &&
+                window.SpeciesRegistry[r.species_id]?.common_name)
+                || r.species_name
+                || r.species_id;
             // Skip blank keys and the generic fallback produced by the DB COALESCE
             if (!effectiveKey || effectiveKey === 'Unknown Species') return;
             if (!speciesMap[effectiveKey]) {
@@ -946,29 +1108,83 @@ const SiteAnalysisPage = (() => {
      * inside the ring appear/disappear as the zone changes) and refreshes
      * both the buffer stat and Active Points count.
      */
+    /*
+     * BUFFER RING COLOURS — change these two values to restyle both rings.
+     * Format: any valid CSS/SVG colour string.
+     * ← BUFFER RING COLOUR (inner dashed + outer solid):
+     */
+    const BUFFER_RING_COLOR = 'rgba(255, 255, 255, 0.75)'; // translucent white
+    const BUFFER_RING_COLOR_FILL = 'rgba(130, 130, 130, 0.26)'; // very faint fill
+
+    /* Pixel radius of the animated overlay at a given zoom level */
+    function _bufferPxRadius(meters) {
+        if (!_map) return 0;
+        const center = _map.getCenter();
+        const mpp = 40075016.686 * Math.cos(center.lat * Math.PI / 180) / (256 * Math.pow(2, _map.getZoom()));
+        return meters / mpp;
+    }
+
+    function _buildBufferOverlayIcon(pxR) {
+        const outerR = pxR * 1.10; // 10% bigger for outer ring
+        const sz = Math.ceil(outerR * 2 + 8);
+        const cx = sz / 2;
+        return L.divIcon({
+            className: 'sa-buffer-overlay',
+            html: `<div class="sa-buffer-rings" style="width:${sz}px;height:${sz}px;">
+                <svg class="sa-buffer-ring sa-buffer-ring--inner" width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">
+                    <circle cx="${cx}" cy="${cx}" r="${pxR}" fill="none" stroke="${BUFFER_RING_COLOR}" stroke-width="1" stroke-dasharray="7 5"/>
+                </svg>
+                <svg class="sa-buffer-ring sa-buffer-ring--outer" width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">
+                    <circle cx="${cx}" cy="${cx}" r="${outerR}" fill="none" stroke="${BUFFER_RING_COLOR}" stroke-width="0.75"/>
+                    <!-- 3 o'clock marker -->
+                    <line x1="${cx + outerR - 5}" y1="${cx}" x2="${cx + outerR + 3}" y2="${cx}" stroke="${BUFFER_RING_COLOR}" stroke-width="1.5"/>
+                    <!-- 9 o'clock marker -->
+                    <line x1="${cx - outerR + 5}" y1="${cx}" x2="${cx - outerR - 3}" y2="${cx}" stroke="${BUFFER_RING_COLOR}" stroke-width="1.5"/>
+                </svg>
+            </div>`,
+            iconSize: [sz, sz],
+            iconAnchor: [cx, cx],
+        });
+    }
+
+    let _bufferOverlayMarker = null;
+
+    function _syncBufferOverlay(lat, lng, radius) {
+        const pxR = _bufferPxRadius(radius);
+        if (pxR < 4) return; // too small to show
+        const icon = _buildBufferOverlayIcon(pxR);
+        if (_bufferOverlayMarker) {
+            _bufferOverlayMarker.setLatLng([lat, lng]);
+            _bufferOverlayMarker.setIcon(icon);
+        } else {
+            _bufferOverlayMarker = L.marker([lat, lng], { icon, interactive: false, zIndexOffset: -100 }).addTo(_map);
+        }
+    }
+
     function updateBufferRing() {
         if (!_map) return;
 
-        const lat    = parseFloat(document.getElementById('buffer-lat')?.value);
-        const lng    = parseFloat(document.getElementById('buffer-lng')?.value);
+        const lat = parseFloat(document.getElementById('buffer-lat')?.value);
+        const lng = parseFloat(document.getElementById('buffer-lng')?.value);
         const radius = parseInt(document.getElementById('buffer-radius-slider')?.value || 5000, 10);
 
         if (isNaN(lat) || isNaN(lng)) {
-            // No valid centre — remove the ring if present
             if (_bufferRing) { _map.removeLayer(_bufferRing); _bufferRing = null; }
+            if (_bufferOverlayMarker) { _map.removeLayer(_bufferOverlayMarker); _bufferOverlayMarker = null; }
         } else if (_bufferRing) {
-            // Smooth in-place update: Leaflet just repositions the SVG path
             _bufferRing.setLatLng([lat, lng]);
             _bufferRing.setRadius(radius);
+            _syncBufferOverlay(lat, lng, radius);
         } else {
             _bufferRing = L.circle([lat, lng], {
                 radius,
-                color: '#E31B23',
-                weight: 1.5,
-                dashArray: '8, 6',
-                fillColor: '#E31B23',
-                fillOpacity: 0.04
+                color: BUFFER_RING_COLOR,
+                weight: 1,
+                dashArray: '7, 5',
+                fillColor: BUFFER_RING_COLOR_FILL,
+                fillOpacity: 1,
             }).addTo(_map);
+            _syncBufferOverlay(lat, lng, radius);
         }
 
         // Keep dots, buffer-zone stat, and Active Points count in sync
@@ -990,14 +1206,18 @@ const SiteAnalysisPage = (() => {
         _container = container;
 
         // Reset session state for the new view so stale data never bleeds in.
-        _sessionReportId    = options.reportId  || null;
-        _sessionSpeciesId   = options.speciesId  || null;
+        _sessionReportId = options.reportId || null;
+        _sessionSpeciesId = options.speciesId || null;
         _sessionSpeciesName = options.speciesName || null;
-        _sessionRegionId    = options.regionId   || null;
+        _sessionRegionId = options.regionId || null;
 
         // Restore viewport species filter from session, or default to 'all'
         // for every fresh session so the dropdown starts in a clean state.
         _viewportSpeciesFilter = options.viewportSpeciesFilter || 'all';
+
+        // Tracker dataset: use session-specified path or fall back to wild pigs
+        _trackerCsvPath = options.trackerCsvPath || '/data/wild_pigs.csv';
+        _trackerSessionId = options.trackerSessionId || 'sa-tracker-wild-pigs';
 
         // Store flyTo target before the map exists
         if (options.lat != null && options.lng != null) {
@@ -1026,17 +1246,17 @@ const SiteAnalysisPage = (() => {
                 <div style="display:flex;align-items:center;gap:var(--sp-5);">
                     <button class="sa-back-btn" id="btn-back-dashboard" title="Back to Sessions">← Sessions</button>
                     ${options.reportId
-                        ? `<button class="sa-back-btn sa-back-btn--report" id="btn-back-report"
+                ? `<button class="sa-back-btn sa-back-btn--report" id="btn-back-report"
                                    title="Back to originating report">← Report</button>`
-                        : ''}
+                : ''}
                     <div class="sa-header__title">Site Analysis // Tactical Overview</div>
                 </div>
                 <div class="sa-header__right">
                     <div class="sa-header__meta" id="sa-meta">
                         ${options.reportId
-                            ? `Origin: Report ${String(options.reportId).slice(0, 8)}${_sessionRegionId ? ` · ${escapeHtml(_sessionRegionId)}` : ''}`
-                            : 'Mara-Serengeti Sector'
-                        }
+                ? `Origin: Report ${String(options.reportId).slice(0, 8)}${_sessionRegionId ? ` · ${escapeHtml(_sessionRegionId)}` : ''}`
+                : 'Mara-Serengeti Sector'
+            }
                     </div>
                     <button class="sa-session-save" id="btn-save-session">SAVE SESSION</button>
                 </div>
@@ -1058,14 +1278,18 @@ const SiteAnalysisPage = (() => {
                 <span>Region context: <strong>${escapeHtml(_sessionRegionId)}</strong> — navigated from Report Detail</span>
             </div>` : ''}
 
+            <div class="sa-body">
             <div class="sa-map-wrap">
                 <div id="sa-map"></div>
 
-
-                <div class="sa-overlay-bottom-left">
-                    <div class="sa-compass">N</div>
-                    <div class="sa-scale-bar"></div>
+                <!-- Timeline strip — hidden by default, toggled via TIME tab -->
+                <div class="sa-timeline" id="sa-timeline">
+                    <button class="sa-btn" id="btn-timeline-play">PLAY</button>
+                    <div class="sa-timeline-val" id="timeline-val-start">--</div>
+                    <input type="range" id="timeline-slider" min="0" max="100" value="100" step="1" />
+                    <div class="sa-timeline-val" id="timeline-val-current" style="color:#E31B23">--</div>
                 </div>
+            </div><!-- /sa-map-wrap -->
 
                 <!-- ══ RIGHT DOCK: tab strip + sliding drawer ══ -->
                 <div class="sa-dock" id="sa-dock">
@@ -1100,7 +1324,7 @@ const SiteAnalysisPage = (() => {
                                 <label for="layer-sightings">Sightings Data</label>
                             </div>
                             <div class="sa-layer-item">
-                                <input type="checkbox" id="layer-heatmap" ${options.layers?.heatmap !== false ? 'checked' : ''}>
+                                <input type="checkbox" id="layer-heatmap" ${options.layers?.heatmap === true ? 'checked' : ''}>
                                 <label for="layer-heatmap">Density Heatmap</label>
                             </div>
                             <div class="sa-layer-item">
@@ -1377,14 +1601,7 @@ const SiteAnalysisPage = (() => {
 
                 </div><!-- /dock -->
 
-                <!-- Timeline strip — hidden by default, toggled via TIME tab -->
-                <div class="sa-timeline" id="sa-timeline">
-                    <button class="sa-btn" id="btn-timeline-play">PLAY</button>
-                    <div class="sa-timeline-val" id="timeline-val-start">--</div>
-                    <input type="range" id="timeline-slider" min="0" max="100" value="100" step="1" />
-                    <div class="sa-timeline-val" id="timeline-val-current" style="color:#E31B23">--</div>
-                </div>
-            </div>
+            </div><!-- /sa-body -->
 
             <div class="sa-analysis-panel">
                 <!-- Sector Density: sightings per km² in current viewport.
@@ -1455,7 +1672,7 @@ const SiteAnalysisPage = (() => {
                          onclick="(function(src){var b=document.createElement('div');b.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';var i=document.createElement('img');i.src=src;i.style.cssText='max-width:92vw;max-height:88vh;border-radius:4px;box-shadow:0 0 60px rgba(0,0,0,0.9);';b.appendChild(i);b.addEventListener('click',function(){b.remove();});document.body.appendChild(b);})(this.src)" />
                 </div>` : ''}
                 <div class="terra-popup__header">
-                    <span class="terra-popup__species" style="color:var(--clr-danger);">Report Origin</span>
+                    <span class="terra-popup__species">Report Origin</span>
                 </div>
                 <div class="terra-popup__body">
                     ${speciesName ? `
@@ -1487,7 +1704,8 @@ const SiteAnalysisPage = (() => {
 
             if (_map) { _map.remove(); _map = null; }
             _originMarker = null;
-            _bufferRing   = null;
+            _bufferRing = null;
+            _bufferOverlayMarker = null;
             _trackerCanvas = null; // Reset canvas renderer on map reinit
 
             _map = L.map('sa-map', {
@@ -1547,8 +1765,7 @@ const SiteAnalysisPage = (() => {
 
                 // ── Apply flyTo from pending options ──────────────
                 if (_pendingFlyTo) {
-                    const { lat, lng, zoom, reportId } = _pendingFlyTo;
-                    _map.setView([lat, lng], zoom || 14);
+                    const { lat, lng, reportId } = _pendingFlyTo;
 
                     /*
                      * Origin highlight marker — species is not known yet at this
@@ -1557,25 +1774,28 @@ const SiteAnalysisPage = (() => {
                      * reference via _originMarker and will call _updatePopup() once
                      * the species is resolved, filling in the species row.
                      */
-                    _originMarker = L.circleMarker([lat, lng], {
-                        radius: 16,
-                        color: '#E31B23',
-                        weight: 3,
-                        fillColor: '#E31B23',
-                        fillOpacity: 0.2
-                    });
-                    // Attach an update helper that re-sets popup content without
-                    // recreating the marker or losing its position on the map.
-                    _originMarker._mediaUrl = null; // populated by loadData() once report is found
-                    _originMarker._updatePopup = (speciesName) => {
-                        _originMarker.setPopupContent(
-                            buildOriginPopupHtml(lat, lng, reportId, speciesName, _originMarker._mediaUrl)
-                        );
-                    };
-                    _originMarker
-                        .bindPopup(buildOriginPopupHtml(lat, lng, reportId, null, null), { maxWidth: 260 })
-                        .addTo(_bufferLayer)
-                        .openPopup();
+                    // Neon-green icon for the report-assigned origin point
+                    _originMarker = L.marker([lat, lng], { icon: createReticleIcon(44, ORIGIN_RETICLE_COLOR) });
+                    _originMarker._mediaUrl = null;
+                    _originMarker.addTo(_bufferLayer);
+
+                    // Fly smoothly to closest view and double-flash reticle
+                    const flyDur = 1200;
+                    _map.flyTo([lat, lng], MAX_CLOSE_ZOOM, { animate: true, duration: flyDur / 1000, easeLinearity: 0.25 });
+                    setTimeout(() => {
+                        const el = _originMarker?.getElement?.()?.querySelector('svg');
+                        if (!el) return;
+                        const flash = (cb) => {
+                            el.style.transition = 'none';
+                            el.style.opacity = '0.06';
+                            requestAnimationFrame(() => requestAnimationFrame(() => {
+                                el.style.transition = 'opacity 320ms ease-out';
+                                el.style.opacity = '';
+                                setTimeout(cb, 400);
+                            }));
+                        };
+                        flash(() => flash(() => {}));
+                    }, flyDur + 120);
 
                     _pendingFlyTo = null;
                 } else if (sessionOptions.viewport) {
@@ -1606,14 +1826,14 @@ const SiteAnalysisPage = (() => {
                     // Restore GEE layers from session
                     if (sessionOptions.layers) {
                         const geeMapping = {
-                            geeVegetation:    'vegetation',
-                            geeWater:         'water',
-                            geeElevation:     'elevation',
-                            geeLandCover:     'land-cover',
+                            geeVegetation: 'vegetation',
+                            geeWater: 'water',
+                            geeElevation: 'elevation',
+                            geeLandCover: 'land-cover',
                             geePrecipitation: 'precipitation',
-                            geeTemperature:   'temperature',
-                            geeNdviTrend:     'ndvi-trend',
-                            geeHabitat:       'habitat'
+                            geeTemperature: 'temperature',
+                            geeNdviTrend: 'ndvi-trend',
+                            geeHabitat: 'habitat'
                         };
                         Object.entries(geeMapping).forEach(([optKey, geeType]) => {
                             if (sessionOptions.layers[optKey]) {
@@ -1649,7 +1869,7 @@ const SiteAnalysisPage = (() => {
                             try {
                                 const type = geoJson.properties?.drawType || 'unknown';
                                 const gjLayer = L.geoJSON(geoJson);
-                                
+
                                 gjLayer.eachLayer(layer => {
                                     if (type === 'marker') {
                                         layer.setIcon(L.divIcon({ className: 'sa-draw-marker', html: '<div class="sa-draw-marker-inner"></div>' }));
@@ -1662,12 +1882,12 @@ const SiteAnalysisPage = (() => {
                                     if (geoJson.properties && geoJson.properties._dbId) {
                                         layer._dbId = geoJson.properties._dbId;
                                     }
-                                    
+
                                     _drawnItems.addLayer(layer);
                                     lastGeometry = geoJson.geometry;
                                     lastType = type;
                                 });
-                            } catch(err) {
+                            } catch (err) {
                                 console.error('[SiteAnalysis] Failed to restore drawn item:', err);
                             }
                         });
@@ -1684,7 +1904,15 @@ const SiteAnalysisPage = (() => {
                 updateBufferRing();
             }, 550);
 
-            _map.on('moveend zoomend', () => renderLayers());
+            _map.on('moveend zoomend', () => {
+                renderLayers();
+                // Resize animated overlay rings to match current zoom
+                if (_bufferRing) {
+                    const c = _bufferRing.getLatLng();
+                    const r = _bufferRing.getRadius();
+                    _syncBufferOverlay(c.lat, c.lng, r);
+                }
+            });
 
             _map.on(L.Draw.Event.CREATED, async function (event) {
                 const layer = event.layer;
@@ -1892,25 +2120,27 @@ const SiteAnalysisPage = (() => {
 
         // Load animal tracker data from CSV
         try {
-            const csvText = await fetch('/data/wild_pigs.csv').then(r => r.text());
-            const lines   = csvText.trim().split('\n');
-            const hdrs    = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-            const col     = name => hdrs.indexOf(name);
+            const csvText = await fetch(_trackerCsvPath).then(r => r.text());
+            const lines = csvText.trim().split('\n');
+            const hdrs = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            const col = name => hdrs.indexOf(name);
             const iTs = col('timestamp'), iLat = col('location-lat'), iLng = col('location-long');
             const iInd = col('individual-local-identifier'), iErr = col('location-error-numerical');
             const iTag = col('tag-local-identifier'), iSen = col('sensor-type');
 
             _trackerData = [];
             for (let i = 1; i < lines.length; i++) {
-                const c   = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                const c = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
                 const lat = parseFloat(c[iLat]), lng = parseFloat(c[iLng]);
                 if (isNaN(lat) || isNaN(lng)) continue;
                 const ts = new Date(c[iTs]).getTime();
                 if (isNaN(ts)) continue;
-                _trackerData.push({ lat, lng, ts,
+                _trackerData.push({
+                    lat, lng, ts,
                     individual: c[iInd] || 'unknown',
                     error: parseFloat(c[iErr]) || 0,
-                    tag_id: c[iTag] || '', sensor: c[iSen] || '' });
+                    tag_id: c[iTag] || '', sensor: c[iSen] || ''
+                });
             }
 
             // Pre-group and sort by individual
@@ -1931,7 +2161,11 @@ const SiteAnalysisPage = (() => {
             inds.forEach(id => { _trackerIndividuals[id] = true; });
 
             // Create/update the tracker saved session so it appears on the Sessions page
-            _ensureTrackerSession();
+            if (_trackerSessionId === 'sa-tracker-wildebeest-mara') {
+                _ensureWildebeestSession();
+            } else {
+                _ensureTrackerSession();
+            }
 
             populateTrackerPanel();
             renderTracker();
@@ -1941,7 +2175,7 @@ const SiteAnalysisPage = (() => {
                 const lats = _trackerData.map(d => d.lat);
                 const lngs = _trackerData.map(d => d.lng);
                 const bounds = [[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]];
-                setTimeout(() => { if (_map) { try { _map.fitBounds(bounds, { padding: [60, 60], maxZoom: 12 }); } catch (_) {} } }, 800);
+                setTimeout(() => { if (_map) { try { _map.fitBounds(bounds, { padding: [60, 60], maxZoom: 12 }); } catch (_) { } } }, 800);
             }
         } catch (e) {
             console.warn('[Tracker] CSV load failed:', e.message);
@@ -1951,10 +2185,10 @@ const SiteAnalysisPage = (() => {
     /* ══════════════ Layer Rendering ═══════════════════════════ */
     function renderLayers() {
         if (!_map) return;
-        const showGrid     = document.getElementById('layer-grid')?.checked;
+        const showGrid = document.getElementById('layer-grid')?.checked;
         const showTactical = document.getElementById('layer-tactical')?.checked;
         const showSightings = document.getElementById('layer-sightings')?.checked;
-        const showHeatmap  = document.getElementById('layer-heatmap')?.checked;
+        const showHeatmap = document.getElementById('layer-heatmap')?.checked;
 
         if (showGrid || showTactical) renderGrid(showGrid, showTactical);
         else _gridLayer.clearLayers();
@@ -2047,35 +2281,41 @@ const SiteAnalysisPage = (() => {
                     [latIdx * cellSize, lngIdx * cellSize],
                     [(latIdx + 1) * cellSize, (lngIdx + 1) * cellSize]
                 ];
+                /*
+                 * GRID COLOUR — translucent grey, matching the reticle and buffer ring.
+                 * ← GRID FILL COLOUR: change rgba values here. A = opacity (0–1).
+                 * Border matches fill colour at same transparency; opaque when cell is selected.
+                 */
+                const GRID_COLOR = `rgba(160,160,160,${(intensity * 0.55).toFixed(2)})`; // fill scales with density
+                const GRID_BORDER_COLOR = `rgba(160,160,160,${(intensity * 0.55).toFixed(2)})`; // border = same as fill by default
+                const GRID_BORDER_OPAQUE = 'rgba(160,160,160,0.90)';                            // border when cell selected
+
                 const rect = L.rectangle(bounds, {
-                    color: '#E31B23', weight: 1.2, fillColor: '#E31B23',
-                    fillOpacity: intensity, pane: 'gridPane', interactive: true, bubblingMouseEvents: false
+                    color: GRID_BORDER_COLOR, weight: 1, fillColor: GRID_COLOR,
+                    fillOpacity: 1, pane: 'gridPane', interactive: true, bubblingMouseEvents: false
                 });
 
-                rect.on('mouseover', function () { this.setStyle({ fillOpacity: Math.min(intensity + 0.35, 0.85), weight: 2, color: '#ff0000' }); });
-                rect.on('mouseout', function () { this.setStyle({ fillOpacity: intensity, weight: 1.2, color: '#E31B23' }); });
+                let _selected = false;
+                rect.on('click', function (e) {
+                    L.DomEvent.stopPropagation(e);
+                    _selected = !_selected;
+                    this.setStyle(_selected
+                        ? { color: GRID_BORDER_OPAQUE, weight: 1.5 }
+                        : { color: GRID_BORDER_COLOR, weight: 1 }
+                    );
+                    const flyMs = flyToGridBounds(rect.getBounds());
+                    flashAllVisible(flyMs);
+                });
+                rect.on('mouseover', function () {
+                    if (!_selected) this.setStyle({ fillColor: `rgba(160,160,160,${Math.min(intensity * 0.55 + 0.25, 0.8).toFixed(2)})` });
+                });
+                rect.on('mouseout', function () {
+                    if (!_selected) this.setStyle({ fillColor: GRID_COLOR });
+                });
 
                 const species = [...new Set(reports.map(r =>
                     (window.SpeciesRegistry && window.SpeciesRegistry[r.species_id]?.common_name) || r.species_id || 'Unknown'
                 ))];
-                rect.bindPopup(`
-                    <div class="terra-popup">
-                        <div class="terra-popup__header">
-                            <span class="terra-popup__species">Grid Cell</span>
-                            <span class="terra-popup__value terra-popup__value--highlight">${count} sighting${count !== 1 ? 's' : ''}</span>
-                        </div>
-                        <div class="terra-popup__body">
-                            <div class="terra-popup__row">
-                                <span class="terra-popup__label">Intensity</span>
-                                <span class="terra-popup__value terra-popup__value--highlight">${(intensity * 100).toFixed(0)}%</span>
-                            </div>
-                            ${species.length ? `<div class="terra-popup__row">
-                                <span class="terra-popup__label">Species</span>
-                                <span class="terra-popup__value">${species.slice(0, 3).join(', ')}</span>
-                            </div>` : ''}
-                        </div>
-                    </div>
-                `, { maxWidth: 260 });
                 rect.addTo(_gridLayer);
             });
 
@@ -2148,37 +2388,12 @@ const SiteAnalysisPage = (() => {
         }
 
         pool.forEach(r => {
-            const marker = L.circleMarker([r.latitude, r.longitude], {
-                radius: 4, fillColor: '#E31B23', color: '#000',
-                weight: 1, opacity: 0.8, fillOpacity: 0.8
-            });
+            const marker = L.marker([r.latitude, r.longitude], { icon: createReticleIcon(44, RETICLE_COLOR) });
             // Prefer the API's COALESCE species_name (handles free-text entries)
             const speciesDisplay = r.species_name
                 || (window.SpeciesRegistry && window.SpeciesRegistry[r.species_id]?.common_name)
                 || r.species_id || 'Unknown';
             const sImgUrl = r.media_url ? '/' + r.media_url.replace(/^\//, '') : null;
-            marker.bindPopup(`
-                <div class="terra-popup" style="min-width:180px;">
-                    ${sImgUrl ? `<div class="terra-popup__photo-stem"><img src="${sImgUrl}" alt="Evidence" class="terra-popup__photo" onclick="(function(src){var b=document.createElement('div');b.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';var i=document.createElement('img');i.src=src;i.style.cssText='max-width:92vw;max-height:88vh;border-radius:4px;box-shadow:0 0 60px rgba(0,0,0,0.9);';b.appendChild(i);b.addEventListener('click',function(){b.remove();});document.body.appendChild(b);})(this.src)" /></div>` : ''}
-                    <div class="terra-popup__header">
-                        <span class="terra-popup__species">${escapeHtml(speciesDisplay)}</span>
-                    </div>
-                    <div class="terra-popup__body">
-                        <div class="terra-popup__row">
-                            <span class="terra-popup__label">Date</span>
-                            <span class="terra-popup__value">${new Date(r.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <div class="terra-popup__row">
-                            <span class="terra-popup__label">Tier</span>
-                            <span class="terra-popup__value">${r.sensitivity_tier || '—'}</span>
-                        </div>
-                        <div class="terra-popup__row">
-                            <span class="terra-popup__label">Confidence</span>
-                            <span class="terra-popup__value terra-popup__value--highlight">${r.ai_confidence_score != null ? r.ai_confidence_score + '%' : 'N/A'}</span>
-                        </div>
-                    </div>
-                </div>
-            `, { maxWidth: 260 });
             marker.addTo(_sightingsLayer);
         });
     }
@@ -2205,17 +2420,17 @@ const SiteAnalysisPage = (() => {
      */
     function buildTimeSeriesChart(data) {
         if (!Array.isArray(data) || data.length === 0) return '';
-        const MONTH_LABELS = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+        const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
         const vals = data.map(d => d.ndvi);
         const maxVal = Math.max(...vals.filter(v => v != null), 0.01);
 
         const bars = vals.map((val, i) => {
-            const pct  = val != null ? Math.round((val / maxVal) * 100) : 0;
+            const pct = val != null ? Math.round((val / maxVal) * 100) : 0;
             const color = val == null ? '#333'
                 : val > 0.5 ? '#56a800'
-                : val > 0.3 ? '#b8f000'
-                : val > 0.1 ? '#fcd163'
-                : '#CE7E45';
+                    : val > 0.3 ? '#b8f000'
+                        : val > 0.1 ? '#fcd163'
+                            : '#CE7E45';
             const tip = val != null ? val.toFixed(3) : 'N/A';
             return `<div class="sa-chart-col">
                 <div class="sa-chart-bar" style="height:${pct}%;background:${color};" title="${MONTH_LABELS[i]}: ${tip}"></div>
@@ -2246,15 +2461,15 @@ const SiteAnalysisPage = (() => {
                 const trendRows = Array.isArray(data.trend) && data.trend.length > 0
                     ? data.trend.map(t =>
                         `<p><span>${t.date}:</span><span class="val">${t.value != null ? parseFloat(t.value).toFixed(3) : '—'}</span></p>`
-                      ).join('')
+                    ).join('')
                     : '';
 
                 const chartHtml = tsData ? buildTimeSeriesChart(tsData) : '';
 
                 showResults('NDVI Zonal Stats', `
                     <p><span>Mean NDVI:</span><span class="val">${data.mean ?? '—'}</span></p>
-                    <p><span>Min NDVI:</span><span class="val">${data.min  ?? '—'}</span></p>
-                    <p><span>Max NDVI:</span><span class="val">${data.max  ?? '—'}</span></p>
+                    <p><span>Min NDVI:</span><span class="val">${data.min ?? '—'}</span></p>
+                    <p><span>Max NDVI:</span><span class="val">${data.max ?? '—'}</span></p>
                     ${data.stdDev ? `<p><span>Std Dev:</span><span class="val">${data.stdDev}</span></p>` : ''}
                     <p><span>6mo Δ:</span><span class="val">${changeStr}</span></p>
                     ${chartHtml}
@@ -2300,7 +2515,7 @@ const SiteAnalysisPage = (() => {
     function openDockTab(panelId) {
         const drawer = document.getElementById('sa-dock-drawer');
         if (!drawer) return;
-        const tabs   = document.querySelectorAll('.sa-dock__tab[data-panel]');
+        const tabs = document.querySelectorAll('.sa-dock__tab[data-panel]');
         const panels = document.querySelectorAll('.sa-dock__panel');
         const targetId = `sa-panel-${panelId}`;
         const alreadyOpen = drawer.classList.contains('open')
@@ -2315,6 +2530,8 @@ const SiteAnalysisPage = (() => {
             tabs.forEach(t => t.classList.toggle('active', t.dataset.panel === panelId));
             panels.forEach(p => p.classList.toggle('active', p.id === targetId));
         }
+        // Invalidate after 2s transition completes so Leaflet recomputes map dimensions
+        setTimeout(() => _map?.invalidateSize({ animate: false }), 2050);
     }
 
     function showResultsLoading() {
@@ -2358,8 +2575,8 @@ const SiteAnalysisPage = (() => {
     // Higher value = lighter/brighter shade
     function _intensityColor(t) {
         const r = Math.round(122 + t * (255 - 122));
-        const g = Math.round(46  + t * (232 - 46));
-        const b = Math.round(0   + t * (176 - 0));
+        const g = Math.round(46 + t * (232 - 46));
+        const b = Math.round(0 + t * (176 - 0));
         return `rgb(${r},${g},${b})`;
     }
 
@@ -2381,7 +2598,7 @@ const SiteAnalysisPage = (() => {
         track.forEach((fix, i) => {
             if (i === 0) { fix._iv = 0; return; }
             const prev = track[i - 1];
-            const dt   = (fix.ts - prev.ts) / 1000;
+            const dt = (fix.ts - prev.ts) / 1000;
             if (_trackerIntensity === 'speed') {
                 fix._iv = dt > 0 ? _haversineM(prev.lat, prev.lng, fix.lat, fix.lng) / dt : 0;
             } else if (_trackerIntensity === 'error') {
@@ -2410,28 +2627,115 @@ const SiteAnalysisPage = (() => {
         })() : { lat: 34.7, lng: -82.8 };
 
         const session = {
-            id:          TRACKER_SESSION_ID,
-            name:        'Wild Pigs — Clemson Forest Tracker',
-            savedAt:     existing?.savedAt || new Date().toISOString(),
-            isStarred:   existing?.isStarred ?? true,
-            isArchived:  false,
+            id: TRACKER_SESSION_ID,
+            name: 'Wild Pigs — Clemson Forest Tracker',
+            savedAt: existing?.savedAt || new Date().toISOString(),
+            isStarred: existing?.isStarred ?? true,
+            isArchived: false,
             isTrackerSession: true,
-            viewport:    { lat: bounds.lat, lng: bounds.lng, zoom: 11 },
-            mode:        'satellite',
+            viewport: { lat: bounds.lat, lng: bounds.lng, zoom: 11 },
+            mode: 'satellite',
             gridResolution: 'standard',
-            speciesId:   null, speciesName: null,
+            speciesId: null, speciesName: null,
             viewportSpeciesFilter: 'all',
-            layers:      { grid: false, tactical: false, sightings: false, heatmap: false,
-                           geeVegetation: false, geeWater: false, geeElevation: false,
-                           geeLandCover: false, geePrecipitation: false, geeTemperature: false,
-                           geeNdviTrend: false, geeHabitat: false },
-            timeline:    { currentDate: _trackerMaxTs },
-            drawnItems:  [], buffer: { radius: 5000, lat: '', lng: '' },
+            layers: {
+                grid: false, tactical: false, sightings: false, heatmap: false,
+                geeVegetation: false, geeWater: false, geeElevation: false,
+                geeLandCover: false, geePrecipitation: false, geeTemperature: false,
+                geeNdviTrend: false, geeHabitat: false
+            },
+            timeline: { currentDate: _trackerMaxTs },
+            drawnItems: [], buffer: { radius: 5000, lat: '', lng: '' },
             trackerMeta: {
                 individuals: Object.keys(_trackerByInd).length,
-                fixes:       _trackerData.length,
-                minTs:       _trackerMinTs,
-                maxTs:       _trackerMaxTs,
+                fixes: _trackerData.length,
+                minTs: _trackerMinTs,
+                maxTs: _trackerMaxTs,
+            }
+        };
+
+        if (existing) {
+            Object.assign(existing, session);
+        } else {
+            sessions.unshift(session);
+        }
+        saveSessions(sessions);
+    }
+
+    // Seed the wildebeest session card on the dashboard without requiring CSV load
+    function _seedWildebeestSession() {
+        const TRACKER_SESSION_ID = 'sa-tracker-wildebeest-mara';
+        const sessions = loadSessions();
+        if (sessions.find(s => s.id === TRACKER_SESSION_ID)) return; // already exists
+        const session = {
+            id: TRACKER_SESSION_ID,
+            name: 'White-bearded Wildebeest — Greater Mara Ecosystem',
+            savedAt: new Date().toISOString(),
+            isStarred: true,
+            isArchived: false,
+            isTrackerSession: true,
+            trackerCsvPath: '/data/wildebeest_mara.csv',
+            trackerSessionId: TRACKER_SESSION_ID,
+            viewport: { lat: -1.35, lng: 35.2, zoom: 10 },
+            mode: 'satellite',
+            gridResolution: 'standard',
+            speciesId: null, speciesName: null,
+            viewportSpeciesFilter: 'all',
+            layers: {
+                grid: false, tactical: false, sightings: false, heatmap: false,
+                geeVegetation: false, geeWater: false, geeElevation: false,
+                geeLandCover: false, geePrecipitation: false, geeTemperature: false,
+                geeNdviTrend: false, geeHabitat: false
+            },
+            drawnItems: [], buffer: { radius: 5000, lat: '', lng: '' },
+            trackerMeta: { individuals: 10, fixes: 43347, minTs: 1489370400000, maxTs: 1616284800000 }
+        };
+        sessions.unshift(session);
+        saveSessions(sessions);
+    }
+
+    // Create (or refresh) the pinned Wildebeest tracker session in localStorage
+    function _ensureWildebeestSession() {
+        const TRACKER_SESSION_ID = 'sa-tracker-wildebeest-mara';
+        const sessions = loadSessions();
+        const existing = sessions.find(s => s.id === TRACKER_SESSION_ID);
+
+        const bounds = _trackerData.length > 0 ? (() => {
+            const lats = _trackerData.map(d => d.lat);
+            const lngs = _trackerData.map(d => d.lng);
+            return {
+                lat: (Math.min(...lats) + Math.max(...lats)) / 2,
+                lng: (Math.min(...lngs) + Math.max(...lngs)) / 2,
+            };
+        })() : { lat: -1.35, lng: 35.2 };
+
+        const session = {
+            id: TRACKER_SESSION_ID,
+            name: 'White-bearded Wildebeest — Greater Mara Ecosystem',
+            savedAt: existing?.savedAt || new Date().toISOString(),
+            isStarred: existing?.isStarred ?? true,
+            isArchived: false,
+            isTrackerSession: true,
+            trackerCsvPath: '/data/wildebeest_mara.csv',
+            trackerSessionId: TRACKER_SESSION_ID,
+            viewport: { lat: bounds.lat, lng: bounds.lng, zoom: 10 },
+            mode: 'satellite',
+            gridResolution: 'standard',
+            speciesId: null, speciesName: null,
+            viewportSpeciesFilter: 'all',
+            layers: {
+                grid: false, tactical: false, sightings: false, heatmap: false,
+                geeVegetation: false, geeWater: false, geeElevation: false,
+                geeLandCover: false, geePrecipitation: false, geeTemperature: false,
+                geeNdviTrend: false, geeHabitat: false
+            },
+            timeline: { currentDate: _trackerMaxTs },
+            drawnItems: [], buffer: { radius: 5000, lat: '', lng: '' },
+            trackerMeta: {
+                individuals: Object.keys(_trackerByInd).length,
+                fixes: _trackerData.length,
+                minTs: _trackerMinTs,
+                maxTs: _trackerMaxTs,
             }
         };
 
@@ -2504,7 +2808,7 @@ const SiteAnalysisPage = (() => {
 
         const zoom = _map ? _map.getZoom() : 10;
         const showArrowsAtZoom = zoom >= 12;
-        const showNodesAtZoom  = zoom >= 11;
+        const showNodesAtZoom = zoom >= 11;
 
         // One canvas renderer shared across all vector layers — critical for perf
         if (!_trackerCanvas) _trackerCanvas = L.canvas({ padding: 0.5 });
@@ -2554,7 +2858,7 @@ const SiteAnalysisPage = (() => {
 
                 // Arrow chevron (every 10th visible segment, only when zoomed in)
                 if (_trackerShowArrows && showArrowsAtZoom && i % 10 === 0) {
-                    const b   = _bearing(prev.lat, prev.lng, curr.lat, curr.lng);
+                    const b = _bearing(prev.lat, prev.lng, curr.lat, curr.lng);
                     const mid = [(prev.lat + curr.lat) / 2, (prev.lng + curr.lng) / 2];
                     L.marker(mid, {
                         icon: L.divIcon({
@@ -2573,19 +2877,19 @@ const SiteAnalysisPage = (() => {
                 track.forEach((fix, i) => {
                     const isEndpoint = i === 0 || i === track.length - 1;
                     if (!isEndpoint && i % nodeStep !== 0) return;
-                    const t   = Math.min(1, (fix._iv || 0) / globalMax);
+                    const t = Math.min(1, (fix._iv || 0) / globalMax);
                     const col = _intensityColor(t);
-                    const r   = isEndpoint ? 5 : 3;
-                    const ts  = new Date(fix.ts).toLocaleString();
-                    const val = _trackerIntensity === 'speed'    ? `${(fix._iv || 0).toFixed(1)} m/s`
-                              : _trackerIntensity === 'error'    ? `${(fix.error || 0).toFixed(0)} m GPS err`
-                              :                                    `${(fix._iv || 0).toFixed(1)} h gap`;
+                    const r = isEndpoint ? 5 : 3;
+                    const ts = new Date(fix.ts).toLocaleString();
+                    const val = _trackerIntensity === 'speed' ? `${(fix._iv || 0).toFixed(1)} m/s`
+                        : _trackerIntensity === 'error' ? `${(fix.error || 0).toFixed(0)} m GPS err`
+                            : `${(fix._iv || 0).toFixed(1)} h gap`;
                     L.circleMarker([fix.lat, fix.lng], {
                         renderer: _trackerCanvas,
                         radius: r, color: col, weight: 1.5,
                         fillColor: col, fillOpacity: 0.35 + t * 0.55
                     }).bindTooltip(`<b>${id}</b> · ${ts}<br>${val}`, { sticky: true })
-                      .addTo(_trackerLayer);
+                        .addTo(_trackerLayer);
                 });
             }
         }
@@ -2614,7 +2918,7 @@ const SiteAnalysisPage = (() => {
 
     function _startTrackerPlay() {
         if (_trackerMinTs === 0) return;
-        _trackerPlaying  = true;
+        _trackerPlaying = true;
         _trackerPlayDate = _trackerPlayDate ?? _trackerMinTs;
         document.getElementById('trk-play-btn')?.classList.add('active');
         _trackerStep();
@@ -2726,7 +3030,7 @@ const SiteAnalysisPage = (() => {
 
         // Timeline tab toggle
         document.getElementById('btn-timeline-tab')?.addEventListener('click', () => {
-            const tl  = document.getElementById('sa-timeline');
+            const tl = document.getElementById('sa-timeline');
             const btn = document.getElementById('btn-timeline-tab');
             if (!tl) return;
             tl.classList.toggle('open');
@@ -2744,7 +3048,7 @@ const SiteAnalysisPage = (() => {
 
         // Buffer radius display + live Total Records recompute
         const bSlider = document.getElementById('buffer-radius-slider');
-        const bDisp   = document.getElementById('buffer-radius-display');
+        const bDisp = document.getElementById('buffer-radius-display');
         if (bSlider && bDisp) {
             bSlider.addEventListener('input', () => {
                 const v = parseInt(bSlider.value, 10);
@@ -2877,7 +3181,7 @@ const SiteAnalysisPage = (() => {
             : _reports.filter(r => {
                 const t = new Date(r.created_at).getTime();
                 return !isNaN(t) && t <= _timeline.currentDate;
-              });
+            });
 
         // renderLayers() calls computeViewportStats() which owns sa-val-points
         // and sa-val-density.  computeBufferRecords() re-reads _filteredReports
@@ -2939,14 +3243,14 @@ const SiteAnalysisPage = (() => {
     }
 
     function _populateCsvColumnSelects(columns) {
-        const latSel   = document.getElementById('csv-col-lat');
-        const lngSel   = document.getElementById('csv-col-lng');
+        const latSel = document.getElementById('csv-col-lat');
+        const lngSel = document.getElementById('csv-col-lng');
         const labelSel = document.getElementById('csv-col-label');
         if (!latSel || !lngSel || !labelSel) return;
         const opts = columns.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
         const none = `<option value="">— none —</option>`;
-        latSel.innerHTML   = opts;
-        lngSel.innerHTML   = opts;
+        latSel.innerHTML = opts;
+        lngSel.innerHTML = opts;
         labelSel.innerHTML = none + opts;
         // Auto-detect common column names
         const tryPick = (sel, candidates) => {
@@ -2955,8 +3259,8 @@ const SiteAnalysisPage = (() => {
                 if (opt) { sel.value = opt.value; return; }
             }
         };
-        tryPick(latSel,   ['lat', 'latitude', 'location-lat', 'y']);
-        tryPick(lngSel,   ['lng', 'lon', 'long', 'longitude', 'location-long', 'x']);
+        tryPick(latSel, ['lat', 'latitude', 'location-lat', 'y']);
+        tryPick(lngSel, ['lng', 'lon', 'long', 'longitude', 'location-long', 'x']);
         tryPick(labelSel, ['name', 'label', 'individual-local-identifier', 'id', 'species']);
     }
 
@@ -2966,8 +3270,8 @@ const SiteAnalysisPage = (() => {
             _csvLayer = L.featureGroup().addTo(_map);
         }
 
-        const latCol   = document.getElementById('csv-col-lat')?.value;
-        const lngCol   = document.getElementById('csv-col-lng')?.value;
+        const latCol = document.getElementById('csv-col-lat')?.value;
+        const lngCol = document.getElementById('csv-col-lng')?.value;
         const labelCol = document.getElementById('csv-col-label')?.value;
 
         let count = 0;
@@ -3022,7 +3326,7 @@ const SiteAnalysisPage = (() => {
                         const resp = await fetch(btn.dataset.url);
                         const text = await resp.text();
                         const { columns, rows } = _parseCsv(text);
-                        _csvRows    = rows;
+                        _csvRows = rows;
                         _csvColumns = columns;
                         const nameEl = document.getElementById('csv-active-name');
                         if (nameEl) nameEl.textContent = btn.dataset.name;
@@ -3063,7 +3367,7 @@ const SiteAnalysisPage = (() => {
 
         // Drag-over highlight
         dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('csv-dropzone--over'); });
-        dropzone.addEventListener('dragleave', ()  => dropzone.classList.remove('csv-dropzone--over'));
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('csv-dropzone--over'));
         dropzone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropzone.classList.remove('csv-dropzone--over');

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 40px;
+      font-family: 'DM Sans', 'Courier New', monospace;
+      padding: 60px 80px;
+    }
+
+    .reticle-card {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      cursor: pointer;
+    }
+
+    .reticle-card svg {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    /* ── INFO PANEL (hover) ── */
+    .info-panel {
+      position: absolute;
+      top: 0;
+      left: 152px;
+      width: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: width 0.22s ease, opacity 0.18s ease;
+      pointer-events: none;
+    }
+
+    .reticle-card:hover .info-panel {
+      width: 210px;
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* hide hover panel when expanded */
+    .reticle-card.expanded .info-panel {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      width: 0 !important;
+    }
+
+    .info-inner {
+      width: 210px;
+      padding: 10px 14px 12px 10px;
+      position: relative;
+      background: transparent;
+    }
+
+    /* Top-right white corner bracket */
+    .info-corner-tr {
+      position: absolute;
+      top: 0; right: 0;
+      width: 12px; height: 12px;
+      border-top: 1.5px solid #fff;
+      border-right: 1.5px solid #fff;
+    }
+
+    .info-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      line-height: 1.4;
+      position: relative;
+      z-index: 1;
+    }
+
+    .info-sub {
+      font-size: 10px;
+      color: #aaa;
+      letter-spacing: 0.04em;
+      line-height: 1.85;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── EXPANDED PANEL (click) ── */
+    .expanded-panel {
+      position: absolute;
+      top: 0;
+      left: 152px;
+      width: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: width 0.28s ease, opacity 0.2s ease;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .reticle-card.expanded .expanded-panel {
+      opacity: 1;
+      pointer-events: all;
+      /* width set dynamically in JS based on grid size */
+    }
+
+    .exp-inner {
+      padding: 10px 0 0 10px;
+      position: relative;
+      display: flex;
+      gap: 12px;
+      background: transparent;
+    }
+
+    /* Top-right white corner bracket on expanded panel */
+    .exp-corner-tr {
+      position: absolute;
+      top: 0; right: 0;
+      width: 12px; height: 12px;
+      border-top: 1.5px solid #fff;
+      border-right: 1.5px solid #fff;
+    }
+
+    /* Left: text block */
+    .exp-text {
+      position: relative;
+      z-index: 1;
+      flex-shrink: 0;
+      width: 140px;
+      padding-right: 4px;
+    }
+
+    .exp-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      line-height: 1.4;
+    }
+
+    .exp-sub {
+      font-size: 10px;
+      color: #aaa;
+      letter-spacing: 0.04em;
+      line-height: 1.85;
+    }
+
+    /* Right: square image grid — no gaps, 3 cols × 2 rows */
+    .exp-grid-wrap {
+      position: relative;
+      z-index: 1;
+      flex-shrink: 0;
+    }
+
+    .exp-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 0;
+    }
+
+    /* Each cell is a square — sized via JS */
+    .grid-cell {
+      background: rgba(255,255,255,0.07);
+      opacity: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .grid-cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Bottom-left corner bracket on the grid section */
+    .exp-grid-corner {
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 12px; height: 12px;
+      border-bottom: 1.5px solid #fff;
+      border-left: 1.5px solid #fff;
+      pointer-events: none;
+    }
+
+    .label-chip {
+      color: #444;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<script>
+  // Grid cell size = reticle height / 2 rows → 150px / 2 = 75px square
+  // 3 cols × 75px = 225px grid width
+  const CELL = 75;
+  const COLS = 3;
+  const ROWS = 2;
+  const GRID_W = CELL * COLS;   // 225
+  const GRID_H = CELL * ROWS;   // 150
+  const TEXT_W = 140;
+  const EXP_PAD = 10;
+  const EXP_GAP = 12;
+  const EXP_W = EXP_PAD + TEXT_W + EXP_GAP + GRID_W; // 10+140+12+225 = 387
+
+  const VARIANTS = [
+    {
+      id: 'default',
+      label: 'Default',
+      bracket: '#ffffff',
+      bar: '#ffffff',
+      fill: 'rgba(255,255,255,0.07)',
+      titleColor: '#ffffff',
+      title: 'GRID CELL',
+      subs: ['1 SIGHTING'],
+      expTitle: 'GRID CELL',
+      expSubs: ['SECTOR 12 A', '-3.1002, 37.2201', 'TIER 1', 'Status: UNCONFIRMED'],
+      statusColor: '#aaa',
+    },
+    {
+      id: 'threat',
+      label: 'Threat',
+      bracket: '#ffffff',
+      bar: '#ff3333',
+      fill: 'rgba(255,40,40,0.09)',
+      titleColor: '#ff3333',
+      title: 'THREAT DETECTED.',
+      subs: ['SECTOR 17 B', '-3.4008, 38.5918'],
+      expTitle: 'WILDFIRE CLUSTER',
+      expSubs: ['SECTOR 17 B', '-3.4008, 38.5918', 'TIER 2', 'Status: VALIDATED'],
+      statusColor: '#ff3333',
+    },
+    {
+      id: 'asset',
+      label: 'Asset',
+      bracket: '#ffffff',
+      bar: '#00ff88',
+      fill: 'rgba(0,255,120,0.07)',
+      titleColor: '#00ff88',
+      title: 'FIELD ASSET – SENSOR',
+      subs: ['SECTOR 15 C', '-3.2008, 36.5918'],
+      expTitle: 'LION',
+      expSubs: ['SECTOR 15 C', '-3.2008, 36.5918', 'TIER 1', 'Status: ONLINE'],
+      statusColor: '#00ff88',
+    },
+    {
+      id: 'report',
+      label: 'Report',
+      bracket: '#ffffff',
+      bar: '#66ccff',
+      fill: 'rgba(80,180,255,0.08)',
+      titleColor: '#66ccff',
+      title: 'REPORT ORIGIN',
+      subs: ['SECTOR 15 C', '-3.2008, 36.5918'],
+      expTitle: 'UNKNOWN',
+      expSubs: ['SECTOR 15 C', '-3.2008, 36.5918', 'TIER 2', 'Status: VALIDATED'],
+      statusColor: '#66ccff',
+    },
+  ];
+
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function makeSVG(v) {
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 130 120');
+    svg.setAttribute('width', '160');
+    svg.setAttribute('height', '150');
+
+    const fillBox = document.createElementNS(NS, 'rect');
+    fillBox.setAttribute('x', '10'); fillBox.setAttribute('y', '10');
+    fillBox.setAttribute('width', '100'); fillBox.setAttribute('height', '100');
+    fillBox.setAttribute('fill', v.fill);
+    fillBox.setAttribute('opacity', '0');
+    fillBox.style.transition = 'opacity 0.4s ease';
+    fillBox.classList.add('fill-box');
+    svg.appendChild(fillBox);
+
+    const corners = [
+      { points: '10,25 10,10 25,10',     cls: 'tl' },
+      { points: '95,110 110,110 110,95', cls: 'br' },
+      { points: '95,10 110,10 110,25',   cls: 'tr' },
+      { points: '10,95 10,110 25,110',   cls: 'bl' },
+    ];
+    corners.forEach(c => {
+      const pl = document.createElementNS(NS, 'polyline');
+      pl.setAttribute('stroke', v.bracket);
+      pl.setAttribute('stroke-width', '1.5');
+      pl.setAttribute('fill', 'none');
+      pl.setAttribute('points', c.points);
+      pl.setAttribute('opacity', '0');
+      pl.classList.add('corner', c.cls);
+      svg.appendChild(pl);
+    });
+
+    const track = document.createElementNS(NS, 'rect');
+    track.setAttribute('x', '116'); track.setAttribute('y', '10');
+    track.setAttribute('width', '5'); track.setAttribute('height', '100');
+    track.setAttribute('rx', '1');
+    track.setAttribute('stroke', v.bar);
+    track.setAttribute('stroke-width', '0.8');
+    track.setAttribute('fill', 'none');
+    track.setAttribute('opacity', '0');
+    track.classList.add('bar-track');
+    svg.appendChild(track);
+
+    const barFill = document.createElementNS(NS, 'rect');
+    barFill.setAttribute('x', '116'); barFill.setAttribute('y', '38');
+    barFill.setAttribute('width', '5'); barFill.setAttribute('height', '72');
+    barFill.setAttribute('rx', '1');
+    barFill.setAttribute('fill', v.bar);
+    barFill.setAttribute('opacity', '0');
+    barFill.classList.add('bar-fill');
+    svg.appendChild(barFill);
+
+    [35, 60, 85].forEach(ty => {
+      const tick = document.createElementNS(NS, 'line');
+      tick.setAttribute('x1', '114'); tick.setAttribute('x2', '116');
+      tick.setAttribute('y1', ty);    tick.setAttribute('y2', ty);
+      tick.setAttribute('stroke', v.bar);
+      tick.setAttribute('stroke-width', '0.6');
+      tick.setAttribute('opacity', '0');
+      tick.classList.add('bar-tick');
+      svg.appendChild(tick);
+    });
+
+    return svg;
+  }
+
+  function flicker(el, finalOpacity, onDone) {
+    let count = 0;
+    const max = Math.floor(Math.random() * 2) + 2;
+    const isSVG = typeof el.setAttribute === 'function' && !(el instanceof HTMLElement);
+    const setOp = o => isSVG ? el.setAttribute('opacity', o) : (el.style.opacity = o);
+    function step() {
+      setOp(count % 2 === 0 ? finalOpacity : '0');
+      count++;
+      if (count <= max * 2) setTimeout(step, 35 + Math.random() * 45);
+      else { setOp(finalOpacity); if (onDone) onDone(); }
+    }
+    step();
+  }
+
+  function animateReticle(svg) {
+    const fillBox  = svg.querySelector('.fill-box');
+    const tl       = svg.querySelector('.corner.tl');
+    const br       = svg.querySelector('.corner.br');
+    const tr       = svg.querySelector('.corner.tr');
+    const bl       = svg.querySelector('.corner.bl');
+    const barTrack = svg.querySelector('.bar-track');
+    const barFill  = svg.querySelector('.bar-fill');
+    const barTicks = svg.querySelectorAll('.bar-tick');
+
+    setTimeout(() => fillBox.setAttribute('opacity', '1'), 80);
+    const d = 320;
+    setTimeout(() => flicker(tl, '1'), d);
+    setTimeout(() => flicker(br, '1'), d + 160);
+    setTimeout(() => flicker(tr, '1'), d + 320);
+    setTimeout(() => flicker(bl, '1', () => {
+      setTimeout(() => {
+        flicker(barTrack, '0.3');
+        setTimeout(() => {
+          barFill.setAttribute('opacity', '0.85');
+          barTicks.forEach(t => t.setAttribute('opacity', '0.4'));
+        }, 120);
+      }, 120);
+    }), d + 480);
+  }
+
+  function flickerGridCells(cells) {
+    const order = [...cells].sort(() => Math.random() - 0.5);
+    order.forEach((cell, i) => {
+      setTimeout(() => {
+        // flicker using style.opacity for HTML elements
+        let count = 0;
+        const max = Math.floor(Math.random() * 2) + 2;
+        function step() {
+          cell.style.opacity = count % 2 === 0 ? '1' : '0';
+          count++;
+          if (count <= max * 2) setTimeout(step, 35 + Math.random() * 50);
+          else cell.style.opacity = '1';
+        }
+        step();
+      }, i * (55 + Math.random() * 70));
+    });
+  }
+
+  function bindInteractions(card, svg, v) {
+    const barEls = [
+      svg.querySelector('.bar-track'),
+      svg.querySelector('.bar-fill'),
+      ...svg.querySelectorAll('.bar-tick'),
+    ];
+
+    card.addEventListener('mouseenter', () => {
+      if (card.classList.contains('expanded')) return;
+      barEls.forEach(el => { el.style.transition = 'opacity 0.15s'; el.setAttribute('opacity', '0'); });
+    });
+
+    card.addEventListener('mouseleave', () => {
+      if (card.classList.contains('expanded')) return;
+      if (svg.querySelector('.corner.bl').getAttribute('opacity') === '1') {
+        svg.querySelector('.bar-track').setAttribute('opacity', '0.3');
+        svg.querySelector('.bar-fill').setAttribute('opacity', '0.85');
+        svg.querySelectorAll('.bar-tick').forEach(t => t.setAttribute('opacity', '0.4'));
+      }
+    });
+
+    card.addEventListener('click', () => {
+      const wasExpanded = card.classList.contains('expanded');
+      document.querySelectorAll('.reticle-card.expanded').forEach(c => {
+        c.classList.remove('expanded');
+        // restore bar on others
+        const s = c.querySelector('svg');
+        s.querySelector('.bar-track').setAttribute('opacity', '0.3');
+        s.querySelector('.bar-fill').setAttribute('opacity', '0.85');
+        s.querySelectorAll('.bar-tick').forEach(t => t.setAttribute('opacity', '0.4'));
+        // reset grid cells
+        c.querySelectorAll('.grid-cell').forEach(cell => { cell.style.opacity = '0'; });
+      });
+
+      if (!wasExpanded) {
+        card.classList.add('expanded');
+        barEls.forEach(el => el.setAttribute('opacity', '0'));
+        const cells = card.querySelectorAll('.grid-cell');
+        setTimeout(() => flickerGridCells(cells), 180);
+      }
+    });
+  }
+
+  function makeInfoPanel(v) {
+    const panel = document.createElement('div');
+    panel.className = 'info-panel';
+
+    const inner = document.createElement('div');
+    inner.className = 'info-inner';
+
+    const cornerTR = document.createElement('div');
+    cornerTR.className = 'info-corner-tr';
+    inner.appendChild(cornerTR);
+
+    const title = document.createElement('div');
+    title.className = 'info-title';
+    title.style.color = v.titleColor;
+    title.textContent = v.title;
+    inner.appendChild(title);
+
+    v.subs.forEach(s => {
+      const sub = document.createElement('div');
+      sub.className = 'info-sub';
+      sub.textContent = s;
+      inner.appendChild(sub);
+    });
+
+    panel.appendChild(inner);
+    return panel;
+  }
+
+  function makeExpandedPanel(v) {
+    const panel = document.createElement('div');
+    panel.className = 'expanded-panel';
+    panel.style.width = EXP_W + 'px'; // pre-set width so transition works
+
+    const inner = document.createElement('div');
+    inner.className = 'exp-inner';
+    inner.style.width = EXP_W + 'px';
+
+    const cornerTR = document.createElement('div');
+    cornerTR.className = 'exp-corner-tr';
+    inner.appendChild(cornerTR);
+
+    // Text block
+    const textBlock = document.createElement('div');
+    textBlock.className = 'exp-text';
+
+    const title = document.createElement('div');
+    title.className = 'exp-title';
+    title.style.color = v.titleColor;
+    title.textContent = v.expTitle;
+    textBlock.appendChild(title);
+
+    v.expSubs.forEach((s, i) => {
+      const sub = document.createElement('div');
+      sub.className = 'exp-sub';
+      if (i === v.expSubs.length - 1) {
+        sub.innerHTML = `<span style="color:#555">Status: </span><span style="color:${v.statusColor};font-weight:500">${s.replace('Status: ', '')}</span>`;
+      } else {
+        sub.textContent = s;
+      }
+      textBlock.appendChild(sub);
+    });
+
+    inner.appendChild(textBlock);
+
+    // Grid wrap — 3×2, no gap, square cells
+    const gridWrap = document.createElement('div');
+    gridWrap.className = 'exp-grid-wrap';
+    gridWrap.style.width = GRID_W + 'px';
+    gridWrap.style.height = GRID_H + 'px';
+    gridWrap.style.position = 'relative';
+
+    const grid = document.createElement('div');
+    grid.className = 'exp-grid';
+    grid.style.width = GRID_W + 'px';
+    grid.style.height = GRID_H + 'px';
+    grid.style.gridTemplateColumns = `repeat(${COLS}, ${CELL}px)`;
+    grid.style.gridTemplateRows = `repeat(${ROWS}, ${CELL}px)`;
+
+    for (let i = 0; i < COLS * ROWS; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'grid-cell';
+      cell.style.width = CELL + 'px';
+      cell.style.height = CELL + 'px';
+      grid.appendChild(cell);
+    }
+
+    const gridCorner = document.createElement('div');
+    gridCorner.className = 'exp-grid-corner';
+
+    gridWrap.appendChild(grid);
+    gridWrap.appendChild(gridCorner);
+    inner.appendChild(gridWrap);
+
+    panel.appendChild(inner);
+    return panel;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    VARIANTS.forEach((v, idx) => {
+      const wrap = document.createElement('div');
+      wrap.style.display = 'flex';
+      wrap.style.flexDirection = 'column';
+      wrap.style.alignItems = 'flex-start';
+
+      const card = document.createElement('div');
+      card.className = 'reticle-card';
+
+      const svg = makeSVG(v);
+      card.appendChild(svg);
+      card.appendChild(makeInfoPanel(v));
+      card.appendChild(makeExpandedPanel(v));
+
+      wrap.appendChild(card);
+
+      const chip = document.createElement('div');
+      chip.className = 'label-chip';
+      chip.textContent = v.label;
+      wrap.appendChild(chip);
+
+      document.body.appendChild(wrap);
+
+      bindInteractions(card, svg, v);
+      setTimeout(() => animateReticle(svg), idx * 180);
+    });
+  });
+</script>
+
+</body>
+</html>
