@@ -1,7 +1,6 @@
 /* ============================================================
    TERRA – submitReport.js
-   Handles the "Submit Wildlife Report" form with an interactive
-   map picker and geocoding search.
+   Submit Wildlife Report — frame-GUI / tactical aesthetic.
    ============================================================ */
 
 const SubmitReportPage = (() => {
@@ -9,7 +8,6 @@ const SubmitReportPage = (() => {
   let _map = null;
   let _marker = null;
 
-  /* ── Field Configuration ─────────────────────────────────── */
   const SENSITIVITY_OPTIONS = [
     { value: 1, label: 'Tier 1 – Public (General Sighting)' },
     { value: 2, label: 'Tier 2 – Protected (Validated Species)' },
@@ -17,363 +15,465 @@ const SubmitReportPage = (() => {
     { value: 4, label: 'Tier 4 – Confidential (Anti-Poaching)' },
   ];
 
-  /* ── Internal: build sensitivity dropdown options ─────────── */
-  function buildSensitivityOptions() {
-    return SENSITIVITY_OPTIONS.map(opt =>
-      `<option value="${opt.value}">${opt.label}</option>`
-    ).join('');
+  /* ── Frame ruler ─────────────────────────────────────────── */
+  function ruler(label, ver) {
+    return `
+      <div class="sr-ruler">
+        <div class="sr-ruler__tick"></div>
+        <span class="sr-ruler__label">${label}</span>
+        <div class="sr-ruler__track">
+          <div class="sr-ruler__pip"></div>
+          <div class="sr-ruler__pip"></div>
+          <div class="sr-ruler__pip"></div>
+        </div>
+        <span class="sr-ruler__ver">${ver}</span>
+      </div>`;
   }
 
-  /* ── Public: render the report submission form ───────────── */
+  /* ── Form field helpers ──────────────────────────────────── */
+  function field(id, label, inputHtml, hint = '') {
+    return `
+      <div class="sr-field" id="field-${id}">
+        <label class="sr-label" for="${id}">${label}</label>
+        ${inputHtml}
+        ${hint ? `<span class="sr-hint">${hint}</span>` : ''}
+        <span class="sr-field__error"></span>
+      </div>`;
+  }
+
+  function input(id, name, type = 'text', placeholder = '', extra = '') {
+    return `<input class="sr-input" id="${id}" name="${name}" type="${type}" placeholder="${placeholder}" ${extra} />`;
+  }
+
+  function select(id, name, options) {
+    const opts = options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+    return `<select class="sr-select" id="${id}" name="${name}">${opts}</select>`;
+  }
+
+  function textarea(id, name, placeholder) {
+    return `<textarea class="sr-textarea" id="${id}" name="${name}" placeholder="${placeholder}"></textarea>`;
+  }
+
+  /* ── Build full page HTML ────────────────────────────────── */
+  function buildHTML() {
+    return `
+      <div id="sr-root">
+        <div class="sr-page">
+
+          ${ruler('FIELD REPORT INTAKE', 'SR-2.1')}
+
+          <!-- HERO -->
+          <div class="sr-hero reveal d1">
+            <div class="sr-hero__body">
+              <div class="sr-hero__left">
+                <span class="sr-pill">New Report</span>
+                <div class="sr-id-large">SUBMIT</div>
+                <div class="sr-id-sub">Wildlife Intelligence Form</div>
+              </div>
+              <div class="sr-hero__right">
+                <div></div>
+                <p class="sr-hero__desc">
+                  Document a wildlife sighting with species identification, GPS coordinates,
+                  evidence media, and sensitivity classification. All fields marked
+                  <span style="color:var(--sr-amber)">*</span> are required.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- FORM BODY -->
+          <form id="sr-form" novalidate>
+            <div class="sr-form-body">
+
+              <!-- MAIN COLUMN -->
+              <div class="sr-form-main">
+
+                <!-- §1 Sighting Details -->
+                <div class="sr-section reveal d1">
+                  <div class="sr-section__head">
+                    <span class="sr-section__num">01</span>
+                    <span class="sr-section__title">Sighting Details</span>
+                  </div>
+                  <div class="sr-section__body">
+                    <div class="sr-field--row">
+                      ${field('species-id', 'Species ID or Name <span class="sr-label__req">*</span>',
+                        `<input class="sr-input" id="species-id" name="species_id" type="text"
+                          placeholder="Cheetah, Lion, or Registry UUID…" list="sr-species-list" required />
+                         <datalist id="sr-species-list">
+                           <option value="Cheetah"><option value="Lion">
+                           <option value="Elephant"><option value="Rhinoceros"><option value="Leopard">
+                         </datalist>`,
+                        'Select a common name or paste a Registry UUID.'
+                      )}
+                      ${field('sensitivity-tier', 'Sensitivity Tier <span class="sr-label__req">*</span>',
+                        select('sensitivity-tier', 'sensitivity_tier', SENSITIVITY_OPTIONS)
+                      )}
+                    </div>
+                    ${field('description', 'Description <span class="sr-label__req">*</span>',
+                      textarea('description', 'description', 'Describe behaviour, count, habitat conditions…'),
+                      ''
+                    )}
+                    ${field('sighting-timestamp', 'Date & Time of Sighting <span class="sr-label__req">*</span>',
+                      input('sighting-timestamp', 'sighting_timestamp', 'datetime-local', '', 'required')
+                    )}
+                  </div>
+                </div>
+
+                <!-- §2 Location -->
+                <div class="sr-section reveal d2">
+                  <div class="sr-section__head">
+                    <span class="sr-section__num">02</span>
+                    <span class="sr-section__title">Pin Location</span>
+                  </div>
+                  <div class="sr-section__body">
+                    <div class="sr-map-search">
+                      <input type="text" id="sr-map-search-input" class="sr-input"
+                        placeholder="Search — Maasai Mara, Nairobi…" autocomplete="off" />
+                      <div id="sr-map-results" class="sr-map-results"></div>
+                    </div>
+                    <div class="sr-map-wrap">
+                      <div id="sr-map"></div>
+                      <button type="button" class="sr-map-gps" id="sr-btn-gps">USE GPS</button>
+                    </div>
+                    <div class="sr-coord-row">
+                      ${field('latitude', 'Latitude <span class="sr-label__req">*</span>',
+                        input('latitude', 'latitude', 'number', '-1.2921', 'step="any" required')
+                      )}
+                      ${field('longitude', 'Longitude <span class="sr-label__req">*</span>',
+                        input('longitude', 'longitude', 'number', '36.8219', 'step="any" required')
+                      )}
+                    </div>
+                    ${field('region-id', 'Region ID <span class="sr-label__req">*</span>',
+                      input('region-id', 'region_id', 'text', 'Auto-populated from coordinates', 'required'),
+                      'Derived from coordinates via reverse geocoding'
+                    )}
+                  </div>
+                </div>
+
+                <!-- §3 Evidence -->
+                <div class="sr-section reveal d3">
+                  <div class="sr-section__head">
+                    <span class="sr-section__num">03</span>
+                    <span class="sr-section__title">Attach Evidence</span>
+                    <span style="margin-left:auto;font-size:9px;color:var(--sr-dim);">PHOTO / AUDIO · MAX 10 MB</span>
+                  </div>
+                  <div class="sr-section__body">
+                    <div class="sr-drop" id="sr-drop">
+                      <div class="sr-drop__icon">DRAG &amp; DROP</div>
+                      <p class="sr-drop__text">Drop a photo or audio file here, or <strong>browse files</strong></p>
+                      <input type="file" id="sr-media-input" name="media"
+                        accept="image/*,audio/*" style="display:none" />
+                    </div>
+                    <div class="sr-file-preview" id="sr-file-preview">
+                      Attached: <strong id="sr-file-name"></strong>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- /sr-form-main -->
+
+              <!-- ASIDE -->
+              <div class="sr-form-aside">
+
+                <!-- Sensitivity Reference -->
+                <div class="sr-aside-panel reveal d2">
+                  <div class="sr-aside-panel__head">
+                    <div class="sr-aside-panel__head-dot"></div>
+                    Sensitivity Reference
+                  </div>
+                  <div class="sr-aside-panel__body">
+                    <div class="sr-tier-row">
+                      <span class="sr-tier-badge sr-tier-badge--1">T1</span>
+                      <span class="sr-tier-desc">Public — General sighting, no restrictions</span>
+                    </div>
+                    <div class="sr-tier-row">
+                      <span class="sr-tier-badge sr-tier-badge--2">T2</span>
+                      <span class="sr-tier-desc">Protected — Validated species, ranger access</span>
+                    </div>
+                    <div class="sr-tier-row">
+                      <span class="sr-tier-badge sr-tier-badge--3">T3</span>
+                      <span class="sr-tier-desc">Restricted — Endangered, limited disclosure</span>
+                    </div>
+                    <div class="sr-tier-row">
+                      <span class="sr-tier-badge sr-tier-badge--4">T4</span>
+                      <span class="sr-tier-desc">Confidential — Anti-poaching, encrypted</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Submission Info -->
+                <div class="sr-aside-panel reveal d3">
+                  <div class="sr-aside-panel__head">
+                    <div class="sr-aside-panel__head-dot"></div>
+                    Submission Info
+                  </div>
+                  <div class="sr-aside-panel__body">
+                    <div class="sr-kv">
+                      <div class="sr-kv__dot"></div>
+                      <span class="sr-kv__label">Status</span>
+                      <span class="sr-kv__val">PENDING REVIEW</span>
+                    </div>
+                    <div class="sr-kv">
+                      <div class="sr-kv__dot"></div>
+                      <span class="sr-kv__label">AI Scoring</span>
+                      <span class="sr-kv__val">AUTO</span>
+                    </div>
+                    <div class="sr-kv">
+                      <div class="sr-kv__dot"></div>
+                      <span class="sr-kv__label">Validation</span>
+                      <span class="sr-kv__val">QUEUED</span>
+                    </div>
+                    <div class="sr-kv">
+                      <div class="sr-kv__dot"></div>
+                      <span class="sr-kv__label">Encryption</span>
+                      <span class="sr-kv__val" style="color:var(--sr-green)">AES-256</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- /sr-form-aside -->
+            </div><!-- /sr-form-body -->
+
+            <!-- FOOTER -->
+            <div class="sr-footer reveal d4">
+              <span class="sr-footer__status" id="sr-status">Ready to submit</span>
+              <div class="sr-footer__actions">
+                <button type="button" class="sr-btn sr-btn--cancel" id="sr-btn-cancel">Cancel</button>
+                <button type="submit"  class="sr-btn sr-btn--submit" id="sr-btn-submit">SUBMIT REPORT</button>
+              </div>
+            </div>
+            <div class="sr-form-error" id="sr-form-error"></div>
+          </form>
+
+        </div>
+      </div>`;
+  }
+
+  /* ── Public render ───────────────────────────────────────── */
   function render(container) {
-    container.innerHTML = `
-      <div class="page-header anim-fade-in">
-        <h1>Submit Wildlife Report</h1>
-        <p>Report a sighting with location, image, and description.</p>
-      </div>
+    if (_map) { try { _map.remove(); } catch (_) {} _map = null; }
 
-      <form id="report-form" class="anim-fade-in-up" novalidate>
+    container.innerHTML = buildHTML();
 
-        <!-- Section: Species & Description -->
-        <div class="card mb-6">
-          <div class="card__header">
-            <div class="card__title">Sighting Details</div>
-          </div>
+    requestAnimationFrame(() => {
+      document.querySelectorAll('#sr-root .reveal').forEach(el => {
+        setTimeout(() => el.classList.add('visible'), 60);
+      });
+    });
 
-          <div class="grid-2" style="gap:var(--sp-5)">
-            <div class="form-group">
-              <label class="form-label" for="species-id">Species (ID or Name) <span class="required">*</span></label>
-              <input class="form-input" id="species-id" name="species_id" type="text" placeholder="e.g. Cheetah, Lion, or UUID..." list="species-list" required />
-              <datalist id="species-list">
-                <option value="Cheetah">
-                <option value="Lion">
-                <option value="Elephant">
-                <option value="Rhinoceros">
-                <option value="Leopard">
-              </datalist>
-              <span class="form-hint">Select a common name or paste a Registry UUID. This field is now required to ensure accurate intelligence scoring.</span>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="sensitivity-tier">
-                Sensitivity Tier <span class="required">*</span>
-              </label>
-              <select class="form-select" id="sensitivity-tier" name="sensitivity_tier" required>
-                ${buildSensitivityOptions()}
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group mt-4">
-            <label class="form-label" for="description">
-              Description <span class="required">*</span>
-            </label>
-            <textarea class="form-textarea" id="description" name="description" placeholder="Describe the sighting: behaviour, count, habitat…" required></textarea>
-          </div>
-
-          <div class="form-group mt-4">
-            <label class="form-label" for="sighting-timestamp">
-              Date & Time of Sighting <span class="required">*</span>
-            </label>
-            <input class="form-input" id="sighting-timestamp" name="sighting_timestamp" type="datetime-local" required />
-          </div>
-        </div>
-
-        <!-- Section: Location / Map Pin -->
-        <div class="card mb-6">
-          <div class="card__header">
-            <div class="card__title">Pin Location</div>
-            <div class="card__subtitle">Search for a place or click the map</div>
-          </div>
-
-          <!-- Location Search Bar -->
-          <div class="map-search-container mb-4">
-            <input type="text" id="map-search-input" class="form-input" placeholder="Search for a location (e.g. Maasai Mara, Nairobi…)" autocomplete="off" />
-            <div id="map-search-results" class="map-search-results"></div>
-          </div>
-
-          <div class="map-picker" id="map-picker-container" style="height: 380px; position: relative;">
-            <div id="submit-report-map" style="height: 100%; border-radius: var(--radius-lg);"></div>
-            
-            <!-- Floating controls on map -->
-            <button type="button" class="btn btn--secondary btn--sm btn--floating" id="btn-use-gps" title="Use my current location">
-              USE GPS
-            </button>
-          </div>
-
-          <div class="map-picker__coords mt-4">
-            <div class="form-group" style="flex:1;">
-              <label class="form-label" for="latitude">Latitude <span class="required">*</span></label>
-              <input class="form-input" type="number" id="latitude" name="latitude" placeholder="-1.2921" step="any" required />
-            </div>
-            <div class="form-group" style="flex:1;">
-              <label class="form-label" for="longitude">Longitude <span class="required">*</span></label>
-              <input class="form-input" type="number" id="longitude" name="longitude" placeholder="36.8219" step="any" required />
-            </div>
-          </div>
-
-          <div class="form-group mt-4">
-            <label class="form-label" for="region-id">
-              Region ID <span class="required">*</span>
-            </label>
-            <input class="form-input" id="region-id" name="region_id" type="text" placeholder="Auto-populated from coordinates" required />
-            <span class="form-hint">Derived from coordinates using reverse geocoding</span>
-          </div>
-        </div>
-
-        <!-- Section: Media Upload -->
-        <div class="card mb-6">
-          <div class="card__header">
-            <div class="card__title">Attach Evidence</div>
-            <div class="card__subtitle">Photo or audio (max 10 MB)</div>
-          </div>
-
-          <div class="drop-zone" id="drop-zone">
-            <div class="drop-zone__icon">::</div>
-            <p class="drop-zone__text">Drag & drop a photo/audio, or <strong>browse files</strong></p>
-            <input type="file" id="media-input" name="media" accept="image/*,audio/*" style="display:none" />
-          </div>
-          <div id="file-preview" style="margin-top:var(--sp-4);display:none">
-            <p class="text-muted" style="font-size:var(--text-sm)">Selected: <strong id="file-name"></strong></p>
-          </div>
-        </div>
-
-        <!-- Form Actions -->
-        <div style="display:flex;gap:var(--sp-4);justify-content:flex-end;">
-          <button type="button" class="btn btn--secondary" id="btn-cancel-report">Cancel</button>
-          <button type="submit" class="btn btn--primary" id="btn-submit-report">SUBMIT REPORT</button>
-        </div>
-
-        <p id="form-error-msg" class="form-error" style="text-align:right;margin-top:var(--sp-2);display:none"></p>
-      </form>
-    `;
-
-    attachFormListeners();
     initMap();
+    attachListeners();
   }
 
-  /* ── Internal: Initialize Leaflet Map ────────────────────── */
+  /* ── Map ─────────────────────────────────────────────────── */
   function initMap() {
     const defaultLat = -1.2921;
     const defaultLng = 36.8219;
 
     requestAnimationFrame(() => {
-      if (typeof L === 'undefined') {
-        console.error('Leaflet.js not found');
-        return;
-      }
+      if (typeof L === 'undefined') return;
 
-      _map = L.map('submit-report-map').setView([defaultLat, defaultLng], 12);
+      _map = L.map('sr-map').setView([defaultLat, defaultLng], 12);
 
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-        maxZoom: 19
+        attribution: '&copy; CARTO',
+        maxZoom: 19,
       }).addTo(_map);
 
-      // Custom glowing marker icon (same as mapWidget.js style)
       const icon = L.divIcon({
         className: '',
-        html: `<div class="map-pin map-pin--brand" style="width:20px;height:20px;"></div>`,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
+        html: `<div style="width:12px;height:12px;border:2px solid #c3ff00;border-radius:50%;background:rgba(195,255,0,0.2);box-shadow:0 0 6px rgba(195,255,0,0.5);"></div>`,
+        iconSize: [12, 12],
+        iconAnchor: [6, 6],
       });
 
-      _marker = L.marker([defaultLat, defaultLng], {
-        draggable: true,
-        icon: icon
-      }).addTo(_map);
+      _marker = L.marker([defaultLat, defaultLng], { draggable: true, icon }).addTo(_map);
+      _marker.on('moveend', e => { const p = e.target.getLatLng(); syncCoords(p.lat, p.lng); });
+      _map.on('click', e => { const { lat, lng } = e.latlng; _marker.setLatLng([lat, lng]); syncCoords(lat, lng); });
 
-      // Sync marker to inputs
-      _marker.on('moveend', (e) => {
-        const pos = e.target.getLatLng();
-        updateCoords(pos.lat, pos.lng);
-      });
-
-      // Map click to move marker
-      _map.on('click', (e) => {
-        const { lat, lng } = e.latlng;
-        _marker.setLatLng([lat, lng]);
-        updateCoords(lat, lng);
-      });
-
-      // Set initial coords
-      updateCoords(defaultLat, defaultLng);
+      syncCoords(defaultLat, defaultLng);
     });
   }
 
-  /* ── Internal: Sync coordinates to inputs ────────────────── */
-  function updateCoords(lat, lng) {
-    document.getElementById('latitude').value = lat.toFixed(6);
-    document.getElementById('longitude').value = lng.toFixed(6);
-
-    // Reverse geocode to get a region name (placeholder for now)
+  function syncCoords(lat, lng) {
+    const latEl = document.getElementById('latitude');
+    const lngEl = document.getElementById('longitude');
+    if (latEl) latEl.value = lat.toFixed(6);
+    if (lngEl) lngEl.value = lng.toFixed(6);
     reverseGeocode(lat, lng);
   }
 
-  /* ── Internal: Reverse Geocoding ─────────────────────────── */
   async function reverseGeocode(lat, lng) {
-    const regionInput = document.getElementById('region-id');
+    const regionEl = document.getElementById('region-id');
+    if (!regionEl) return;
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`);
+      const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`);
       const data = await res.json();
-      if (data && data.display_name) {
-        // Try to extract a useful part (city/county/region)
-        const parts = data.address;
-        const region = parts.county || parts.region || parts.state || parts.city || 'Unknown Region';
-        regionInput.value = region;
+      if (data?.address) {
+        const a = data.address;
+        regionEl.value = a.county || a.region || a.state || a.city || 'Unknown Region';
       }
-    } catch (err) {
-      console.warn('Reverse geocoding failed', err);
-    }
+    } catch (_) {}
   }
 
-  /* ── Internal: Geocoding Search ──────────────────────────── */
-  async function searchLocation(query) {
-    const resultsEl = document.getElementById('map-search-results');
-    if (!query || query.length < 3) {
-      resultsEl.style.display = 'none';
-      return;
-    }
-
+  async function geocodeSearch(query) {
+    const resultsEl = document.getElementById('sr-map-results');
+    if (!resultsEl) return;
+    if (!query || query.length < 3) { resultsEl.style.display = 'none'; return; }
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+      const res  = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
       const data = await res.json();
-
-      if (data.length > 0) {
-        resultsEl.innerHTML = data.map(item => `
-                    <div class="map-search-item" data-lat="${item.lat}" data-lon="${item.lon}">
-                        ${item.display_name}
-                    </div>
-                `).join('');
+      if (data.length) {
+        resultsEl.innerHTML = data.map(item =>
+          `<div class="sr-map-result" data-lat="${item.lat}" data-lon="${item.lon}">${item.display_name}</div>`
+        ).join('');
         resultsEl.style.display = 'block';
       } else {
         resultsEl.style.display = 'none';
       }
-    } catch (err) {
-      console.error('Search failed', err);
-    }
+    } catch (_) {}
   }
 
-  /* ── Internal: wire up all form interactions ─────────────── */
-  function attachFormListeners() {
-    const form = document.getElementById('report-form');
-    const dropZone = document.getElementById('drop-zone');
-    const mediaInput = document.getElementById('media-input');
-    const errorMsg = document.getElementById('form-error-msg');
-    const searchInput = document.getElementById('map-search-input');
-    const searchResults = document.getElementById('map-search-results');
+  /* ── Listeners ───────────────────────────────────────────── */
+  function attachListeners() {
+    const form      = document.getElementById('sr-form');
+    const drop      = document.getElementById('sr-drop');
+    const mediaIn   = document.getElementById('sr-media-input');
+    const searchIn  = document.getElementById('sr-map-search-input');
+    const searchRes = document.getElementById('sr-map-results');
+    const errorEl   = document.getElementById('sr-form-error');
 
-    // Geocoding Search
-    let searchTimeout;
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => searchLocation(searchInput.value), 400);
+    /* Search */
+    let searchTimer;
+    searchIn?.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => geocodeSearch(searchIn.value), 400);
     });
-
-    searchResults.addEventListener('click', (e) => {
-      const item = e.target.closest('.map-search-item');
-      if (item) {
-        const lat = parseFloat(item.dataset.lat);
-        const lon = parseFloat(item.dataset.lon);
-
-        _map.setView([lat, lon], 14);
-        _marker.setLatLng([lat, lon]);
-        updateCoords(lat, lon);
-
-        searchInput.value = item.textContent.trim();
-        searchResults.style.display = 'none';
+    searchRes?.addEventListener('click', e => {
+      const item = e.target.closest('.sr-map-result');
+      if (!item) return;
+      const lat = parseFloat(item.dataset.lat);
+      const lon = parseFloat(item.dataset.lon);
+      _map?.setView([lat, lon], 14);
+      _marker?.setLatLng([lat, lon]);
+      syncCoords(lat, lon);
+      searchIn.value = item.textContent.trim();
+      searchRes.style.display = 'none';
+    });
+    document.addEventListener('click', e => {
+      if (!searchIn?.contains(e.target) && !searchRes?.contains(e.target)) {
+        if (searchRes) searchRes.style.display = 'none';
       }
     });
 
-    // Hide search results if clicking outside
-    document.addEventListener('click', (e) => {
-      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-        searchResults.style.display = 'none';
-      }
-    });
-
-    // Coord inputs change -> update map
+    /* Coord inputs → map */
     ['latitude', 'longitude'].forEach(id => {
-      document.getElementById(id).addEventListener('change', () => {
-        const lat = parseFloat(document.getElementById('latitude').value);
-        const lng = parseFloat(document.getElementById('longitude').value);
+      document.getElementById(id)?.addEventListener('change', () => {
+        const lat = parseFloat(document.getElementById('latitude')?.value);
+        const lng = parseFloat(document.getElementById('longitude')?.value);
         if (!isNaN(lat) && !isNaN(lng)) {
-          _map.setView([lat, lng]);
-          _marker.setLatLng([lat, lng]);
+          _map?.setView([lat, lng]);
+          _marker?.setLatLng([lat, lng]);
           reverseGeocode(lat, lng);
         }
       });
     });
 
-    // File drop zone
-    dropZone.addEventListener('click', () => mediaInput.click());
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('drag-over');
-      const file = e.dataTransfer?.files[0];
-      if (file) showFilePreview(file);
-    });
-    mediaInput.addEventListener('change', () => {
-      const file = mediaInput.files[0];
-      if (file) showFilePreview(file);
-    });
-
-    // GPS location button
-    document.getElementById('btn-use-gps')?.addEventListener('click', () => {
-      if (!navigator.geolocation) {
-        Toast.warning('Geolocation not supported by your browser.');
-        return;
-      }
+    /* GPS */
+    document.getElementById('sr-btn-gps')?.addEventListener('click', () => {
+      if (!navigator.geolocation) { Toast.warning('Geolocation not supported.'); return; }
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        pos => {
           const { latitude, longitude } = pos.coords;
-          _map.setView([latitude, longitude], 15);
-          _marker.setLatLng([latitude, longitude]);
-          updateCoords(latitude, longitude);
-          Toast.success('Location captured successfully!');
+          _map?.setView([latitude, longitude], 15);
+          _marker?.setLatLng([latitude, longitude]);
+          syncCoords(latitude, longitude);
+          Toast.success('Location captured.');
         },
         () => Toast.error('Could not get location. Ensure GPS is enabled.')
       );
     });
 
-    // Form buttons
-    document.getElementById('btn-cancel-report')?.addEventListener('click', () => {
+    /* Drop zone */
+    drop?.addEventListener('click', () => mediaIn?.click());
+    drop?.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
+    drop?.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+    drop?.addEventListener('drop', e => {
+      e.preventDefault(); drop.classList.remove('drag-over');
+      const file = e.dataTransfer?.files[0];
+      if (file) showPreview(file, mediaIn);
+    });
+    mediaIn?.addEventListener('change', () => {
+      if (mediaIn.files[0]) showPreview(mediaIn.files[0], mediaIn);
+    });
+
+    /* Cancel */
+    document.getElementById('sr-btn-cancel')?.addEventListener('click', () => {
       Router.navigate('dashboard');
     });
-    form.addEventListener('submit', async (e) => {
+
+    /* Submit */
+    form?.addEventListener('submit', async e => {
       e.preventDefault();
-      await handleSubmit(form, errorMsg);
+      if (!validateForm()) return;
+      await handleSubmit(form, errorEl);
     });
   }
 
-  function showFilePreview(file) {
-    const filePreview = document.getElementById('file-preview');
-    const fileNameEl = document.getElementById('file-name');
-    const mediaInput = document.getElementById('media-input');
+  function showPreview(file, mediaIn) {
+    const preview = document.getElementById('sr-file-preview');
+    const nameEl  = document.getElementById('sr-file-name');
     const dt = new DataTransfer();
     dt.items.add(file);
-    mediaInput.files = dt.files;
-    fileNameEl.textContent = file.name;
-    filePreview.style.display = 'block';
+    if (mediaIn) mediaIn.files = dt.files;
+    if (nameEl)  nameEl.textContent = file.name;
+    if (preview) preview.style.display = 'block';
   }
 
-  async function handleSubmit(form, errorMsg) {
-    const btn = document.getElementById('btn-submit-report');
+  /* ── Client-side validation ──────────────────────────────── */
+  function validateForm() {
+    const required = [
+      { id: 'species-id',          msg: 'Species is required' },
+      { id: 'sensitivity-tier',    msg: 'Select a sensitivity tier' },
+      { id: 'description',         msg: 'Description is required' },
+      { id: 'sighting-timestamp',  msg: 'Date and time are required' },
+      { id: 'latitude',            msg: 'Latitude is required' },
+      { id: 'longitude',           msg: 'Longitude is required' },
+      { id: 'region-id',           msg: 'Region is required' },
+    ];
+    let valid = true;
+    required.forEach(({ id, msg }) => {
+      const el      = document.getElementById(id);
+      const fieldEl = document.getElementById(`field-${id}`);
+      const errEl   = fieldEl?.querySelector('.sr-field__error');
+      const empty   = !el?.value?.trim();
+      fieldEl?.classList.toggle('has-error', empty);
+      if (errEl) errEl.textContent = empty ? msg : '';
+      if (empty) valid = false;
+    });
+    return valid;
+  }
+
+  /* ── Submit ──────────────────────────────────────────────── */
+  async function handleSubmit(form, errorEl) {
+    const btn    = document.getElementById('sr-btn-submit');
+    const status = document.getElementById('sr-status');
+
     btn.disabled = true;
     btn.textContent = 'Submitting…';
-    errorMsg.style.display = 'none';
+    if (status) status.textContent = 'Uploading…';
+    if (errorEl) errorEl.style.display = 'none';
 
     try {
       const formData = new FormData(form);
       await API.postForm('/reports', formData);
-      Toast.success('Report submitted successfully!');
+      Toast.success('Report submitted successfully.');
       Router.navigate('my-reports');
     } catch (err) {
-      errorMsg.textContent = err.message || 'Failed to submit report.';
-      errorMsg.style.display = 'block';
-      Toast.error(err.message || 'Submission failed.');
+      const msg = err.message || 'Failed to submit report.';
+      if (errorEl) { errorEl.textContent = msg; errorEl.style.display = 'block'; }
+      if (status)  status.textContent = 'Submission failed';
+      Toast.error(msg);
     } finally {
       btn.disabled = false;
       btn.textContent = 'SUBMIT REPORT';

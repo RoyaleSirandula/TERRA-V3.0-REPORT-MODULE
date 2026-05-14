@@ -48,11 +48,11 @@
     }
 
     .nav-back:hover {
-      color: #00c003;
+      color: #c3ff00;
     }
 
     .nav-logo {
-      background: #00c003;
+      background: #c3ff00;
       color: black;
       padding: 5px 16px;
       font-weight: 700;
@@ -83,7 +83,7 @@
     }
 
     .nav-dot.active {
-      background: #00c003;
+      background: #c3ff00;
     }
 
     /* ── SCROLL CONTAINER ── */
@@ -1770,7 +1770,7 @@
 
       .map-subtitle {
         font-size: 11px;
-        color: rgba(255,255,255,0.45);
+        color: rgba(255, 255, 255, 0.45);
         letter-spacing: 0.5px;
         margin-top: 2px;
       }
@@ -1779,8 +1779,8 @@
         display: flex;
         flex-direction: column;
         gap: 6px;
-        background: rgba(0,0,0,0.75);
-        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(0, 0, 0, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 4px;
         padding: 12px 16px;
         pointer-events: auto;
@@ -1792,7 +1792,7 @@
         align-items: center;
         gap: 8px;
         font-size: 10.5px;
-        color: rgba(255,255,255,0.65);
+        color: rgba(255, 255, 255, 0.65);
         letter-spacing: 0.3px;
       }
 
@@ -1813,8 +1813,8 @@
         align-items: center;
         gap: 32px;
         padding: 12px 28px;
-        background: rgba(0,0,0,0.8);
-        border-top: 1px solid rgba(255,255,255,0.07);
+        background: rgba(0, 0, 0, 0.8);
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
         pointer-events: none;
         backdrop-filter: blur(8px);
       }
@@ -1837,13 +1837,13 @@
         font-size: 9px;
         letter-spacing: 2px;
         text-transform: uppercase;
-        color: rgba(255,255,255,0.4);
+        color: rgba(255, 255, 255, 0.4);
       }
 
       .map-divider {
         width: 1px;
         height: 32px;
-        background: rgba(255,255,255,0.1);
+        background: rgba(255, 255, 255, 0.1);
       }
 
       .map-loading {
@@ -1862,19 +1862,23 @@
       .map-loading-spinner {
         width: 36px;
         height: 36px;
-        border: 2px solid rgba(200,255,0,0.15);
+        border: 2px solid rgba(200, 255, 0, 0.15);
         border-top-color: #c8ff00;
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
       }
 
-      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
       .map-loading-label {
         font-size: 11px;
         letter-spacing: 2px;
         text-transform: uppercase;
-        color: rgba(255,255,255,0.4);
+        color: rgba(255, 255, 255, 0.4);
       }
 
       #wildebeest-map {
@@ -1888,12 +1892,35 @@
       }
 
       @media (max-width: 768px) {
-        .s-map { height: auto; min-height: 85svh; scroll-snap-align: none; }
-        #wildebeest-map { min-height: 65svh; }
-        .map-header { padding: 14px 16px 0; flex-wrap: wrap; gap: 10px; }
-        .map-title { font-size: 24px; }
-        .map-stat-bar { gap: 16px; padding: 10px 16px; flex-wrap: wrap; }
-        .map-stat-num { font-size: 18px; }
+        .s-map {
+          height: auto;
+          min-height: 85svh;
+          scroll-snap-align: none;
+        }
+
+        #wildebeest-map {
+          min-height: 65svh;
+        }
+
+        .map-header {
+          padding: 14px 16px 0;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .map-title {
+          font-size: 24px;
+        }
+
+        .map-stat-bar {
+          gap: 16px;
+          padding: 10px 16px;
+          flex-wrap: wrap;
+        }
+
+        .map-stat-num {
+          font-size: 18px;
+        }
       }
     </style>
 

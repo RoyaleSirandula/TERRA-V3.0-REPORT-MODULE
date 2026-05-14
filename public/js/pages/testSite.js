@@ -136,23 +136,100 @@ const TestSitePage = (() => {
             expTitle: 'WILDFIRE CLUSTER', expSubs: ['SECTOR -1.27,36.85', '-1.2650, 36.8420', 'TIER 3', 'Status: VALIDATED'],
         },
         {
+            id: 'threat-1', kind: 'threat',
+            lat: -1.3140, lng: 36.8975, sector: '-1.31,36.90',
+            title: 'THREAT DETECTED.', subs: ['SECTOR -1.31,36.90', '-1.3140, 36.8975', 'TIER 3'],
+            expTitle: 'POACHING ACTIVITY', expSubs: ['SECTOR -1.31,36.90', '-1.3140, 36.8975', 'TIER 3', 'Status: ALERT'],
+        },
+        {
             id: 'ts-report-1', kind: 'report',
             lat: -1.2950, lng: 36.8560, sector: '-1.30,36.86',
             title: 'REPORT ORIGIN', subs: ['SECTOR -1.30,36.86', '-1.2950, 36.8560', 'TIER 2'],
             expTitle: 'ELEPHANT', expSubs: ['SECTOR -1.30,36.86', '-1.2950, 36.8560', 'TIER 2', 'Status: VALIDATED'],
+        },
+        {
+            id: 'ranger-1', kind: 'ranger',
+            lat: -1.2740, lng: 36.8812, sector: '17B',
+            title: 'FIELD ASSET', subs: ['SECTOR 17B', '-1.2740, 36.8812', 'RANGER'],
+            expTitle: 'ADWOA K.', expSubs: ['SECTOR 17B', '-1.2740, 36.8812', 'Status: ON PATROL'],
+        },
+        {
+            id: 'ranger-2', kind: 'ranger',
+            lat: -1.2880, lng: 36.8864, sector: '17B',
+            title: 'FIELD ASSET', subs: ['SECTOR 17B', '-1.2880, 36.8864', 'RANGER'],
+            expTitle: 'KOFI M.', expSubs: ['SECTOR 17B', '-1.2880, 36.8864', 'Status: ON PATROL'],
+        },
+        {
+            id: 'ranger-3', kind: 'ranger',
+            lat: -1.2540, lng: 36.9040, sector: '21A',
+            title: 'FIELD ASSET', subs: ['SECTOR 21A', '-1.2540, 36.9040', 'RANGER'],
+            expTitle: 'LINNET O.', expSubs: ['SECTOR 21A', '-1.2540, 36.9040', 'Status: CAUTION'],
+        },
+        {
+            id: 'ranger-4', kind: 'ranger',
+            lat: -1.2600, lng: 36.8900, sector: '21A',
+            title: 'FIELD ASSET', subs: ['SECTOR 21A', '-1.2600, 36.8900', 'RANGER'],
+            expTitle: 'BOATENG S.', expSubs: ['SECTOR 21A', '-1.2600, 36.8900', 'Status: LOST SIGNAL'],
+        },
+        {
+            id: 'ranger-5', kind: 'ranger',
+            lat: -1.2700, lng: 36.9200, sector: '09C',
+            title: 'FIELD ASSET', subs: ['SECTOR 09C', '-1.2700, 36.9200', 'RANGER'],
+            expTitle: 'ADJEI P.', expSubs: ['SECTOR 09C', '-1.2700, 36.9200', 'Status: STANDING BY'],
+        },
+        {
+            id: 'sensor-1', kind: 'sensor',
+            lat: -1.2510, lng: 36.8720, sector: '7B',
+            title: 'FIELD ASSET', subs: ['SECTOR 7B', '-1.2510, 36.8720', 'SENSOR'],
+            expTitle: 'ACOUSTIC 14', expSubs: ['SECTOR 7B', '-1.2510, 36.8720', 'Status: ONLINE'],
+        },
+        {
+            id: 'sensor-2', kind: 'sensor',
+            lat: -1.3040, lng: 36.9090, sector: '21A',
+            title: 'FIELD ASSET', subs: ['SECTOR 21A', '-1.3040, 36.9090', 'SENSOR'],
+            expTitle: 'ACOUSTIC 09', expSubs: ['SECTOR 21A', '-1.3040, 36.9090', 'Status: ONLINE'],
+        },
+        {
+            id: 'sensor-3', kind: 'sensor',
+            lat: -1.2700, lng: 36.9200, sector: '09C',
+            title: 'FIELD ASSET', subs: ['SECTOR 09C', '-1.2700, 36.9200', 'SENSOR'],
+            expTitle: 'CAMERA 03', expSubs: ['SECTOR 09C', '-1.2700, 36.9200', 'Status: OFFLINE'],
+        },
+        {
+            id: 'sensor-4', kind: 'sensor',
+            lat: -1.2800, lng: 36.8780, sector: '17B',
+            title: 'FIELD ASSET', subs: ['SECTOR 17B', '-1.2800, 36.8780', 'SENSOR'],
+            expTitle: 'LORA NODE 7', expSubs: ['SECTOR 17B', '-1.2800, 36.8780', 'Status: ONLINE'],
+        },
+        {
+            id: 'ranger-6', kind: 'ranger',
+            lat: -1.2921, lng: 36.8380, sector: '17B',
+            title: 'FIELD ASSET', subs: ['SECTOR 17B', '-1.2921, 36.8380', 'RANGER'],
+            expTitle: 'NIA Z.', expSubs: ['SECTOR 17B', '-1.2921, 36.8380', 'Status: ON PATROL'],
+            _raw: { created_at: new Date().toISOString(), sensitivity_tier: 1 }
+        },
+        {
+            id: 'sensor-5', kind: 'sensor',
+            lat: -1.2950, lng: 36.8400, sector: '17B',
+            title: 'FIELD ASSET', subs: ['SECTOR 17B', '-1.2950, 36.8400', 'SENSOR'],
+            expTitle: 'SATELLITE LINK 1', expSubs: ['SECTOR 17B', '-1.2950, 36.8400', 'Status: ONLINE'],
+            _raw: { created_at: new Date().toISOString(), sensitivity_tier: 1 }
         },
     ];
 
     /* ── Variant palette ──────────────────────────────────────── */
     const VARIANT_META = {
         default: { bracket: '#ffffff', bar: '#ffffff', fill: 'rgba(255,255,255,0.07)', titleColor: '#ffffff', statusColor: '#aaaaaa' },
-        threat:  { bracket: '#ffffff', bar: '#ff3333', fill: 'rgba(255,40,40,0.09)',   titleColor: '#ff3333', statusColor: '#ff3333' },
-        asset:   { bracket: '#ffffff', bar: '#39ff14', fill: 'rgba(57,255,20,0.07)',   titleColor: '#39ff14', statusColor: '#39ff14' },
         report:  { bracket: '#ffffff', bar: '#66ccff', fill: 'rgba(80,180,255,0.08)',  titleColor: '#66ccff', statusColor: '#66ccff' },
+        ranger:  { bracket: 'rgba(255,255,255,0.9)', bar: '#b8f000', fill: 'rgba(184,240,0,0.07)',  titleColor: '#b8f000', statusColor: '#b8f000' },
+        sensor:  { bracket: 'rgba(255,255,255,0.8)', bar: '#00e5ff', fill: 'rgba(0,229,255,0.07)',  titleColor: '#00e5ff', statusColor: '#00e5ff' },
+        command: { bracket: 'rgba(255,255,255,0.6)', bar: '#ffffff', fill: 'rgba(255,255,255,0.05)', titleColor: '#ffffff', statusColor: '#aaaaaa' },
+        caution: { bracket: 'rgba(255,255,255,0.9)', bar: '#ffcc44', fill: 'rgba(255,204,68,0.08)',  titleColor: '#ffcc44', statusColor: '#ffcc44' },
+        threat:  { bracket: '#ffffff', bar: '#ff3333', fill: 'rgba(255,40,40,0.09)',   titleColor: '#ff3333', statusColor: '#ff3333' },
     };
 
-    /* ── Animation load order (grid → report → asset → threat) ── */
-    const KIND_ORDER = ['default', 'report', 'asset', 'threat'];
+    /* ── Animation load order ─────────────────────────────────── */
+    const KIND_ORDER = ['default', 'report', 'ranger', 'sensor', 'command', 'caution', 'threat'];
 
     /* ── SVG namespace ────────────────────────────────────────── */
     const NS = 'http://www.w3.org/2000/svg';
@@ -719,7 +796,11 @@ const TestSitePage = (() => {
         buildReportContent(inner, marker, meta, sectorCount);
         // Overwrite kind label
         const kindEl = inner.querySelector('.ts-exp-kind');
-        if (kindEl) { kindEl.textContent = 'FIELD ASSET'; kindEl.style.color = meta.bar; }
+        const labelMap = { ranger: 'FIELD RANGER', sensor: 'FIELD SENSOR', command: 'BASE COMMAND', caution: 'CAUTION' };
+        if (kindEl) { 
+            kindEl.textContent = labelMap[marker.kind] || 'FIELD ASSET'; 
+            kindEl.style.color = meta.bar; 
+        }
     }
 
     /* ── Expanded panel (click) ───────────────────────────────── */
@@ -743,6 +824,10 @@ const TestSitePage = (() => {
             report:  buildReportContent,
             threat:  buildThreatContent,
             default: buildDefaultContent,
+            ranger:  buildAssetContent,
+            sensor:  buildAssetContent,
+            command: buildAssetContent,
+            caution: buildAssetContent,
             asset:   buildAssetContent,
         };
         (builders[marker.kind] || buildDefaultContent)(inner, marker, meta, sectorCount);
@@ -1003,77 +1088,19 @@ const TestSitePage = (() => {
                 </div>
             </div>` : '';
 
-        // ICE environmental signature — shown for predicted zones and
-        // for any observed marker when its sector has a computed score
-        const iceFactors  = marker._iceFactors  || null;
-        const iceScore    = marker._iceScore     ?? null;
-        const iceSim      = marker._iceSimilarity ?? null;
-        const iceLabel    = marker._iceLabel     || null;
-
-        let iceBlock = '';
-        if (iceFactors) {
-            const scorePct = Math.round(iceScore * 100);
-            const scoreColor = iceScore >= 0.60 ? '#ff5533'
-                             : iceScore >= 0.40 ? '#ffcc44'
-                             : '#39ff14';
-
-            const factorDefs = [
-                { key: 'vegetation', label: 'VEG',   color: '#39ff14' },
-                { key: 'terrain',    label: 'TERR',  color: '#66ccff' },
-                { key: 'water',      label: 'WATER',  color: '#4499ff' },
-                { key: 'historical', label: 'HIST',   color: '#ff8800' },
-            ];
-
-            const factorBars = factorDefs.map(({ key, label, color }) => {
-                const val    = iceFactors[key] ?? 0;
-                const refVal = ICE_HIGH_RISK_TEMPLATE[key];
-                const pct    = Math.round(val    * 100);
-                const refPct = Math.round(refVal * 100);
-                return `
-                <div class="ts-ice-factor">
-                    <div class="ts-ice-factor-label">${label}</div>
-                    <div class="ts-ice-factor-track">
-                        <div class="ts-ice-factor-fill" style="width:${pct}%;background:${color};"></div>
-                        <div class="ts-ice-factor-ref"  style="left:${refPct}%;"></div>
-                    </div>
-                    <div class="ts-ice-factor-val">${pct}</div>
-                </div>`;
-            }).join('');
-
-            const matchBlock = iceSim != null && iceSim >= ICE_MATCH_THRESHOLD ? `
-                <div class="ts-ice-match">
-                    <span class="ts-ice-match-icon">◈</span>
-                    SIGNATURE MATCH · ${Math.round(iceSim * 100)}% similarity to known high-risk profile.
-                    Cross-property risk transfer active.
-                </div>` : '';
-
-            iceBlock = `
-                <div class="ts-ice-signature">
-                    <div class="ts-ice-signature-title">Environmental Signature</div>
-                    ${factorBars}
-                    <div class="ts-ice-score-row">
-                        <span class="ts-ice-score-label">ICE RISK SCORE</span>
-                        <span class="ts-ice-score-val" style="color:${scoreColor}">${scorePct}</span>
-                    </div>
-                    ${matchBlock}
-                </div>`;
-        }
-
-        const isPredicted = marker.kind === 'predicted';
-
         return `
             <div class="ts-dock-header">
-                <div class="ts-dock-kind" style="color:${isPredicted ? '#ffcc44' : meta.bar}">${isPredicted ? 'PREDICTED RISK ZONE' : marker.kind.toUpperCase()}</div>
-                <div class="ts-dock-title" style="color:${isPredicted ? '#ffcc44' : meta.titleColor}">${marker.expTitle}</div>
+                <div class="ts-dock-kind" style="color:${meta.bar}">${marker.kind.toUpperCase()}</div>
+                <div class="ts-dock-title" style="color:${meta.titleColor}">${marker.expTitle}</div>
                 ${sciName ? `<div class="ts-dock-sci">${sciName}</div>` : ''}
             </div>
-            ${isPredicted ? '' : mediaBlock}
+            ${mediaBlock}
             ${section('LOCATION', `
                 ${row('COORDS', `${parseFloat(marker.lat).toFixed(5)}, ${parseFloat(marker.lng).toFixed(5)}`)}
                 ${row('SECTOR', marker.sector)}
-                ${isPredicted ? '' : row('REGION', regionId)}
+                ${row('REGION', regionId)}
             `)}
-            ${isPredicted ? '' : section('REPORT', `
+            ${section('REPORT', `
                 ${row('STATUS', status, meta.statusColor)}
                 ${row('TIER', `${tier}`)}
                 ${threatDots}
@@ -1085,8 +1112,7 @@ const TestSitePage = (() => {
                 ${row('IUCN', iucn)}
                 ${row('TREND', trend)}
             `) : ''}
-            ${iceBlock}
-            ${isPredicted ? '' : confBlock}
+            ${confBlock}
         `;
     }
 
@@ -1147,19 +1173,19 @@ const TestSitePage = (() => {
         timeWindow: 'ALL',   // NOW | 24H | 7D | ALL
         heatmapOn: false,
         flowsOn: false,
-        riskOn: false,
     };
 
     /* ── Mounted marker refs (populated by mountMarkers) ─────── */
     let _mountedRefs = [];
     let _heatLayer = null;
     let _leafletMap = null;
-    let _flowGroup = null;   // L.LayerGroup holding all flow arrows
-    let _riskGroup = null;   // L.LayerGroup holding ICE risk zone polygons
-    let _allMarkers = [];    // full marker list for flow recompute
-    let _renderId = 0;       // increments each render; stale async renders abort
-    let _focusedIndex = -1;  // keyboard-focused marker index into _mountedRefs
-    let _kbHandler = null;   // current keydown handler; replaced on each render
+    let _flowGroup = null;       // L.LayerGroup holding all flow arrows
+    let _allMarkers = [];        // full marker list for flow recompute
+    let _renderId = 0;           // increments each render; stale async renders abort
+    let _focusedIndex = -1;      // keyboard-focused marker index into _mountedRefs
+    let _kbHandler = null;       // current keydown handler; replaced on each render
+    let _wildebeestLayer = null; // L.LayerGroup of wildebeest GPS points
+    let _wildebeestOn = false;   // toggle state
 
     /* ── Apply current filterState to all mounted markers ─────── */
     function applyFilters() {
@@ -1217,269 +1243,6 @@ const TestSitePage = (() => {
                 buildFlowArrows(_leafletMap, _allMarkers.filter(m => filterState.activeKinds.has(m.kind)));
             } else {
                 clearFlowArrows(_leafletMap);
-            }
-        }
-
-        // ICE risk zones sync
-        if (_leafletMap) {
-            if (filterState.riskOn) {
-                buildRiskZones(_leafletMap, _allMarkers);
-            } else {
-                clearRiskZones(_leafletMap);
-            }
-        }
-    }
-
-    /* ── ICE (Incidence–Confidence–Exposure) risk scoring ──────
-       Combines four environmental proxies into a 0–1 risk score
-       per sector. All proxies are deterministic from lat/lng so
-       the model runs client-side without a separate API call.
-
-       Factors:
-         vegetation_density — NDVI proxy: sine interference of
-           lat/lng wavelengths calibrated to Mara grass patterns.
-           High NDVI → more cover → higher snare concealment risk.
-         terrain_gradient   — roughness proxy from fractional lat/lng.
-           Broken terrain channels wildlife (and poachers) into
-           predictable crossing corridors.
-         water_proximity    — inverse distance to simulated water
-           bodies (rivers + seasonal pools). Wildlife aggregates
-           at water; so does snaring pressure.
-         historical_density — normalised sighting count × mean tier.
-           Zero for unsurveyed sectors; scales 0–1 across dataset.
-
-       ICE score = weighted sum; weights reflect field validation
-       from the Greater Mara 2017–2021 dataset.                  */
-
-    /* Simulated water-body centroids (lat, lng) — Mara region */
-    const WATER_BODIES = [
-        [-1.2800, 36.8100],  // Narok River north bend
-        [-1.3100, 36.8500],  // seasonal pool cluster
-        [-1.2600, 36.8700],  // Mara tributary east
-        [-1.2400, 36.8300],  // wetland fringe north
-    ];
-
-    const ICE_WEIGHTS = {
-        vegetation:  0.28,
-        terrain:     0.22,
-        water:       0.30,
-        historical:  0.20,
-    };
-
-    /* Known high-risk environmental signature — used for
-       cross-property matching in the dock panel.            */
-    const ICE_HIGH_RISK_TEMPLATE = {
-        vegetation: 0.72,
-        terrain:    0.65,
-        water:      0.80,
-        historical: 0.70,
-    };
-
-    /* Cosine similarity threshold for cross-property match flag */
-    const ICE_MATCH_THRESHOLD = 0.82;
-
-    function iceVegetation(lat, lng) {
-        /* Sine interference produces spatially coherent NDVI-like
-           variation without requiring a raster tile fetch.         */
-        const v = 0.5 + 0.4 * Math.sin(lat * 18.7) * Math.cos(lng * 14.3)
-                      + 0.1 * Math.sin(lat * 37.1 + lng * 22.9);
-        return Math.max(0, Math.min(1, v));
-    }
-
-    function iceTerrain(lat, lng) {
-        /* Fractional part of degree × scale approximates terrain
-           roughness — valleys (near .0 / .5) are smooth; spurs
-           (near .25 / .75) are rugged.                            */
-        const fLat = Math.abs((lat % 0.05) / 0.05);
-        const fLng = Math.abs((lng % 0.05) / 0.05);
-        const roughness = Math.sin(fLat * Math.PI) * Math.sin(fLng * Math.PI);
-        return Math.max(0, Math.min(1, roughness));
-    }
-
-    function iceWaterProximity(lat, lng) {
-        /* Inverse-square decay from nearest water body.
-           Max influence radius ~15 km at equatorial scale.        */
-        let minDist = Infinity;
-        WATER_BODIES.forEach(([wlat, wlng]) => {
-            const d = Math.sqrt((lat - wlat) ** 2 + (lng - wlng) ** 2);
-            if (d < minDist) minDist = d;
-        });
-        // 0.05 deg ≈ 5.5 km; score peaks at 0 distance, floors at 0
-        const score = Math.max(0, 1 - minDist / 0.18);
-        return Math.min(1, score);
-    }
-
-    /* Compute per-sector historical density given the full marker list */
-    function buildHistoricalScores(markers) {
-        const sectorData = {};
-        markers.forEach(m => {
-            const t = m._raw?.sensitivity_tier || 1;
-            if (!sectorData[m.sector]) sectorData[m.sector] = { count: 0, tierSum: 0 };
-            sectorData[m.sector].count++;
-            sectorData[m.sector].tierSum += t;
-        });
-        const maxCount = Math.max(1, ...Object.values(sectorData).map(s => s.count));
-        const scores = {};
-        Object.entries(sectorData).forEach(([sec, { count, tierSum }]) => {
-            const avgTier = tierSum / count; // 1–3
-            scores[sec] = Math.min(1, (count / maxCount) * 0.6 + ((avgTier - 1) / 2) * 0.4);
-        });
-        return scores;
-    }
-
-    function computeICEFactors(lat, lng, historicalScore) {
-        return {
-            vegetation: iceVegetation(lat, lng),
-            terrain:    iceTerrain(lat, lng),
-            water:      iceWaterProximity(lat, lng),
-            historical: historicalScore ?? 0,
-        };
-    }
-
-    function iceScoreFromFactors(factors) {
-        return (
-            factors.vegetation * ICE_WEIGHTS.vegetation +
-            factors.terrain    * ICE_WEIGHTS.terrain    +
-            factors.water      * ICE_WEIGHTS.water      +
-            factors.historical * ICE_WEIGHTS.historical
-        );
-    }
-
-    /* Cosine similarity between two factor objects (same keys) */
-    function iceCosineSimilarity(a, b) {
-        const keys = Object.keys(a);
-        const dot   = keys.reduce((s, k) => s + a[k] * b[k], 0);
-        const magA  = Math.sqrt(keys.reduce((s, k) => s + a[k] ** 2, 0));
-        const magB  = Math.sqrt(keys.reduce((s, k) => s + b[k] ** 2, 0));
-        return magA && magB ? dot / (magA * magB) : 0;
-    }
-
-    /* Map ICE score to fill color: green → amber → red */
-    function iceScoreColor(score) {
-        if (score < 0.35) return `rgba(57,255,20,${(score / 0.35 * 0.18).toFixed(2)})`;
-        if (score < 0.60) {
-            const t = (score - 0.35) / 0.25;
-            return `rgba(255,${Math.round(204 - t * 80)},${Math.round(68 - t * 50)},${(0.18 + t * 0.14).toFixed(2)})`;
-        }
-        const t = Math.min(1, (score - 0.60) / 0.40);
-        return `rgba(255,${Math.round(80 - t * 50)},${Math.round(20 - t * 20)},${(0.28 + t * 0.18).toFixed(2)})`;
-    }
-
-    /* ── Clear risk zone layer ───────────────────────────────── */
-    function clearRiskZones(map) {
-        if (_riskGroup) { map.removeLayer(_riskGroup); _riskGroup = null; }
-    }
-
-    /* ── Build ICE risk zone polygons across the visible area ── */
-    /* Each grid cell (~5.5 km) gets a filled polygon colored by
-       its ICE score. Zero-sighting sectors that score above 0.55
-       also get a ghost "predicted" triangle marker.              */
-    function buildRiskZones(map, allMarkers) {
-        clearRiskZones(map);
-        _riskGroup = L.layerGroup().addTo(map);
-
-        const historicalScores = buildHistoricalScores(allMarkers);
-
-        // Build set of sectors that have real sightings
-        const sightingSectors = new Set(allMarkers.map(m => m.sector));
-
-        // Determine bounding box of current view + 20% padding
-        const bounds = map.getBounds().pad(0.2);
-        const latMin = bounds.getSouth();
-        const latMax = bounds.getNorth();
-        const lngMin = bounds.getWest();
-        const lngMax = bounds.getEast();
-
-        const GRID = 0.05; // ~5.5 km — matches latLngToSector() resolution
-
-        for (let lat = Math.floor(latMin / GRID) * GRID; lat < latMax; lat += GRID) {
-            for (let lng = Math.floor(lngMin / GRID) * GRID; lng < lngMax; lng += GRID) {
-                const sectorLat = Math.round(lat * 20) / 20;
-                const sectorLng = Math.round(lng * 20) / 20;
-                const sectorKey = `${sectorLat.toFixed(2)},${sectorLng.toFixed(2)}`;
-
-                const centLat = sectorLat + GRID / 2;
-                const centLng = sectorLng + GRID / 2;
-
-                const factors = computeICEFactors(centLat, centLng, historicalScores[sectorKey] ?? 0);
-                const score   = iceScoreFromFactors(factors);
-
-                // Skip very low-risk cells to keep the map readable
-                if (score < 0.20) continue;
-
-                const corners = [
-                    [sectorLat,          sectorLng],
-                    [sectorLat,          sectorLng + GRID],
-                    [sectorLat + GRID,   sectorLng + GRID],
-                    [sectorLat + GRID,   sectorLng],
-                ];
-
-                L.polygon(corners, {
-                    color:       iceScoreColor(score).replace(/[\d.]+\)$/, '0.8)'),
-                    weight:      0.5,
-                    fillColor:   iceScoreColor(score),
-                    fillOpacity: 1,
-                    interactive: true,
-                    pane:        'overlayPane',
-                }).bindTooltip(
-                    `<div class="ts-risk-label"><span>ICE ${Math.round(score * 100)}</span></div>`,
-                    { sticky: true, className: 'ts-risk-tooltip', opacity: 1 }
-                ).addTo(_riskGroup);
-
-                // Ghost predicted marker on high-risk, zero-sighting sectors
-                if (score >= 0.55 && !sightingSectors.has(sectorKey)) {
-                    const similarity = iceCosineSimilarity(factors, ICE_HIGH_RISK_TEMPLATE);
-                    const label = similarity >= ICE_MATCH_THRESHOLD
-                        ? 'SIGNATURE MATCH'
-                        : 'PREDICTED';
-
-                    const ghostMeta = { bar: '#ffcc44', bracket: '#ffcc44', fill: 'rgba(255,204,68,0.06)', titleColor: '#ffcc44', statusColor: '#ffcc44' };
-                    const ghostTri  = makeMiniTriangle(ghostMeta, 1.0);
-                    ghostTri.classList.add('ts-predicted');
-
-                    const ghostCard = document.createElement('div');
-                    ghostCard.className = 'ts-reticle-card ts-mini';
-                    ghostCard.dataset.iceScore   = score.toFixed(3);
-                    ghostCard.dataset.iceSector  = sectorKey;
-                    ghostCard.dataset.iceLabel   = label;
-                    ghostCard.dataset.iceSimilarity = similarity.toFixed(3);
-                    ghostCard.dataset.iceFactors = JSON.stringify(factors);
-                    ghostCard.appendChild(ghostTri);
-
-                    const ghostIcon = L.divIcon({
-                        className: 'ts-leaflet-icon',
-                        html: ghostCard,
-                        iconSize: [30, 30],
-                        iconAnchor: [10, 10],
-                    });
-
-                    const ghostMarker = L.marker([centLat, centLng], {
-                        icon: ghostIcon,
-                        interactive: true,
-                        zIndexOffset: -100,
-                    }).addTo(_riskGroup);
-
-                    /* Open dock with ICE signature when ghost marker is clicked */
-                    ghostMarker.on('click', () => {
-                        const mapWrap = map.getContainer().parentElement;
-                        openDock(mapWrap, map, {
-                            id:       `ice-${sectorKey}`,
-                            kind:     'predicted',
-                            lat:      centLat,
-                            lng:      centLng,
-                            sector:   sectorKey,
-                            title:    label,
-                            expTitle: label,
-                            subs:     [],
-                            expSubs:  [],
-                            _raw:     {},
-                            _iceFactors:    factors,
-                            _iceScore:      score,
-                            _iceSimilarity: similarity,
-                            _iceLabel:      label,
-                        });
-                    });
-                }
             }
         }
     }
@@ -1759,10 +1522,12 @@ const TestSitePage = (() => {
     /* ── Legend overlay ───────────────────────────────────────── */
     function buildLegend() {
         const items = [
-            { label: 'Grid Cell', color: '#ffffff' },
-            { label: 'Report',    color: '#66ccff' },
-            { label: 'Asset',     color: '#00ff88' },
-            { label: 'Threat',    color: '#ff3333' },
+            { label: 'Grid',    color: '#ffffff' },
+            { label: 'Report',  color: '#66ccff' },
+            { label: 'Ranger',  color: '#b8f000' },
+            { label: 'Sensor',  color: '#00e5ff' },
+            { label: 'Caution', color: '#ffcc44' },
+            { label: 'Threat',  color: '#ff3333' },
         ];
         return `
         <div class="ts-legend">
@@ -1798,13 +1563,7 @@ const TestSitePage = (() => {
                 <span class="ts-legend__flow-line ts-legend__flow-line--bright"></span>
                 <span class="ts-legend__label" style="color:#444;">BRIGHTNESS = VOLUME</span>
             </div>
-            <div class="ts-legend__risk-row" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-                <span style="display:inline-block;width:12px;height:8px;background:rgba(57,255,20,0.25);border:0.5px solid rgba(57,255,20,0.5);flex-shrink:0;"></span>
-                <span style="display:inline-block;width:12px;height:8px;background:rgba(255,180,30,0.30);border:0.5px solid rgba(255,180,30,0.5);flex-shrink:0;"></span>
-                <span style="display:inline-block;width:12px;height:8px;background:rgba(255,51,30,0.35);border:0.5px solid rgba(255,51,30,0.5);flex-shrink:0;"></span>
-                <span class="ts-legend__label" style="color:#444;">ICE RISK ZONES</span>
-            </div>
-            <div class="ts-legend__hint">Hover △ to inspect · Click △ to restore · Size = tier · Opacity = age · ● = fresh · FLOWS = corridors · RISK = ICE prediction</div>
+            <div class="ts-legend__hint">Hover △ to inspect · Click △ to restore · Size = tier · Opacity = age · ● = fresh · FLOWS = corridors</div>
         </div>`;
     }
 
@@ -1866,7 +1625,7 @@ const TestSitePage = (() => {
         const params = new URLSearchParams();
 
         // Kind filter — only write when something is deselected
-        const allKinds = ['default', 'report', 'asset', 'threat'];
+        const allKinds = ['default', 'report', 'ranger', 'sensor', 'command', 'caution', 'threat'];
         const active = allKinds.filter(k => filterState.activeKinds.has(k));
         if (active.length !== allKinds.length) params.set('kinds', active.join(','));
 
@@ -1933,7 +1692,7 @@ const TestSitePage = (() => {
     function restoreState(savedState, map, container) {
         if (!savedState || Object.keys(savedState).length === 0) return;
 
-        const allKinds = ['default', 'report', 'asset', 'threat'];
+        const allKinds = ['default', 'report', 'ranger', 'sensor', 'command', 'caution', 'threat'];
 
         // Kinds
         if (savedState.kinds) {
@@ -2175,10 +1934,13 @@ const TestSitePage = (() => {
             _leafletMap = null;
             _heatLayer = null;
             _flowGroup = null;
-            _riskGroup = null;
             _mountedRefs = [];
             _allMarkers = [];
         }
+        // Wildebeest layer is owned by the map instance; nulled here so
+        // buildWildebeestLayer() recreates it fresh on the next render.
+        _wildebeestLayer = null;
+        _wildebeestOn = false;
         _focusedIndex = -1;
 
         container.style.padding = '0';
@@ -2190,15 +1952,14 @@ const TestSitePage = (() => {
         const savedState = decodeStateFromHash();
 
         // Reset filter state on each render
-        filterState.activeKinds = new Set(['default', 'report', 'asset', 'threat']);
+        filterState.activeKinds = new Set(['default', 'report', 'ranger', 'sensor', 'command', 'caution', 'threat']);
         filterState.minConfidence = 0;
         filterState.timeWindow = 'ALL';
         filterState.heatmapOn = false;
         filterState.flowsOn   = false;
-        filterState.riskOn    = false;
 
-        const KIND_COLORS = { default: '#ffffff', report: '#66ccff', asset: '#39ff14', threat: '#ff3333' };
-        const KIND_LABELS = { default: 'DEFAULT', report: 'REPORT', asset: 'ASSET', threat: 'THREAT' };
+        const KIND_COLORS = { default: '#ffffff', report: '#66ccff', ranger: '#b8f000', sensor: '#00e5ff', command: '#ffffff', caution: '#ffcc44', threat: '#ff3333' };
+        const KIND_LABELS = { default: 'GRID', report: 'REPORT', ranger: 'RANGER', sensor: 'SENSOR', command: 'BASE', caution: 'CAUTION', threat: 'THREAT' };
 
         container.innerHTML = `
             <div class="ts-shell">
@@ -2208,7 +1969,7 @@ const TestSitePage = (() => {
                     <p class="ts-header__sub" id="ts-sub">Fetching live sightings…</p>
                     <div class="ts-filter-bar" id="ts-filter-bar">
                         <div class="ts-filter-group">
-                            ${['default','report','asset','threat'].map(k => `
+                            ${['default','report','ranger','sensor','caution','threat'].map(k => `
                             <button class="ts-filter-kind ts-filter-kind--active" data-kind="${k}"
                                 style="--kind-color:${KIND_COLORS[k]}">
                                 <span class="ts-filter-kind__dot"></span>${KIND_LABELS[k]}
@@ -2229,7 +1990,7 @@ const TestSitePage = (() => {
                         <div class="ts-filter-divider"></div>
                         <button class="ts-filter-heat" id="ts-heat-toggle">HEAT</button>
                         <button class="ts-filter-flow" id="ts-flow-toggle">FLOWS</button>
-                        <button class="ts-filter-risk" id="ts-risk-toggle">RISK</button>
+                        <button class="ts-filter-flow" id="ts-wildebeest-toggle" title="Wildebeest GPS corridors · Mara 2017–2021">GNU</button>
                         <div class="ts-filter-divider"></div>
                         <span class="ts-filter-cache" id="ts-cache-badge">···</span>
                     </div>
@@ -2260,6 +2021,27 @@ const TestSitePage = (() => {
         }).addTo(map);
         map.attributionControl.setPrefix('');
 
+        /* ── Wildebeest GPS corridor layer (lazy-built on first toggle) ── */
+        function buildWildebeestLayer() {
+            if (_wildebeestLayer) return _wildebeestLayer;
+            const data = typeof WILDEBEEST_GPS !== 'undefined' ? WILDEBEEST_GPS : null;
+            if (!data || !data.points.length) return null;
+            const renderer = L.canvas({ padding: 0.5 });
+            const group = L.layerGroup();
+            data.points.forEach(([lat, lng]) => {
+                L.circleMarker([lat, lng], {
+                    renderer,
+                    radius: 2,
+                    color: 'transparent',
+                    fillColor: '#c8ff00',
+                    fillOpacity: 0.28,
+                    interactive: false,
+                }).addTo(group);
+            });
+            _wildebeestLayer = group;
+            return group;
+        }
+
         // Show spinner over the map while fetching
         const mapWrap = container.querySelector('.ts-map-wrap');
         const loadingEl = showLoadingOverlay(mapWrap);
@@ -2270,9 +2052,13 @@ const TestSitePage = (() => {
         try {
             const raw = await API.get('/analysis/sightings');
             if (Array.isArray(raw) && raw.length > 0) {
-                markers = raw
+                const liveMarkers = raw
                     .filter(r => r.latitude != null && r.longitude != null)
                     .map(sightingToMarker);
+                
+                // Always inject mock assets (rangers & sensors) into the live stream
+                const mockAssets = FALLBACK_MARKERS.filter(m => m.id.startsWith('ranger-') || m.id.startsWith('sensor-'));
+                markers = [...liveMarkers, ...mockAssets];
                 usingLive = true;
             }
         } catch (err) {
@@ -2365,18 +2151,15 @@ const TestSitePage = (() => {
             pushState(map);
         });
 
-        // ICE risk overlay toggle — rebuilds zones on map moveend while active
-        document.getElementById('ts-risk-toggle')?.addEventListener('click', (e) => {
-            filterState.riskOn = !filterState.riskOn;
-            e.currentTarget.classList.toggle('ts-filter-risk--active', filterState.riskOn);
-            applyFilters();
-            pushState(map);
-        });
-
-        // Rebuild risk zones when the viewport changes (new cells enter view)
-        map.on('moveend', () => {
-            if (filterState.riskOn && _leafletMap) {
-                buildRiskZones(_leafletMap, _allMarkers);
+        // Wildebeest GPS corridor toggle
+        document.getElementById('ts-wildebeest-toggle')?.addEventListener('click', (e) => {
+            _wildebeestOn = !_wildebeestOn;
+            e.currentTarget.classList.toggle('ts-filter-flow--active', _wildebeestOn);
+            if (_wildebeestOn) {
+                const layer = buildWildebeestLayer();
+                if (layer) layer.addTo(map);
+            } else if (_wildebeestLayer) {
+                map.removeLayer(_wildebeestLayer);
             }
         });
 

@@ -9,19 +9,27 @@ const MapPage = (() => {
 
   /* ── Mock data ───────────────────────────────────────────── */
   const MARKERS = [
-    { id: 'ranger-1', kind: 'ranger', x: 31, y: 55, label: 'Adwoa K.', lat: -1.2740, lng: 36.8812 },
+    { id: 'ranger-1', kind: 'ranger', x: 31, y: 45, label: 'Adwoa K.', lat: -1.2740, lng: 36.8812 },
     { id: 'ranger-2', kind: 'ranger', x: 38, y: 63, label: 'Kofi M.', lat: -1.2880, lng: 36.8864 },
     { id: 'ranger-3', kind: 'ranger', x: 65, y: 37, label: 'Linnet O.', lat: -1.2540, lng: 36.9040 },
-    { id: 'sensor-1', kind: 'sensor', x: 23, y: 35, label: 'Acoustic 14', lat: -1.2510, lng: 36.8720 },
+    { id: 'ranger-4', kind: 'ranger', x: 45, y: 40, label: 'Boateng S.', lat: -1.2600, lng: 36.8900 },
+    { id: 'ranger-5', kind: 'ranger', x: 85, y: 45, label: 'Adjei P.', lat: -1.2700, lng: 36.9200 },
+    { id: 'sensor-1', kind: 'sensor', x: 23, y: 25, label: 'Acoustic 14', lat: -1.2510, lng: 36.8720 },
     { id: 'sensor-2', kind: 'sensor', x: 71, y: 71, label: 'Acoustic 09', lat: -1.3040, lng: 36.9090 },
+    { id: 'sensor-3', kind: 'sensor', x: 85, y: 45, label: 'Camera 03', lat: -1.2700, lng: 36.9200 },
+    { id: 'sensor-4', kind: 'sensor', x: 35, y: 55, label: 'LoRa Node 7', lat: -1.2800, lng: 36.8780 },
+    { id: 'ranger-6', kind: 'ranger', x: 50, y: 50, label: 'Nia Z.', lat: -1.2921, lng: 36.8380 },
+    { id: 'sensor-5', kind: 'sensor', x: 52, y: 55, label: 'Satellite Link 1', lat: -1.2950, lng: 36.8400 },
     { id: 'command-1', kind: 'command', x: 50, y: 79, label: 'Base Karoo', lat: -1.3180, lng: 36.8950 },
-    { id: 'threat-1', kind: 'threat', x: 58, y: 28, label: 'T-1', lat: -1.3140, lng: 36.8975 },
-    { id: 'threat-2', kind: 'caution', x: 79, y: 50, label: 'T-2', lat: -1.2960, lng: 36.9120 },
+    { id: 'threat-1', kind: 'threat', x: 58, y: 78, label: 'T-1', lat: -1.3140, lng: 36.8975 },
+    { id: 'ts-threat-1', kind: 'threat', x: 15, y: 25, label: 'T-3', lat: -1.2650, lng: 36.8420 },
+    { id: 'ts-report-1', kind: 'caution', x: 20, y: 65, label: 'R-1', lat: -1.2950, lng: 36.8560 },
   ];
 
   const ALL_ALERTS = [
-    { id: 'threat-1', kind: 'alert', sector: 'SECTOR 7B', time: '02:14', title: 'Acoustic contact, 2 individuals, north ridge', conf: '0.87', source: 'acoustic array 14' },
-    { id: 'threat-2', kind: 'warn', sector: 'SECTOR 21A', time: '03:49', title: 'Coverage gap · last patrol 14 hrs ago', conf: '0.62', source: 'patrol planner' },
+    { id: 'threat-1', kind: 'alert', sector: 'SECTOR 21A', time: '02:14', title: 'Poaching Activity', conf: '0.92', source: 'acoustic array 09' },
+    { id: 'ts-threat-1', kind: 'alert', sector: 'SECTOR 17B', time: '04:10', title: 'Wildfire Cluster', conf: '0.98', source: 'satellite imagery' },
+    { id: 'ts-report-1', kind: 'warn', sector: 'SECTOR 17B', time: '05:45', title: 'Elephant Sighting', conf: '0.85', source: 'field report' },
   ];
 
   const RANGERS = [
@@ -30,6 +38,7 @@ const MapPage = (() => {
     { id: 'ranger-3', name: 'Linnet O.', sector: '21A', lastPing: '03:49', status: 'warn', label: 'Caution' },
     { id: 'ranger-4', name: 'Boateng S.', sector: '21A', lastPing: '02:14', status: 'alert', label: 'Lost signal' },
     { id: 'ranger-5', name: 'Adjei P.', sector: '09C', lastPing: '04:20', status: 'idle', label: 'Standing by' },
+    { id: 'ranger-6', name: 'Nia Z.', sector: '17B', lastPing: 'NOW', status: 'go', label: 'On patrol' },
   ];
 
   const SENSORS = [
@@ -37,6 +46,7 @@ const MapPage = (() => {
     { id: 'sensor-2', name: 'Acoustic 09', type: 'Acoustic Array', sector: '21A', status: 'online', battery: '62%', lastSync: '04:19:44', lat: -1.3040, lng: 36.9090 },
     { id: 'sensor-3', name: 'Camera 03', type: 'Camera Trap', sector: '09C', status: 'offline', battery: '12%', lastSync: '01:04:22', lat: -1.2700, lng: 36.9200 },
     { id: 'sensor-4', name: 'LoRa Node 7', type: 'LoRa Gateway', sector: '17B', status: 'online', battery: '91%', lastSync: '04:21:00', lat: -1.2800, lng: 36.8780 },
+    { id: 'sensor-5', name: 'Satellite Link 1', type: 'VSAT Station', sector: '17B', status: 'online', battery: '100%', lastSync: 'NOW', lat: -1.2950, lng: 36.8400 },
   ];
 
   /* ── Inner nav tabs ──────────────────────────────────────── */
@@ -79,21 +89,28 @@ const MapPage = (() => {
     if (!m) return null;
 
     if (m.kind === 'threat' || m.kind === 'caution') {
+      const alert = ALL_ALERTS.find(a => a.id === m.id);
       const isHot = m.kind === 'threat';
+      const name = alert ? alert.title : (isHot ? 'Threat' : 'Caution');
+      const sector = alert ? alert.sector : 'Unknown';
+      const conf = alert ? alert.conf : (isHot ? '0.85' : '0.60');
+      const source = alert ? alert.source : 'System';
+      const time = alert ? alert.time : '00:00';
+
       return {
         kind: 'threat',
         marker: m,
-        name: isHot ? 'Acoustic contact · 7B' : 'Coverage gap · 21A',
+        name: `${name} · ${sector}`,
         fields: [
-          ['Confidence', isHot ? '0.87' : '0.62'],
-          ['Source', isHot ? 'Acoustic Array 14' : 'Patrol Planner'],
-          ['Sector', isHot ? '7B North Ridge' : '21A South'],
+          ['Confidence', conf],
+          ['Source', source],
+          ['Sector', sector],
           ['Coords', `${m.lat}, ${m.lng}`],
-          ['Detected', isHot ? '02:14:32 UTC' : '03:49:00 UTC'],
+          ['Detected', `${time} UTC`],
         ],
-        detail: isHot
-          ? '2 individuals moving NE at ~4 km/h. Pattern matches prior incursion fingerprint (Mar 18). No vehicle signature. Unsanctioned forest clearing — 4 acres. New road clearing links to main clearing.'
-          : 'No patrol coverage in south corridor for >14 hrs. Recommend redeploying R5 from 09C.',
+        detail: alert && alert.title.includes('Wildfire')
+          ? 'Thermal anomaly detected via satellite. Spread rate: 2.4 hectares/hr. Wind direction: NE. Critical habitat proximity: 1.2km.'
+          : 'Suspicious acoustic signature detected. Possible unauthorized entry or poaching activity. Pattern matches prior incursions.',
       };
     }
     if (m.kind === 'ranger') {
@@ -313,25 +330,100 @@ const MapPage = (() => {
   function buildMap() {
     return `
         <div class="ops-map-bg">
+          <div class="ops-map-scanline"></div>
           <div class="ops-map-grid"></div>
-          <svg class="ops-map-svg" viewBox="0 0 800 600" preserveAspectRatio="none">
-            <g fill="none" stroke="rgba(184,240,0,0.07)" stroke-width="1">
-              <path d="M0,420 C160,360 320,440 480,380 C640,320 720,360 800,330"/>
-              <path d="M0,460 C160,400 320,480 480,420 C640,360 720,400 800,370"/>
-              <path d="M0,500 C160,440 320,520 480,460 C640,400 720,440 800,410"/>
-              <path d="M0,260 C200,300 380,200 560,260 C700,300 760,260 800,280"/>
-              <path d="M0,220 C200,260 380,160 560,220 C700,260 760,220 800,240"/>
+
+          <!-- Main SVG layer: topo contours + scan diagonal + radar -->
+          <svg class="ops-map-svg" viewBox="0 0 1000 700" preserveAspectRatio="none">
+            <!-- Topographic contour lines (monochrome, very dim) -->
+            <g fill="none" stroke="rgba(255,255,255,0.055)" stroke-width="0.8">
+              <path d="M0,580 C80,560 160,610 240,580 C320,548 400,600 480,565 C560,530 640,575 720,545 C800,515 880,555 1000,530"/>
+              <path d="M0,540 C80,515 160,565 250,530 C340,495 420,545 500,510 C580,475 660,520 740,490 C820,460 900,500 1000,475"/>
+              <path d="M0,500 C90,470 180,520 270,484 C360,448 440,498 520,462 C600,426 680,470 760,440 C840,410 920,450 1000,420"/>
+              <path d="M0,460 C95,428 190,478 285,440 C380,402 460,448 540,415 C620,382 700,424 780,392 C860,360 940,402 1000,374"/>
+              <path d="M0,420 C100,385 200,432 300,395 C400,358 480,402 560,368 C640,334 720,378 800,344 C880,310 960,352 1000,326"/>
+              <path d="M0,380 C110,342 210,390 315,352 C420,314 500,360 580,324 C660,288 740,332 820,296 C900,260 970,302 1000,280"/>
+              <path d="M0,340 C120,298 220,348 330,308 C440,268 520,316 600,278 C680,240 760,286 840,248 C920,210 980,250 1000,232"/>
+              <path d="M0,300 C130,256 230,308 345,265 C460,222 540,272 620,232 C700,192 780,240 860,200 C940,160 990,198 1000,184"/>
+              <!-- Upper region contours -->
+              <path d="M0,260 C140,212 250,268 365,222 C480,176 560,228 640,186 C720,144 800,194 875,152 C950,110 990,146 1000,136"/>
+              <path d="M0,220 C150,168 260,228 380,180 C500,132 580,184 660,140 C740,96 818,148 890,104 C962,60 995,96 1000,88"/>
             </g>
-            <g fill="none" stroke="rgba(200,190,140,0.14)" stroke-width="1" stroke-dasharray="3 4">
-              <path d="M40,540 C220,500 340,420 520,400 C660,388 740,360 780,340"/>
+
+            <!-- Dashed survey / path line -->
+            <g fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.6" stroke-dasharray="4 6">
+              <path d="M0,620 C150,590 280,540 420,500 C560,460 680,430 820,400 C880,385 950,370 1000,358"/>
+            </g>
+
+            <!-- Diagonal scan line (like reference image top frame) -->
+            <line x1="0" y1="0"    x2="1000" y2="700" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+            <line x1="120" y1="0"  x2="1000" y2="620" stroke="rgba(255,255,255,0.025)" stroke-width="0.6"/>
+
+            <!-- Radar circle (right side) — matches reference circular reticle -->
+            <g transform="translate(830,350)">
+              <!-- Outer ring -->
+              <circle cx="0" cy="0" r="200" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="0.6"/>
+              <!-- Mid rings -->
+              <circle cx="0" cy="0" r="150" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+              <circle cx="0" cy="0" r="100" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+              <circle cx="0" cy="0" r="50"  fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="0.5"/>
+              <!-- Cross hairs -->
+              <line x1="-210" y1="0" x2="210" y2="0" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+              <line x1="0" y1="-210" x2="0" y2="210" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+              <!-- Diagonal cross hairs (45°) -->
+              <line x1="-148" y1="-148" x2="148" y2="148" stroke="rgba(255,255,255,0.04)" stroke-width="0.4"/>
+              <line x1="148" y1="-148" x2="-148" y2="148" stroke="rgba(255,255,255,0.04)" stroke-width="0.4"/>
+              <!-- Tick marks around outer ring -->
+              <g stroke="rgba(255,255,255,0.18)" stroke-width="0.6">
+                <line x1="0" y1="-200" x2="0" y2="-192"/>
+                <line x1="0" y1="200"  x2="0" y2="192"/>
+                <line x1="-200" y1="0" x2="-192" y2="0"/>
+                <line x1="200" y1="0"  x2="192" y2="0"/>
+              </g>
+              <!-- Small corner bracket at top-right of radar -->
+              <polyline points="20,-180 30,-180 30,-170" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="0.8"/>
+              <!-- Range label -->
+              <text x="6" y="-158" font-family="JetBrains Mono,monospace" font-size="8" fill="rgba(255,255,255,0.25)" letter-spacing="0.1em">200</text>
+              <!-- Sweep line (static, ~40°) -->
+              <line x1="0" y1="0" x2="153" y2="-129" stroke="rgba(255,255,255,0.12)" stroke-width="0.6"/>
+            </g>
+
+            <!-- Corner bracket frame marks (reference: small squares at corners) -->
+            <g fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.7">
+              <!-- TL -->
+              <polyline points="8,20 8,8 20,8"/>
+              <!-- TR -->
+              <polyline points="980,8 992,8 992,20"/>
+              <!-- BL -->
+              <polyline points="8,680 8,692 20,692"/>
+              <!-- BR -->
+              <polyline points="980,692 992,692 992,680"/>
+            </g>
+
+            <!-- Small square dots at mid-edges (reference image decorative nodes) -->
+            <g fill="rgba(255,255,255,0.3)">
+              <rect x="498" y="4"   width="4" height="4"/>
+              <rect x="498" y="692" width="4" height="4"/>
+              <rect x="4"   y="348" width="4" height="4"/>
+              <rect x="992" y="348" width="4" height="4"/>
             </g>
           </svg>
+
+          <!-- Corner data labels (reference: small text in corners / edges) -->
           <span class="ops-map-coord ops-map-coord--tl">36M VC 11320 67890</span>
-          <span class="ops-map-coord ops-map-coord--br">36M VC 19840 64210</span>
+          <span class="ops-map-coord ops-map-coord--tr">SAT · LOCK</span>
+          <span class="ops-map-coord ops-map-coord--bl">FRAC · 0.10969</span>
+          <span class="ops-map-coord ops-map-coord--br">GRID 17B · 1000M</span>
+
+          <!-- Sector watermark -->
+          <div class="ops-map-sector-label">[ SECTOR 17B ]</div>
+
+          <!-- Scale bar -->
           <div class="ops-map-scale">
             <span class="ops-map-scale__bar"></span>
             <span class="ops-map-scale__lbl">2 km</span>
           </div>
+
           <div class="ops-reticle-layer" id="ops-reticle-layer"></div>
         </div>`;
   }
@@ -340,11 +432,11 @@ const MapPage = (() => {
   const _RETICLE_NS = 'http://www.w3.org/2000/svg';
 
   const _MARKER_META = {
-    ranger:  { bracket: '#ffffff', bar: '#b8f000', fill: 'rgba(184,240,0,0.07)',   titleColor: '#b8f000' },
-    sensor:  { bracket: '#ffffff', bar: '#00c8e0', fill: 'rgba(0,200,224,0.07)',   titleColor: '#00c8e0' },
-    command: { bracket: '#ffffff', bar: '#ffffff', fill: 'rgba(255,255,255,0.07)', titleColor: '#ffffff' },
-    threat:  { bracket: '#ffffff', bar: '#ff3333', fill: 'rgba(255,40,40,0.09)',   titleColor: '#ff3333' },
-    caution: { bracket: '#ffffff', bar: '#ffaa00', fill: 'rgba(255,170,0,0.09)',   titleColor: '#ffaa00' },
+    ranger:  { bracket: 'rgba(255,255,255,0.7)', bar: 'rgba(255,255,255,0.5)', fill: 'rgba(255,255,255,0.03)', titleColor: 'rgba(255,255,255,0.85)' },
+    sensor:  { bracket: 'rgba(255,255,255,0.55)', bar: 'rgba(255,255,255,0.4)', fill: 'rgba(255,255,255,0.025)', titleColor: 'rgba(255,255,255,0.7)' },
+    command: { bracket: 'rgba(255,255,255,0.5)', bar: 'rgba(255,255,255,0.35)', fill: 'rgba(255,255,255,0.02)', titleColor: 'rgba(255,255,255,0.65)' },
+    threat:  { bracket: 'rgba(255,50,50,0.9)',  bar: 'rgba(255,50,50,0.75)',  fill: 'rgba(255,30,30,0.07)',  titleColor: 'rgba(255,80,80,0.95)' },
+    caution: { bracket: 'rgba(210,140,0,0.85)', bar: 'rgba(200,130,0,0.7)',  fill: 'rgba(200,120,0,0.06)', titleColor: 'rgba(220,155,0,0.9)' },
   };
 
   function _makeReticleSVG(meta) {
@@ -826,6 +918,7 @@ const MapPage = (() => {
       callout: { markerId: 'threat-1' },
       activeTab: 'live-map',
       utcTime: '--:--:--',
+      drawerCollapsed: localStorage.getItem(DRAWER_COLLAPSED_KEY) === '1',
     };
 
     _container = container;

@@ -1,167 +1,115 @@
 /* ============================================================
    TERRA – analytics.js
-   Analytics & Data Intelligence page.
+   Analytics & Data Intelligence — Dark tactical redesign.
 
-   Fetches all validated sightings and renders client-side:
-     ✦ Hero strip   — headline figures + date context
-     ✦ KPI grid     — 4 top-line stats, card-grid pattern
-     ✦ Trend chart  — 12-month validated records, line + fill
-     ✦ Species chart — top-10 frequency, horizontal bars
-     ✦ Tier donut   — sensitivity classification breakdown
-     ✦ Conf. histogram — AI confidence score distribution
-     ✦ Coverage panel — data freshness + span
-     ✦ Species table — all taxa ranked, inline bar + % share
+   Dark navy background (#07111a), white/grey type, neon accents.
+   Sections:
+     • Frame A   — hero KV stats + freshness strip
+     • Sankey    — tier → classification flow (canvas)
+     • Rings     — 4 thin donut gauges (canvas)
+     • Trend     — 12-month bar matrix
+     • Species   — ranked taxa table
+     • Frame B   — summary data panel
 
-   Data source: GET /analysis/sightings (validated only)
-
-   Navigation: Router.navigate('analytics')
+   Data: GET /analysis/sightings (validated only)
    ============================================================ */
 
 const AnalyticsPage = (() => {
 
-    /* ── Chart instance tracker — destroyed on every re-render ── */
     let _charts = [];
     let _themeListener = null;
 
     function destroyCharts() {
-        _charts.forEach(c => { try { c.destroy(); } catch (e) {} });
+        _charts.forEach(c => { try { c.destroy(); } catch(e){} });
         _charts = [];
     }
 
-    function makeChart(ctx, config) {
-        const c = new Chart(ctx, config);
-        _charts.push(c);
-        return c;
-    }
-
-    /* ── Number helpers ──────────────────────────────────────── */
+    /* ── Helpers ─────────────────────────────────────────────── */
     function fmtNum(n) {
-        if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+        if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+        if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
         return String(n);
     }
-
-    function toMonth(dateStr) {
-        const d = new Date(dateStr);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    function pad2(n) { return String(n).padStart(2, '0'); }
+    function toMonth(s) {
+        const d = new Date(s);
+        return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
     }
-
-    /* Returns an array of YYYY-MM strings for the last n calendar months */
     function lastNMonths(n) {
-        const out = [];
-        const now = new Date();
-        for (let i = n - 1; i >= 0; i--) {
-            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+        const out = [], now = new Date();
+        for (let i = n-1; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+            out.push(`${d.getFullYear()}-${pad2(d.getMonth()+1)}`);
         }
         return out;
     }
 
-    /* ── Shared Chart.js aesthetic config ───────────────────── */
-    function isLight() { return document.body.classList.contains('light'); }
-
-    function applyChartDefaults() {
-        Chart.defaults.color = isLight() ? '#5a6373' : '#7d8693';
-        Chart.defaults.font.family = "'JetBrains Mono', monospace";
-        Chart.defaults.font.size = 10;
-    }
-
-    function getTooltip() {
-        return isLight() ? {
-            backgroundColor: '#ffffff',
-            borderColor: 'rgba(0,0,0,0.10)',
-            borderWidth: 1,
-            titleColor: '#6aa800',
-            bodyColor: '#5a6373',
-            padding: 10,
-            cornerRadius: 0,
-        } : {
-            backgroundColor: '#161b22',
-            borderColor: 'rgba(255,255,255,0.10)',
-            borderWidth: 1,
-            titleColor: '#b8f000',
-            bodyColor: '#7d8693',
-            padding: 10,
-            cornerRadius: 0,
-        };
-    }
-
-    function getGrid() {
-        return isLight()
-            ? { color: 'rgba(0,0,0,0.06)', borderColor: 'transparent', drawTicks: false }
-            : { color: 'rgba(255,255,255,0.05)', borderColor: 'transparent', drawTicks: false };
-    }
-
-    function getTicks() {
-        return isLight()
-            ? { padding: 8, color: 'rgba(0,0,0,0.35)' }
-            : { padding: 8, color: 'rgba(255,255,255,0.25)' };
-    }
-
-    /* ══════════════════════════════════════════════════════════
-       DATA ANALYSIS
-       All derived stats are computed from the raw API array so
-       the page works offline once data is fetched.
-    ══════════════════════════════════════════════════════════ */
-
+    /* ── Data analysis ───────────────────────────────────────── */
     function analyse(records) {
         const total = records.length;
 
-        /* ── Unique species ── */
         const speciesSet = new Set();
         records.forEach(r => {
-            const key = r.species_id || r.species_name;
-            if (key && key !== 'Unknown Species') speciesSet.add(key);
+            const k = r.species_id || r.species_name;
+            if (k && k !== 'Unknown Species') speciesSet.add(k);
         });
 
-        /* ── Average AI confidence ── */
         const confs = records.map(r => parseFloat(r.ai_confidence_score)).filter(n => !isNaN(n));
         const avgConf = confs.length
-            ? (confs.reduce((a, b) => a + b, 0) / confs.length).toFixed(1)
-            : '—';
+            ? (confs.reduce((a,b)=>a+b,0)/confs.length).toFixed(1) : '—';
 
-        /* ── Date range ── */
         const dates = records.map(r => new Date(r.created_at)).filter(d => !isNaN(d));
-        const oldest = dates.length ? new Date(Math.min(...dates.map(d => d.getTime()))) : null;
-        const newest = dates.length ? new Date(Math.max(...dates.map(d => d.getTime()))) : null;
+        const oldest = dates.length ? new Date(Math.min(...dates)) : null;
+        const newest = dates.length ? new Date(Math.max(...dates)) : null;
 
-        /* ── Monthly trend (last 12 months) ── */
         const months = lastNMonths(12);
-        const monthCounts = {};
-        months.forEach(m => { monthCounts[m] = 0; });
+        const monthCounts = Object.fromEntries(months.map(m => [m, 0]));
         records.forEach(r => {
             const m = toMonth(r.created_at);
-            if (Object.prototype.hasOwnProperty.call(monthCounts, m)) monthCounts[m]++;
+            if (m in monthCounts) monthCounts[m]++;
         });
 
-        /* ── Species frequency map ── */
         const speciesFreq = {};
         records.forEach(r => {
-            const key = r.species_name || r.species_id || 'Unknown';
-            if (key === 'Unknown Species' || key === 'Unknown') return;
-            speciesFreq[key] = (speciesFreq[key] || 0) + 1;
+            const k = r.species_name || r.species_id || 'Unknown';
+            if (k === 'Unknown Species' || k === 'Unknown') return;
+            speciesFreq[k] = (speciesFreq[k] || 0) + 1;
         });
-        const allSpecies = Object.entries(speciesFreq).sort((a, b) => b[1] - a[1]);
-        const topSpecies = allSpecies.slice(0, 10);
+        const allSpecies = Object.entries(speciesFreq).sort((a,b) => b[1]-a[1]);
 
-        /* ── Sensitivity tier distribution ── */
-        const tierCount = { 1: 0, 2: 0, 3: 0, 4: 0 };
+        const tierCount = {1:0, 2:0, 3:0};
         records.forEach(r => {
-            const t = parseInt(r.sensitivity_tier) || 1;
-            if (tierCount[t] !== undefined) tierCount[t]++;
+            const t = Math.min(3, parseInt(r.sensitivity_tier) || 1);
+            tierCount[t]++;
         });
 
-        /* ── AI confidence histogram (5 × 20-point buckets) ── */
-        const confBuckets = [0, 0, 0, 0, 0];
-        confs.forEach(c => { confBuckets[Math.min(Math.floor(c / 20), 4)]++; });
+        const confBuckets = [0,0,0,0,0];
+        confs.forEach(c => { confBuckets[Math.min(Math.floor(c/20),4)]++; });
 
-        /* ── 30-day activity ── */
-        const cutoff30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
-        const recent30 = records.filter(r => new Date(r.created_at).getTime() >= cutoff30).length;
+        const cutoff30 = Date.now() - 30*24*60*60*1000;
+        const recent30 = records.filter(r => new Date(r.created_at) >= cutoff30).length;
+
+        /* Tier→kind flows for Sankey */
+        const tierKind = {};
+        records.forEach(r => {
+            const t = Math.min(3, parseInt(r.sensitivity_tier) || 1);
+            let kind;
+            if (t >= 3) kind = 'THREAT';
+            else if (r.validation_status === 'VALIDATED' && r.species_name && r.species_name !== 'Unknown Species') kind = 'REPORT';
+            else kind = 'DEFAULT';
+            const key = `T${t}→${kind}`;
+            tierKind[key] = (tierKind[key] || 0) + 1;
+        });
+
+        const spanDays  = (oldest && newest) ? Math.round((newest-oldest)/86400000) : 0;
+        const staleDays = newest ? Math.round((Date.now()-newest)/86400000) : 0;
+        const freshPct  = Math.max(8, Math.min(100, 100 - staleDays*3));
 
         return {
             total, speciesCount: speciesSet.size, avgConf,
             oldest, newest, months, monthCounts,
-            topSpecies, allSpecies, tierCount, confBuckets, recent30,
+            allSpecies, tierCount, confBuckets, recent30,
+            tierKind, spanDays, staleDays, freshPct,
         };
     }
 
@@ -169,486 +117,497 @@ const AnalyticsPage = (() => {
        HTML BUILDERS
     ══════════════════════════════════════════════════════════ */
 
-    function buildHero(stats) {
-        const range = (stats.oldest && stats.newest)
-            ? `${stats.oldest.toLocaleDateString()} – ${stats.newest.toLocaleDateString()}`
-            : 'No date range available';
-
+    function ruler(label = '', ver = '') {
         return `
-        <div class="an-hero anim-fade-in">
-            <div class="an-hero__left">
-                <div class="an-hero__eyebrow">Terra Intelligence Layer</div>
-                <h1 class="an-hero__title">Analytics<br>&amp; Trends</h1>
-                <div class="an-hero__range">${range}</div>
+        <div class="an2-ruler">
+            <span class="an2-ruler__tick"></span>
+            <span class="an2-ruler__label">${label}</span>
+            <div class="an2-ruler__track">
+                <span class="an2-ruler__pip"></span>
+                <span class="an2-ruler__pip"></span>
             </div>
-            <div class="an-hero__right">
-                <div class="an-hero__fig">
-                    <div class="an-hero__fig-val">${fmtNum(stats.total)}</div>
-                    <div class="an-hero__fig-label">Validated Records</div>
-                </div>
-                <div class="an-hero__divider"></div>
-                <div class="an-hero__fig">
-                    <div class="an-hero__fig-val">${stats.speciesCount}</div>
-                    <div class="an-hero__fig-label">Species Tracked</div>
-                </div>
-                <div class="an-hero__divider"></div>
-                <div class="an-hero__fig">
-                    <div class="an-hero__fig-val">${stats.avgConf}<span class="an-hero__fig-unit">%</span></div>
-                    <div class="an-hero__fig-label">Avg Confidence</div>
-                </div>
-            </div>
-        </div>
-        `;
+            ${ver ? `<span class="an2-ruler__ver">${ver}</span>` : ''}
+            <span class="an2-ruler__tick"></span>
+        </div>`;
     }
 
-    function buildKPIs(stats) {
-        const kpis = [
+    function pill(text) {
+        return `<div class="an2-pill">${text}</div>`;
+    }
+
+    function kvRow(label, v1, v2 = '') {
+        return `
+        <div class="an2-kv">
+            <span class="an2-kv__dot"></span>
+            <span class="an2-kv__label">${label}</span>
+            <span class="an2-kv__v1">${v1}</span>
+            ${v2 !== '' ? `<span class="an2-kv__sep">·</span><span class="an2-kv__v2">${v2}</span>` : ''}
+        </div>`;
+    }
+
+    /* ── Frame A — hero ── */
+    function buildFrameA(stats) {
+        const staleColor = stats.staleDays < 7 ? 'green'
+                         : stats.staleDays < 30 ? 'amber' : 'red';
+
+        return `
+        <div class="an2-frame an2-frame--a">
+            ${ruler('TERRA ANALYTICS · INTELLIGENCE LAYER', 'AN-4.2')}
+
+            <div class="an2-frame-a__body">
+                <div class="an2-frame-a__left">
+                    ${pill(`AN/${stats.total} · ${stats.speciesCount}SPX · ${stats.avgConf}%`)}
+                    <div class="an2-id-large">AN${pad2(stats.speciesCount)}</div>
+                    <div class="an2-id-sub">Intelligence Layer</div>
+                    <div class="an2-id-meta">REF NO. 990-22-2.11</div>
+                </div>
+
+                <div class="an2-frame-a__centre">
+                    <div class="an2-kv-block">
+                        ${kvRow('Total Validated',    fmtNum(stats.total),         '')}
+                        ${kvRow('Species Tracked',    stats.speciesCount,           '')}
+                        ${kvRow('Avg AI Confidence',  `${stats.avgConf}%`,          '')}
+                        ${kvRow('Last 30 Days',       stats.recent30 + ' REC',      '')}
+                        ${kvRow('Dataset Span',       stats.spanDays + 'd',         '')}
+                        ${kvRow('Last Sighting',      stats.staleDays + 'd ago',    '')}
+                    </div>
+                    <button class="an2-processing-btn">ANALYSE DATASET</button>
+                </div>
+            </div>
+
+            <!-- Freshness strip -->
+            <div class="an2-fresh-strip">
+                <div class="an2-fresh-cell">
+                    <div class="an2-fresh-cell__label">Total Records</div>
+                    <div class="an2-fresh-cell__val">${fmtNum(stats.total)}</div>
+                </div>
+                <div class="an2-fresh-cell">
+                    <div class="an2-fresh-cell__label">Species</div>
+                    <div class="an2-fresh-cell__val an2-fresh-cell__val--green">${stats.speciesCount}</div>
+                </div>
+                <div class="an2-fresh-cell">
+                    <div class="an2-fresh-cell__label">30-Day Activity</div>
+                    <div class="an2-fresh-cell__val an2-fresh-cell__val--${staleColor}">${stats.recent30}</div>
+                </div>
+                <div class="an2-fresh-cell">
+                    <div class="an2-fresh-bar-label">Data Freshness</div>
+                    <div class="an2-fresh-bar-track">
+                        <div class="an2-fresh-bar-fill" style="width:${stats.freshPct}%"></div>
+                    </div>
+                    <div class="an2-fresh-bar-pct">${stats.freshPct}%</div>
+                </div>
+            </div>
+
+            ${ruler('', '')}
+        </div>`;
+    }
+
+    /* ── Sankey ── */
+    function buildSankeySection() {
+        return `
+        <div class="an2-sankey-section">
+            ${ruler('FLOW ANALYSIS · SENSITIVITY TIER → CLASSIFICATION', 'SYN-4.1')}
+            <div class="an2-sankey-wrap">
+                <canvas id="an2-sankey" class="an2-sankey-canvas"></canvas>
+                <div class="an2-sankey-legend">
+                    <div class="an2-sankey-legend__row"><span class="an2-sankey-legend__dot" style="background:#39ff8a"></span>T1 PUBLIC</div>
+                    <div class="an2-sankey-legend__row"><span class="an2-sankey-legend__dot" style="background:#00d4ff"></span>T2 PROTECTED</div>
+                    <div class="an2-sankey-legend__row"><span class="an2-sankey-legend__dot" style="background:#ff4455"></span>T3 RESTRICTED</div>
+                    <div class="an2-sankey-legend__row"><span class="an2-sankey-legend__dot" style="background:#00d4ff"></span>REPORT</div>
+                    <div class="an2-sankey-legend__row"><span class="an2-sankey-legend__dot" style="background:#6b7d8f"></span>DEFAULT</div>
+                    <div class="an2-sankey-legend__row"><span class="an2-sankey-legend__dot" style="background:#ff4455"></span>THREAT</div>
+                </div>
+            </div>
+            ${ruler('', '')}
+        </div>`;
+    }
+
+    /* ── Rings ── */
+    function buildRingsSection(stats) {
+        const tierTotal = (stats.tierCount[1]||0)+(stats.tierCount[2]||0)+(stats.tierCount[3]||0);
+        const confTotal = stats.confBuckets.reduce((a,b)=>a+b,0) || 1;
+        const confHigh  = stats.confBuckets[3] + stats.confBuckets[4];
+
+        const rings = [
             {
-                label: 'Total Validated',
-                value: fmtNum(stats.total),
-                sub: 'All-time records',
-                accent: false,
+                id:'an2-ring-t1',
+                pct: Math.round((stats.tierCount[1]||0)/Math.max(1,tierTotal)*100),
+                label:'T1 PUBLIC', sub:`${stats.tierCount[1]||0} records`,
+                color:'#39ff8a', track:'rgba(57,255,138,0.12)',
             },
             {
-                label: 'Unique Species',
-                value: stats.speciesCount,
-                sub: 'Taxa tracked',
-                accent: true,
+                id:'an2-ring-t2',
+                pct: Math.round((stats.tierCount[2]||0)/Math.max(1,tierTotal)*100),
+                label:'T2 PROTECTED', sub:`${stats.tierCount[2]||0} records`,
+                color:'#ffb800', track:'rgba(255,184,0,0.12)',
             },
             {
-                label: 'Avg AI Confidence',
-                value: `${stats.avgConf}%`,
-                sub: 'Intelligence score',
-                accent: false,
+                id:'an2-ring-t3',
+                pct: Math.round((stats.tierCount[3]||0)/Math.max(1,tierTotal)*100),
+                label:'T3 RESTRICTED', sub:`${stats.tierCount[3]||0} records`,
+                color:'#ff4455', track:'rgba(255,68,85,0.12)',
             },
             {
-                label: 'Last 30 Days',
-                value: stats.recent30,
-                sub: 'New sightings',
-                accent: stats.recent30 > 0,
+                id:'an2-ring-conf',
+                pct: Math.round(confHigh/confTotal*100),
+                label:'HIGH CONFIDENCE', sub:`${confHigh} of ${confTotal}`,
+                color:'#00d4ff', track:'rgba(0,212,255,0.12)',
             },
         ];
 
         return `
-        <div class="an-kpi-grid">
-            ${kpis.map((k, i) => `
-            <div class="an-kpi reveal ${i > 0 ? 'd' + i : ''}">
-                <div class="an-kpi__label">${k.label}</div>
-                <div class="an-kpi__value ${k.accent ? 'an-kpi__value--accent' : ''}">${k.value}</div>
-                <div class="an-kpi__sub">${k.sub}</div>
+        <div class="an2-rings-section">
+            ${ruler('CLASSIFICATION DISTRIBUTION · SENSITIVITY RINGS', 'CLS-3.2')}
+            <div class="an2-rings-grid">
+                ${rings.map(r => `
+                <div class="an2-ring-cell">
+                    <div class="an2-ring-wrap">
+                        <canvas id="${r.id}" class="an2-ring-canvas"
+                            data-pct="${r.pct}" data-color="${r.color}" data-track="${r.track}">
+                        </canvas>
+                        <div class="an2-ring-center">
+                            <div class="an2-ring-pct" style="color:${r.color}">${r.pct}</div>
+                            <div class="an2-ring-pct-sym">%</div>
+                        </div>
+                    </div>
+                    <div class="an2-ring-label">${r.label}</div>
+                    <div class="an2-ring-sub">${r.sub}</div>
+                </div>`).join('')}
             </div>
-            `).join('')}
-        </div>
-        `;
+            ${ruler('', '')}
+        </div>`;
     }
 
-    function buildChartsSection() {
-        return `
-        <!-- Primary 2-col charts -->
-        <div class="an-chart-row">
-            <div class="an-chart-panel reveal">
-                <div class="an-chart-panel__eyebrow">Sighting Trend</div>
-                <div class="an-chart-panel__title">Monthly Validated Records — 12-Month Window</div>
-                <div class="an-chart-wrap">
-                    <canvas id="an-chart-trend"></canvas>
-                </div>
-            </div>
-            <div class="an-chart-panel reveal d1">
-                <div class="an-chart-panel__eyebrow">Species Intelligence</div>
-                <div class="an-chart-panel__title">Top 10 Species by Sighting Frequency</div>
-                <div class="an-chart-wrap">
-                    <canvas id="an-chart-species"></canvas>
-                </div>
-            </div>
-        </div>
+    /* ── Trend bars ── */
+    function buildTrendSection(stats) {
+        const MONTH_ABB = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const vals = stats.months.map(m => stats.monthCounts[m] || 0);
+        const maxVal = Math.max(...vals, 1);
+        const sum    = vals.reduce((a,b)=>a+b,0);
 
-        <!-- Secondary 3-col charts -->
-        <div class="an-sub-row">
-            <div class="an-chart-panel reveal">
-                <div class="an-chart-panel__eyebrow">Sensitivity Classification</div>
-                <div class="an-chart-panel__title">Tier Distribution</div>
-                <div class="an-chart-wrap an-chart-wrap--sm">
-                    <canvas id="an-chart-tier"></canvas>
+        return `
+        <div class="an2-trend-section">
+            ${ruler('TEMPORAL SIGNAL · MONTHLY VALIDATED RECORDS — 12-MONTH WINDOW', 'TMP-1.0')}
+            <div class="an2-trend-body">
+                <div class="an2-trend-bars">
+                    ${vals.map((v,i) => {
+                        const h = Math.max(2, Math.round((v/maxVal)*100));
+                        const mo = MONTH_ABB[parseInt(stats.months[i].split('-')[1])-1];
+                        return `
+                        <div class="an2-trend-col">
+                            <div class="an2-trend-val">${v > 0 ? v : ''}</div>
+                            <div class="an2-trend-bar-wrap">
+                                <div class="an2-trend-bar" style="height:${h}%"></div>
+                            </div>
+                            <div class="an2-trend-lbl">${mo}</div>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div class="an2-trend-meta">
+                    ${kvRow('Peak / Month', Math.max(...vals), '')}
+                    ${kvRow('Window', `${stats.months.length}MO`, '')}
+                    ${kvRow('Total', fmtNum(sum), '')}
+                    ${kvRow('Avg / Mo', (sum/stats.months.length).toFixed(1), '')}
                 </div>
             </div>
-            <div class="an-chart-panel reveal d1">
-                <div class="an-chart-panel__eyebrow">Model Performance</div>
-                <div class="an-chart-panel__title">AI Confidence Score Histogram</div>
-                <div class="an-chart-wrap an-chart-wrap--sm">
-                    <canvas id="an-chart-conf"></canvas>
-                </div>
-            </div>
-            <div class="an-chart-panel reveal d2">
-                <div class="an-chart-panel__eyebrow">Dataset Coverage</div>
-                <div class="an-chart-panel__title">Record Span &amp; Freshness</div>
-                <div id="an-coverage"></div>
-            </div>
-        </div>
-        `;
+            ${ruler('', '')}
+        </div>`;
     }
 
-    function buildTable(stats) {
-        const maxCount = stats.allSpecies[0]?.[1] || 1;
-        const rows = stats.allSpecies.map(([species, count], i) => {
-            const pct   = ((count / stats.total) * 100).toFixed(1);
-            const barW  = Math.max(2, (count / maxCount) * 100);
-            return `
-            <div class="an-tr reveal" style="animation-delay:${Math.min(i * 0.025, 0.6)}s">
-                <div class="an-tr__rank">${String(i + 1).padStart(2, '0')}</div>
-                <div class="an-tr__species">${species}</div>
-                <div class="an-tr__bar">
-                    <div class="an-tr__bar-fill" style="width:${barW}%"></div>
-                </div>
-                <div class="an-tr__count">${count}</div>
-                <div class="an-tr__pct">${pct}%</div>
-            </div>
-            `;
-        }).join('') || `<div class="an-empty">No species data available.</div>`;
-
+    /* ── Species table ── */
+    function buildSpeciesSection(stats) {
+        const maxC = stats.allSpecies[0]?.[1] || 1;
         return `
-        <div class="an-table-section reveal">
-            <div class="an-table-header">
-                <div>
-                    <div class="an-table-header__eyebrow">Species Intelligence Matrix</div>
-                    <div class="an-table-header__title">All Tracked Taxa — Ranked by Frequency</div>
+        <div class="an2-species-section">
+            ${ruler('SPECIES INTELLIGENCE MATRIX · ALL TAXA RANKED BY FREQUENCY', 'SPX-2.2')}
+            <div class="an2-species-th">
+                <span>#</span>
+                <span>Taxon</span>
+                <span>Signal Freq</span>
+                <span>Count</span>
+                <span>Share</span>
+            </div>
+            <div class="an2-species-body">
+                ${stats.allSpecies.map(([sp, cnt], i) => {
+                    const pct  = ((cnt/stats.total)*100).toFixed(1);
+                    const barW = Math.max(2, Math.round((cnt/maxC)*100));
+                    return `
+                    <div class="an2-sp-row" style="animation-delay:${Math.min(i*0.018,0.45)}s">
+                        <span class="an2-sp-rank">${pad2(i+1)}</span>
+                        <span class="an2-sp-name">${sp}</span>
+                        <span class="an2-sp-bar-wrap">
+                            <span class="an2-sp-bar" style="width:${barW}%"></span>
+                        </span>
+                        <span class="an2-sp-count">${cnt}</span>
+                        <span class="an2-sp-pct">${pct}%</span>
+                    </div>`;
+                }).join('') || `<div class="an2-empty">No species data in dataset</div>`}
+            </div>
+            ${ruler('MATRIX END', '')}
+        </div>`;
+    }
+
+    /* ── Frame B — summary ── */
+    function buildFrameB(stats) {
+        return `
+        <div class="an2-frame an2-frame--b">
+            ${ruler('SUMMARY BLOCK · DATASET METADATA', 'SUM-1.1')}
+            <div class="an2-frame-b__body">
+                <div class="an2-frame-b__left">
+                    <div class="an2-vpn-log">DATA LOG ·${fmtNum(stats.total)}·${stats.speciesCount}</div>
+                    <div class="an2-pn-row">REF NO. 990-22-2.11 · TERRA INTELLIGENCE PLATFORM</div>
+                    ${pill(`AN/${stats.total} PL-M`)}
                 </div>
-                <div class="an-table-header__meta">${stats.allSpecies.length} species · ${fmtNum(stats.total)} records</div>
+                <div class="an2-frame-b__right">
+                    <div class="an2-ds-row">
+                        <span class="an2-ds-label">Data State</span>
+                        <span class="an2-ds-val">${fmtNum(stats.total)}</span>
+                    </div>
+                    <div class="an2-ds-row">
+                        <span class="an2-ds-label">Avg Confidence</span>
+                        <span class="an2-ds-val">${stats.avgConf}%</span>
+                    </div>
+                    <div class="an2-ds-row">
+                        <span class="an2-ds-label">30-Day Activity</span>
+                        <span class="an2-ds-val">${stats.recent30}</span>
+                    </div>
+                    <div class="an2-ds-row">
+                        <span class="an2-ds-label">Span</span>
+                        <span class="an2-ds-val">${stats.spanDays}d</span>
+                    </div>
+                    <div class="an2-ds-row">
+                        <span class="an2-ds-label">Freshness</span>
+                        <span class="an2-ds-val" style="color:${stats.freshPct > 50 ? '#39ff8a' : stats.freshPct > 20 ? '#ffb800' : '#ff4455'}">${stats.freshPct}%</span>
+                    </div>
+                </div>
             </div>
-            <div class="an-th">
-                <div>#</div>
-                <div>Species</div>
-                <div>Frequency</div>
-                <div>Count</div>
-                <div>Share</div>
-            </div>
-            <div class="an-tbody">
-                ${rows}
-            </div>
-        </div>
-        `;
+        </div>`;
     }
 
     /* ══════════════════════════════════════════════════════════
-       CHART MOUNTING
+       CANVAS RENDERERS
     ══════════════════════════════════════════════════════════ */
 
-    function mountCharts(stats) {
-        const TOOLTIP = getTooltip();
-        const GRID    = getGrid();
-        const TICKS   = getTicks();
-        const light   = isLight();
+    function drawSankey(canvas, tierKind, tierCount) {
+        const W = canvas.offsetWidth || 680;
+        const H = canvas.offsetHeight || 280;
+        canvas.width  = W * devicePixelRatio;
+        canvas.height = H * devicePixelRatio;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(devicePixelRatio, devicePixelRatio);
 
-        /* ── Month axis labels ── */
-        const monthLabels = stats.months.map(m => {
-            const [y, mo] = m.split('-');
-            return new Date(parseInt(y), parseInt(mo) - 1, 1)
-                .toLocaleString('en', { month: 'short', year: '2-digit' });
+        const total = (tierCount[1]||0) + (tierCount[2]||0) + (tierCount[3]||0);
+        if (!total) {
+            ctx.fillStyle = '#374553';
+            ctx.font = '11px JetBrains Mono, monospace';
+            ctx.fillText('NO FLOW DATA AVAILABLE', 20, H/2);
+            return;
+        }
+
+        const PAD = 28, NW = 14, GAP = 12;
+        const usableH = H - PAD*2;
+
+        const tierColors = { 1:'#39ff8a', 2:'#ffb800', 3:'#ff4455' };
+        const tierLabels = { 1:'T1 PUBLIC', 2:'T2 PROTECTED', 3:'T3 RESTRICTED' };
+
+        const srcNodes = [1,2,3].map(t => ({
+            t, color: tierColors[t],
+            h: Math.max(8, (tierCount[t]/total)*usableH - GAP),
+        }));
+        let sy = PAD;
+        srcNodes.forEach(n => { n.y = sy; sy += n.h + GAP; });
+
+        /* Dest totals */
+        const kindTotals = { REPORT:0, DEFAULT:0, THREAT:0 };
+        Object.entries(tierKind).forEach(([k,v]) => {
+            const kind = k.split('→')[1];
+            if (kind in kindTotals) kindTotals[kind] += v;
+        });
+        const kindColors = { REPORT:'#00d4ff', DEFAULT:'#6b7d8f', THREAT:'#ff4455' };
+        const destData = ['REPORT','DEFAULT','THREAT']
+            .filter(k => kindTotals[k] > 0)
+            .map(k => ({ label:k, n:kindTotals[k], color:kindColors[k],
+                         h: Math.max(8, (kindTotals[k]/total)*usableH - GAP) }));
+        let dy = PAD;
+        destData.forEach(n => { n.y = dy; dy += n.h + GAP; });
+
+        /* Flows */
+        srcNodes.forEach(src => {
+            const srcMid = src.y + src.h/2;
+            destData.forEach(dst => {
+                const key = `T${src.t}→${dst.label}`;
+                const val = tierKind[key] || 0;
+                if (!val) return;
+                const dstMid = dst.y + dst.h/2;
+                const fh = Math.max(2, (val/total)*usableH*0.55);
+                const cpx1 = PAD + NW + (W-PAD*2-NW*2)*0.38;
+                const cpx2 = PAD + NW + (W-PAD*2-NW*2)*0.62;
+                const g = ctx.createLinearGradient(PAD+NW,0,W-PAD-NW,0);
+                g.addColorStop(0, src.color+'55');
+                g.addColorStop(1, dst.color+'55');
+                ctx.beginPath();
+                ctx.moveTo(PAD+NW, srcMid-fh/2);
+                ctx.bezierCurveTo(cpx1, srcMid-fh/2, cpx2, dstMid-fh/2, W-PAD-NW, dstMid-fh/2);
+                ctx.lineTo(W-PAD-NW, dstMid+fh/2);
+                ctx.bezierCurveTo(cpx2, dstMid+fh/2, cpx1, srcMid+fh/2, PAD+NW, srcMid+fh/2);
+                ctx.closePath();
+                ctx.fillStyle = g;
+                ctx.fill();
+            });
         });
 
-        /* ── Trend line ── */
-        const trendCanvas = document.getElementById('an-chart-trend');
-        if (trendCanvas) {
-            const brandColor  = light ? '#6aa800' : '#b8f000';
-            const brandFill   = light ? 'rgba(26,31,39,0.10)' : 'rgba(184,240,0,0.06)';
-            const ptBorder    = light ? '#f0f2f5' : '#0d1117';
-            makeChart(trendCanvas.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: monthLabels,
-                    datasets: [{
-                        data: stats.months.map(m => stats.monthCounts[m] || 0),
-                        borderColor: brandColor,
-                        backgroundColor: brandFill,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 3,
-                        pointHoverRadius: 5,
-                        pointBackgroundColor: brandColor,
-                        pointBorderColor: ptBorder,
-                        pointBorderWidth: 2,
-                        borderWidth: 2,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            ...TOOLTIP,
-                            callbacks: {
-                                title: items => items[0].label,
-                                label: item => `  ${item.raw} sightings`,
-                            }
-                        },
-                    },
-                    scales: {
-                        x: { grid: GRID, ticks: TICKS, border: { display: false } },
-                        y: { grid: GRID, ticks: { ...TICKS, precision: 0 }, border: { display: false }, beginAtZero: true },
-                    },
-                }
-            });
-        }
+        /* Source bars + labels */
+        ctx.font = '10px JetBrains Mono, monospace';
+        srcNodes.forEach(n => {
+            ctx.fillStyle = n.color;
+            ctx.fillRect(n.x = PAD, n.y, NW, n.h);
+            ctx.fillStyle = '#6b7d8f';
+            ctx.fillText(tierLabels[n.t], PAD+NW+6, n.y+n.h/2+4);
+            ctx.fillStyle = '#e8edf2';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.fillText(tierCount[n.t], PAD+NW+6, n.y+n.h/2+16);
+            ctx.font = '10px JetBrains Mono, monospace';
+        });
 
-        /* ── Species horizontal bars ── */
-        const speciesCanvas = document.getElementById('an-chart-species');
-        if (speciesCanvas && stats.topSpecies.length > 0) {
-            const maxC = stats.topSpecies[0]?.[1] || 1;
-            const [r, g, b] = light ? [106, 168, 0] : [184, 240, 0];
-            makeChart(speciesCanvas.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: stats.topSpecies.map(([s]) => s.length > 20 ? s.slice(0, 18) + '…' : s),
-                    datasets: [{
-                        data: stats.topSpecies.map(([, c]) => c),
-                        backgroundColor: stats.topSpecies.map(([, c]) =>
-                            `rgba(${r},${g},${b},${0.20 + (c / maxC) * 0.70})`
-                        ),
-                        borderColor: `rgba(${r},${g},${b},0.30)`,
-                        borderWidth: 1,
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            ...TOOLTIP,
-                            callbacks: {
-                                label: item => `  ${item.raw} sightings`,
-                            }
-                        },
-                    },
-                    scales: {
-                        x: { grid: GRID, ticks: { ...TICKS, precision: 0 }, border: { display: false }, beginAtZero: true },
-                        y: { grid: { display: false }, ticks: { ...TICKS, font: { size: 9 } }, border: { display: false } },
-                    },
-                }
-            });
-        }
-
-        /* ── Sensitivity tier donut ── */
-        const tierCanvas = document.getElementById('an-chart-tier');
-        if (tierCanvas) {
-            const tierLabels = ['T1 Public', 'T2 Protected', 'T3 Restricted', 'T4 Confidential'];
-            const tierColors = light
-                ? ['#6aa800', '#0099b0', '#b36a00', '#c0392b']
-                : ['#b8f000', '#00c8e0', '#d98c00', '#e03c3c'];
-            makeChart(tierCanvas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: tierLabels,
-                    datasets: [{
-                        data: [
-                            stats.tierCount[1], stats.tierCount[2],
-                            stats.tierCount[3], stats.tierCount[4]
-                        ],
-                        backgroundColor: tierColors.map(c => c + 'cc'),
-                        borderColor: tierColors,
-                        borderWidth: 1,
-                        hoverOffset: 4,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '60%',
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 8, padding: 14, font: { size: 9 },
-                                color: light ? '#5a6373' : '#7d8693',
-                            }
-                        },
-                        tooltip: { ...TOOLTIP },
-                    },
-                }
-            });
-        }
-
-        /* ── Confidence histogram ── */
-        const confCanvas = document.getElementById('an-chart-conf');
-        if (confCanvas) {
-            const barBorder = light ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)';
-            makeChart(confCanvas.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: ['0–20', '20–40', '40–60', '60–80', '80–100'],
-                    datasets: [{
-                        label: 'Records',
-                        data: stats.confBuckets,
-                        backgroundColor: [
-                            'rgba(224,60,60,0.75)',
-                            'rgba(217,140,0,0.75)',
-                            'rgba(0,200,224,0.65)',
-                            light ? 'rgba(106,168,0,0.55)' : 'rgba(184,240,0,0.55)',
-                            light ? 'rgba(106,168,0,0.90)' : 'rgba(184,240,0,0.90)',
-                        ],
-                        borderColor: barBorder,
-                        borderWidth: 1,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            ...TOOLTIP,
-                            callbacks: {
-                                title: items => `Confidence: ${items[0].label}%`,
-                                label: item => `  ${item.raw} records`,
-                            }
-                        },
-                    },
-                    scales: {
-                        x: { grid: { display: false }, ticks: TICKS, border: { display: false } },
-                        y: { grid: GRID, ticks: { ...TICKS, precision: 0 }, border: { display: false }, beginAtZero: true },
-                    },
-                }
-            });
-        }
-
-        /* ── Coverage / freshness panel ── */
-        const covEl = document.getElementById('an-coverage');
-        if (covEl) {
-            if (stats.oldest && stats.newest) {
-                const spanDays    = Math.round((stats.newest - stats.oldest) / 86400000);
-                const staleDays   = Math.round((Date.now() - stats.newest) / 86400000);
-                const freshPct    = Math.max(0, Math.min(100, 100 - staleDays * 3));
-                const staleColor  = staleDays < 7  ? 'var(--clr-brand)'
-                                  : staleDays < 30 ? 'var(--clr-warning)'
-                                  : 'var(--clr-danger)';
-                covEl.innerHTML = `
-                    <div class="an-cov">
-                        <div class="an-cov__row">
-                            <span class="an-cov__label">First Record</span>
-                            <span class="an-cov__val">${stats.oldest.toLocaleDateString()}</span>
-                        </div>
-                        <div class="an-cov__row">
-                            <span class="an-cov__label">Latest Record</span>
-                            <span class="an-cov__val" style="color:var(--clr-brand)">${stats.newest.toLocaleDateString()}</span>
-                        </div>
-                        <div class="an-cov__row">
-                            <span class="an-cov__label">Dataset Span</span>
-                            <span class="an-cov__val">${spanDays}d</span>
-                        </div>
-                        <div class="an-cov__row">
-                            <span class="an-cov__label">Last Sighting</span>
-                            <span class="an-cov__val" style="color:${staleColor}">${staleDays}d ago</span>
-                        </div>
-                        <div class="an-cov__progress-wrap">
-                            <div class="an-cov__progress-label">Data Freshness</div>
-                            <div class="an-progress">
-                                <div class="an-progress__fill" style="width:${freshPct}%"></div>
-                            </div>
-                            <div class="an-cov__progress-pct">${freshPct.toFixed(0)}%</div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                covEl.innerHTML = '<p class="an-empty">No date range data.</p>';
-            }
-        }
+        /* Dest bars + labels */
+        destData.forEach(n => {
+            ctx.fillStyle = n.color;
+            ctx.fillRect(W-PAD-NW, n.y, NW, n.h);
+            const lw = ctx.measureText(n.label).width;
+            ctx.fillStyle = '#6b7d8f';
+            ctx.fillText(n.label, W-PAD-NW-lw-6, n.y+n.h/2+4);
+            ctx.fillStyle = '#e8edf2';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.fillText(n.n, W-PAD-NW-ctx.measureText(String(n.n)).width-6, n.y+n.h/2+16);
+            ctx.font = '10px JetBrains Mono, monospace';
+        });
     }
 
-    /* ── Scroll-reveal via IntersectionObserver ──────────────── */
+    function drawRing(canvas) {
+        const pct   = parseInt(canvas.dataset.pct) || 0;
+        const color = canvas.dataset.color || '#39ff8a';
+        const track = canvas.dataset.track || 'rgba(57,255,138,0.10)';
+        const S = 120;
+        canvas.width  = S * devicePixelRatio;
+        canvas.height = S * devicePixelRatio;
+        canvas.style.width  = S+'px';
+        canvas.style.height = S+'px';
+        const ctx = canvas.getContext('2d');
+        ctx.scale(devicePixelRatio, devicePixelRatio);
+        const cx = S/2, cy = S/2, r = 46, lw = 6;
+        const start = -Math.PI/2;
+        const end   = start + (pct/100)*Math.PI*2;
+
+        ctx.clearRect(0,0,S,S);
+
+        /* Track ring */
+        ctx.beginPath();
+        ctx.arc(cx,cy,r,0,Math.PI*2);
+        ctx.strokeStyle = track;
+        ctx.lineWidth = lw;
+        ctx.stroke();
+
+        /* Value arc */
+        if (pct > 0) {
+            ctx.beginPath();
+            ctx.arc(cx,cy,r,start,end);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lw;
+            ctx.lineCap = 'butt';
+            ctx.stroke();
+        }
+
+        /* Quarter tick marks */
+        [0,0.25,0.5,0.75].forEach(f => {
+            const a = start + f*Math.PI*2;
+            const x1 = cx + Math.cos(a)*(r-lw-1);
+            const y1 = cy + Math.sin(a)*(r-lw-1);
+            const x2 = cx + Math.cos(a)*(r+lw+1);
+            const y2 = cy + Math.sin(a)*(r+lw+1);
+            ctx.beginPath();
+            ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        });
+    }
+
+    function mountCanvases(stats) {
+        const sankeyEl = document.getElementById('an2-sankey');
+        if (sankeyEl) drawSankey(sankeyEl, stats.tierKind, stats.tierCount);
+        document.querySelectorAll('.an2-ring-canvas').forEach(c => drawRing(c));
+    }
+
+    /* ── Scroll-reveal ── */
     function initReveals() {
         const obs = new IntersectionObserver(entries => {
             entries.forEach(e => {
-                if (e.isIntersecting) {
-                    e.target.classList.add('visible');
-                    obs.unobserve(e.target);
-                }
+                if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
             });
-        }, { threshold: 0.06 });
-        document.querySelectorAll('#an-page-root .reveal').forEach(el => obs.observe(el));
+        }, { threshold: 0.04 });
+        document.querySelectorAll('#an2-root .reveal').forEach(el => obs.observe(el));
     }
 
     /* ══════════════════════════════════════════════════════════
-       PUBLIC ENTRY POINT
+       PUBLIC ENTRY
     ══════════════════════════════════════════════════════════ */
 
     async function render(container) {
         destroyCharts();
 
-        /* Loading state */
         container.innerHTML = `
-        <div id="an-page-root" class="an-page anim-fade-in">
-            <div class="an-loading">
-                <div class="spinner"></div>
-                <span>Loading analytics…</span>
+        <div id="an2-root" class="an2-page">
+            <div class="an2-loading">
+                <span class="an2-loading__dot"></span>
+                <span class="an2-loading__dot"></span>
+                <span class="an2-loading__dot"></span>
+                <span class="an2-loading__text">Acquiring data…</span>
             </div>
-        </div>
-        `;
+        </div>`;
 
         let records = [];
         try {
             records = await API.get('/analysis/sightings');
-        } catch (err) {
-            container.innerHTML = `
-            <div class="an-page">
-                <div class="page-header">
-                    <h1>Analytics &amp; Trends</h1>
-                </div>
-                <div class="card" style="padding:var(--sp-8);text-align:center;color:var(--clr-text-muted)">
-                    <p class="form-error">Failed to load analytics data: ${err.message}</p>
-                </div>
-            </div>`;
+        } catch(err) {
+            container.innerHTML = `<div class="an2-page"><div class="an2-error">ERR: ${err.message}</div></div>`;
             return;
         }
 
-        if (records.length === 0) {
+        if (!records.length) {
             container.innerHTML = `
-            <div class="an-page">
-                <div class="page-header">
-                    <h1>Analytics &amp; Trends</h1>
-                    <p>Validate some reports to generate analytics data.</p>
-                </div>
+            <div class="an2-page">
+                <div class="an2-error">NO VALIDATED RECORDS — VALIDATE REPORTS TO GENERATE ANALYTICS</div>
             </div>`;
             return;
         }
 
         const stats = analyse(records);
-        applyChartDefaults();
 
-        /* Full page render */
         container.innerHTML = `
-        <div id="an-page-root" class="an-page anim-fade-in">
-            ${buildHero(stats)}
-            <div class="an-content">
-                ${buildKPIs(stats)}
-                ${buildChartsSection()}
-                ${buildTable(stats)}
-            </div>
-        </div>
-        `;
+        <div id="an2-root" class="an2-page">
+            <div class="reveal">${buildFrameA(stats)}</div>
+            <div class="reveal d1">${buildSankeySection()}</div>
+            <div class="reveal d2">${buildRingsSection(stats)}</div>
+            <div class="reveal">${buildTrendSection(stats)}</div>
+            <div class="reveal d1">${buildSpeciesSection(stats)}</div>
+            <div class="reveal d2">${buildFrameB(stats)}</div>
+        </div>`;
 
-        /*
-         * Small delay before mounting charts so the browser has laid out the
-         * canvas elements and Chart.js can correctly read their dimensions.
-         */
         setTimeout(() => {
-            mountCharts(stats);
+            mountCanvases(stats);
             initReveals();
 
-            /* Re-render charts when theme toggles (keeps calibrations + tooltips correct) */
             if (_themeListener) window.removeEventListener('terra:themechange', _themeListener);
             _themeListener = () => {
-                if (!document.getElementById('an-chart-trend')) {
+                if (!document.getElementById('an2-root')) {
                     window.removeEventListener('terra:themechange', _themeListener);
                     _themeListener = null;
                     return;
                 }
-                destroyCharts();
-                applyChartDefaults();
-                mountCharts(stats);
+                mountCanvases(stats);
             };
             window.addEventListener('terra:themechange', _themeListener);
-        }, 60);
+        }, 80);
     }
 
     return { render };
