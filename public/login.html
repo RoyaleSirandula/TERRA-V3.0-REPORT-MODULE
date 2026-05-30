@@ -31,7 +31,7 @@
 
         <!-- Logo -->
         <div class="login-logo">
-            <img src="../assets/MINI TERRA LOGO.png" alt="Terra logo"
+            <img src="assets/MINI TERRA LOGO.png" alt="Terra logo"
                 style="height: 52px; width: auto; object-fit: contain;">
         </div>
 
@@ -46,8 +46,11 @@
                 data-tab="register">Register</button>
         </div>
 
+        <!-- ── Forms (wrapped for animated transitions) ── -->
+        <div class="login-forms-wrap" id="login-forms-wrap">
+
         <!-- ── Sign In Form ── -->
-        <form class="login-form" id="signin-form" novalidate>
+        <form class="login-form is-active" id="signin-form" novalidate>
             <div class="login-field">
                 <label class="login-label" for="signin-email">Email</label>
                 <input class="login-input" id="signin-email" type="email" name="email" placeholder="you@example.com"
@@ -69,7 +72,7 @@
         </form>
 
         <!-- ── Register Form (hidden by default) ── -->
-        <form class="login-form" id="register-form" style="display:none" novalidate>
+        <form class="login-form" id="register-form" novalidate>
             <div class="login-field">
                 <label class="login-label" for="reg-username">Username</label>
                 <input class="login-input" id="reg-username" type="text" name="username" placeholder="Your name"
@@ -89,12 +92,36 @@
             </div>
 
             <div class="login-field">
-                <label class="login-label" for="reg-role">Role</label>
-                <select class="login-input login-select" id="reg-role" name="role">
-                    <option value="COMMUNITY">Community</option>
-                    <option value="RANGER">Ranger</option>
-                    <option value="ANALYST">Analyst</option>
-                </select>
+                <label class="login-label" id="role-label">Role</label>
+
+                <!-- Hidden input carries the value for form submission -->
+                <input type="hidden" id="reg-role" name="role" value="COMMUNITY" />
+
+                <!-- Custom dropdown -->
+                <div class="ld" id="role-dropdown" role="listbox" aria-labelledby="role-label" aria-expanded="false" tabindex="0">
+                    <div class="ld__trigger" id="role-trigger" aria-hidden="true">
+                        <span class="ld__value" id="role-display">Community</span>
+                        <svg class="ld__chevron" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                    <ul class="ld__menu" role="presentation">
+                        <li class="ld__option ld__option--selected" role="option" data-value="COMMUNITY" aria-selected="true">
+                            <span class="ld__option-label">Community</span>
+                            <span class="ld__option-desc">Field informant · sighting reports</span>
+                        </li>
+                        <li class="ld__option" role="option" data-value="RANGER" aria-selected="false">
+                            <span class="ld__option-label">Ranger</span>
+                            <span class="ld__option-desc">Frontline patrol · incident logging</span>
+                        </li>
+                        <li class="ld__option" role="option" data-value="ANALYST" aria-selected="false">
+                            <span class="ld__option-label">Analyst</span>
+                            <span class="ld__option-desc">Data review · site analysis</span>
+                        </li>
+                    </ul>
+                </div>
+
                 <span class="login-hint">Admin accounts are assigned by a System Administrator.</span>
             </div>
 
@@ -105,6 +132,8 @@
                 <span class="login-btn__spinner" aria-hidden="true"></span>
             </button>
         </form>
+
+        </div><!-- /.login-forms-wrap -->
 
         <p class="login-footer-note">
             By signing in you agree to Terra's data governance and conservation data policies.

@@ -186,14 +186,35 @@ const SiteAnalysisPage = (() => {
     ═══════════════════════════════════════════════════════════ */
     function renderSessionsDashboard(container) {
         _container = container;
+
+        const sessions  = loadSessions();
+        const total     = sessions.length;
+        const starred   = sessions.filter(s => s.isStarred).length;
+        const archived  = sessions.filter(s => s.isArchived).length;
+
         container.innerHTML = `
             <div class="sa-dashboard anim-fade-in">
                 <div class="sa-dashboard__header">
                     <div>
-                        <h1 class="sa-dashboard__title">Site Analysis Sessions</h1>
-                        <p class="sa-dashboard__subtitle">Continue a saved analysis or start a new session.</p>
+                        <h1 class="sa-dashboard__title">Site Analysis</h1>
+                        <p class="sa-dashboard__subtitle">Saved sessions · spatial intelligence workspace</p>
                     </div>
                     <button class="btn btn--primary sa-dashboard__new" id="btn-new-session">+ New Session</button>
+                </div>
+
+                <div class="sa-dashboard__stats">
+                    <div class="sa-dashboard__stat">
+                        <div class="sa-dashboard__stat-val">${total}</div>
+                        <div class="sa-dashboard__stat-lbl">Sessions</div>
+                    </div>
+                    <div class="sa-dashboard__stat">
+                        <div class="sa-dashboard__stat-val">${starred}</div>
+                        <div class="sa-dashboard__stat-lbl">Starred</div>
+                    </div>
+                    <div class="sa-dashboard__stat">
+                        <div class="sa-dashboard__stat-val">${archived}</div>
+                        <div class="sa-dashboard__stat-lbl">Archived</div>
+                    </div>
                 </div>
 
                 <div class="sa-sessions-wrap" id="sa-sessions-wrap">
@@ -268,13 +289,34 @@ const SiteAnalysisPage = (() => {
         `;
         };
 
-        let html = `<div class="sa-sessions-list">` + active.map(renderCard).join('') + `</div>`;
+        // Refresh stats strip counts
+        const statVals = document.querySelectorAll('.sa-dashboard__stat-val');
+        if (statVals.length === 3) {
+            statVals[0].textContent = sessions.length;
+            statVals[1].textContent = sessions.filter(s => s.isStarred).length;
+            statVals[2].textContent = sessions.filter(s => s.isArchived).length;
+        }
+
+        const starredActive = active.filter(s => s.isStarred);
+        const unstared = active.filter(s => !s.isStarred);
+
+        let html = '';
+
+        if (starredActive.length) {
+            html += `<div class="sa-sessions-section-lbl">Starred</div>`;
+            html += `<div class="sa-sessions-list" style="margin-bottom:var(--sp-5)">` + starredActive.map(renderCard).join('') + `</div>`;
+        }
+
+        if (unstared.length) {
+            if (starredActive.length) html += `<div class="sa-sessions-section-lbl">All Sessions</div>`;
+            html += `<div class="sa-sessions-list">` + unstared.map(renderCard).join('') + `</div>`;
+        }
 
         if (archived.length > 0) {
             html += `
                 <details class="sa-sessions-archived">
                     <summary>Archived (${archived.length})</summary>
-                    <div class="sa-sessions-list sa-sessions-list--archived">
+                    <div class="sa-sessions-list sa-sessions-list--archived" style="margin-top:var(--sp-3)">
                         ${archived.map(renderCard).join('')}
                     </div>
                 </details>

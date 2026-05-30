@@ -227,6 +227,7 @@
       expTitle: 'GRID CELL',
       expSubs: ['SECTOR 12 A', '-3.1002, 37.2201', 'TIER 1', 'Status: UNCONFIRMED'],
       statusColor: '#aaa',
+      confidence: 0.35,
     },
     {
       id: 'threat',
@@ -240,6 +241,7 @@
       expTitle: 'WILDFIRE CLUSTER',
       expSubs: ['SECTOR 17 B', '-3.4008, 38.5918', 'TIER 2', 'Status: VALIDATED'],
       statusColor: '#ff3333',
+      confidence: 0.88,
     },
     {
       id: 'asset',
@@ -253,6 +255,7 @@
       expTitle: 'LION',
       expSubs: ['SECTOR 15 C', '-3.2008, 36.5918', 'TIER 1', 'Status: ONLINE'],
       statusColor: '#00ff88',
+      confidence: 0.96,
     },
     {
       id: 'report',
@@ -266,6 +269,7 @@
       expTitle: 'UNKNOWN',
       expSubs: ['SECTOR 15 C', '-3.2008, 36.5918', 'TIER 2', 'Status: VALIDATED'],
       statusColor: '#66ccff',
+      confidence: 0.62,
     },
   ];
 
@@ -314,9 +318,11 @@
     track.classList.add('bar-track');
     svg.appendChild(track);
 
+    const fillH = v.confidence * 100;
+    const fillY = 110 - fillH;
     const barFill = document.createElementNS(NS, 'rect');
-    barFill.setAttribute('x', '116'); barFill.setAttribute('y', '38');
-    barFill.setAttribute('width', '5'); barFill.setAttribute('height', '72');
+    barFill.setAttribute('x', '116'); barFill.setAttribute('y', String(fillY));
+    barFill.setAttribute('width', '5'); barFill.setAttribute('height', String(fillH));
     barFill.setAttribute('rx', '1');
     barFill.setAttribute('fill', v.bar);
     barFill.setAttribute('opacity', '0');

@@ -318,7 +318,14 @@ const TestSitePage = (() => {
     }
 
     /* ── Build reticle SVG ────────────────────────────────────── */
-    function makeSVG(meta, scale = 1) {
+    /* Normalise ai_confidence_score to 0-1 regardless of how it arrives
+       (some records store 0.75, others store 75 — both should render as 75%). */
+    function normaliseConf(score) {
+        if (score == null) return null;
+        return score > 1 ? score / 100 : score;
+    }
+
+    function makeSVG(meta, scale = 1, confidence = null) {
         const w = Math.round(78 * scale);
         const h = Math.round(72 * scale);
         const offset = Math.round(-26 * scale);
@@ -368,9 +375,11 @@ const TestSitePage = (() => {
         track.classList.add('bar-track');
         svg.appendChild(track);
 
+        const fillH = confidence != null ? confidence * 100 : 72;
+        const fillY = 110 - fillH;
         const barFill = document.createElementNS(NS, 'rect');
-        barFill.setAttribute('x', '116'); barFill.setAttribute('y', '38');
-        barFill.setAttribute('width', '5'); barFill.setAttribute('height', '72');
+        barFill.setAttribute('x', '116'); barFill.setAttribute('y', String(fillY));
+        barFill.setAttribute('width', '5'); barFill.setAttribute('height', String(fillH));
         barFill.setAttribute('rx', '1');
         barFill.setAttribute('fill', meta.bar);
         barFill.setAttribute('opacity', '0');
@@ -491,7 +500,7 @@ const TestSitePage = (() => {
 
     /* ── Shared: confidence bar ───────────────────────────────── */
     function makeConfBar(score, color) {
-        const pct = Math.round((score || 0) * 100);
+        const pct = Math.round((normaliseConf(score) || 0) * 100);
         const wrap = document.createElement('div');
         wrap.className = 'ts-conf-wrap';
         wrap.innerHTML = `
@@ -1033,7 +1042,7 @@ const TestSitePage = (() => {
     function buildDockContent(marker) {
         const raw = marker._raw || {};
         const meta = VARIANT_META[marker.kind] || VARIANT_META.default;
-        const score = raw.ai_confidence_score;
+        const score = normaliseConf(raw.ai_confidence_score);
         const pct = score != null ? Math.round(score * 100) : null;
         const tier = raw.sensitivity_tier || 1;
         const status = (raw.validation_status || 'PENDING').toUpperCase();
@@ -1201,7 +1210,7 @@ const TestSitePage = (() => {
             const kindOk = filterState.activeKinds.has(kind);
 
             // Confidence filter — pass if no score (fallback markers)
-            const score = raw?.ai_confidence_score;
+            const score = normaliseConf(raw?.ai_confidence_score);
             const confOk = score == null || score * 100 >= filterState.minConfidence;
 
             // Time filter — pass if no timestamp (fallback markers)
@@ -1412,7 +1421,7 @@ const TestSitePage = (() => {
             wrapper.dataset.barColor = meta.bar;
             wrapper.dataset.kind = m.kind;
 
-            const svg = makeSVG(meta, scale);
+            const svg = makeSVG(meta, scale, normaliseConf(m._raw?.ai_confidence_score));
             svg.style.display = 'none';
 
             const triSvg = makeMiniTriangle(meta, scale);

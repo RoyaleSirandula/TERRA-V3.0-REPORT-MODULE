@@ -27,24 +27,115 @@
     const registerError = document.getElementById('register-error');
 
     /* ── Tab switcher ────────────────────────────────────────── */
-    function activateTab(tab) {
-        const isSignIn = tab === 'signin';
+    let _switching = false;
 
+    function activateTab(tab) {
+        if (_switching) return;
+
+        const isSignIn = tab === 'signin';
+        const outgoing = isSignIn ? registerForm : signinForm;
+        const incoming = isSignIn ? signinForm : registerForm;
+
+        if (incoming.classList.contains('is-active')) return;
+
+        _switching = true;
+
+        // Update tab bar
         tabSignIn.classList.toggle('active', isSignIn);
         tabRegister.classList.toggle('active', !isSignIn);
-        tabSignIn.setAttribute('aria-selected', isSignIn);
-        tabRegister.setAttribute('aria-selected', !isSignIn);
+        tabSignIn.setAttribute('aria-selected', String(isSignIn));
+        tabRegister.setAttribute('aria-selected', String(!isSignIn));
 
-        signinForm.style.display = isSignIn ? 'flex' : 'none';
-        registerForm.style.display = isSignIn ? 'none' : 'flex';
-
-        // Clear errors when switching
+        // Clear errors
         signinError.textContent = '';
         registerError.textContent = '';
+
+        // Prime incoming off-screen right (absolute, invisible)
+        incoming.classList.remove('is-active');
+        incoming.classList.add('is-entering');
+
+        // Force reflow so initial state registers before transition starts
+        incoming.getBoundingClientRect();
+
+        // Swap: outgoing exits left (stays absolute), incoming enters as active (goes into flow)
+        // The card immediately resizes to incoming's natural height — no clipping
+        outgoing.classList.remove('is-active');
+        outgoing.classList.add('is-leaving');
+
+        incoming.classList.remove('is-entering');
+        incoming.classList.add('is-active');
+
+        // Clean up leaving form after animation completes
+        setTimeout(() => {
+            outgoing.classList.remove('is-leaving');
+            _switching = false;
+        }, 300);
     }
 
     tabSignIn.addEventListener('click', () => activateTab('signin'));
     tabRegister.addEventListener('click', () => activateTab('register'));
+
+    /* ── Custom Role Dropdown ────────────────────────────────── */
+    const roleDropdown = document.getElementById('role-dropdown');
+    const roleInput    = document.getElementById('reg-role');
+    const roleDisplay  = document.getElementById('role-display');
+    const roleOptions  = roleDropdown.querySelectorAll('.ld__option');
+
+    function closeDropdown() {
+        roleDropdown.setAttribute('aria-expanded', 'false');
+    }
+
+    function openDropdown() {
+        roleDropdown.setAttribute('aria-expanded', 'true');
+    }
+
+    function selectOption(el) {
+        roleOptions.forEach(o => {
+            o.classList.remove('ld__option--selected');
+            o.setAttribute('aria-selected', 'false');
+        });
+        el.classList.add('ld__option--selected');
+        el.setAttribute('aria-selected', 'true');
+        roleInput.value   = el.dataset.value;
+        roleDisplay.textContent = el.querySelector('.ld__option-label').textContent;
+        closeDropdown();
+        roleDropdown.focus();
+    }
+
+    // Toggle open/close on trigger click
+    roleDropdown.addEventListener('click', (e) => {
+        const isOpen = roleDropdown.getAttribute('aria-expanded') === 'true';
+        isOpen ? closeDropdown() : openDropdown();
+
+        const opt = e.target.closest('.ld__option');
+        if (opt) selectOption(opt);
+    });
+
+    // Keyboard navigation
+    roleDropdown.addEventListener('keydown', (e) => {
+        const isOpen = roleDropdown.getAttribute('aria-expanded') === 'true';
+        const opts   = [...roleOptions];
+        const cur    = opts.findIndex(o => o.classList.contains('ld__option--selected'));
+
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            isOpen ? closeDropdown() : openDropdown();
+        } else if (e.key === 'Escape') {
+            closeDropdown();
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (!isOpen) { openDropdown(); return; }
+            selectOption(opts[Math.min(cur + 1, opts.length - 1)]);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectOption(opts[Math.max(cur - 1, 0)]);
+        }
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!roleDropdown.contains(e.target)) closeDropdown();
+    });
 
     /* ── Helper: set loading state on a button ───────────────── */
     function setLoading(btn, isLoading) {

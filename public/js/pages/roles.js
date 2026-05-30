@@ -537,14 +537,25 @@ const RolesPage = (() => {
         // Loading skeleton
         container.innerHTML = `
         <div class="rp-page anim-fade-in">
+            <div class="rp-ruler">
+                <div class="rp-ruler__tick"></div>
+                <span class="rp-ruler__label">TERRA // RBAC ENGINE</span>
+                <div class="rp-ruler__track">
+                    <div class="rp-ruler__pip"></div>
+                    <div class="rp-ruler__pip"></div>
+                    <div class="rp-ruler__pip"></div>
+                </div>
+                <span class="rp-ruler__ver">RBAC/1.0</span>
+            </div>
             <div class="rp-hero">
-                <div>
-                    <div class="rp-hero__eyebrow">Terra // RBAC Engine</div>
-                    <h1 class="rp-hero__title">Roles &amp;<br>Permissions</h1>
+                <div class="rp-hero__left">
+                    <div class="rp-hero__pill">TERRA SYS</div>
+                    <div class="rp-hero__title">ROLES &amp; PERMISSIONS</div>
+                    <div class="rp-hero__sub">RBAC Editor · Clearance Tier Management</div>
                 </div>
             </div>
-            <div style="display:flex;align-items:center;gap:var(--sp-3);color:var(--clr-text-muted);font-family:var(--font-mono);font-size:var(--text-sm);">
-                <div class="spinner"></div> Loading role definitions…
+            <div style="display:flex;align-items:center;gap:12px;padding:32px 24px;color:var(--clr-text-muted);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;">
+                <div class="spinner"></div> LOADING ROLE DEFINITIONS…
             </div>
         </div>`;
 
@@ -567,15 +578,30 @@ const RolesPage = (() => {
         container.innerHTML = `
         <div class="rp-page anim-fade-in">
 
+            <!-- Frame ruler -->
+            <div class="rp-ruler">
+                <div class="rp-ruler__tick"></div>
+                <span class="rp-ruler__label">TERRA // RBAC ENGINE</span>
+                <div class="rp-ruler__track">
+                    <div class="rp-ruler__pip"></div>
+                    <div class="rp-ruler__pip"></div>
+                    <div class="rp-ruler__pip"></div>
+                </div>
+                <span class="rp-ruler__ver">RBAC/1.0</span>
+            </div>
+
             <!-- Hero -->
             <div class="rp-hero">
-                <div>
-                    <div class="rp-hero__eyebrow">Terra // RBAC Engine</div>
-                    <h1 class="rp-hero__title">Roles &amp;<br>Permissions</h1>
+                <div class="rp-hero__left">
+                    <div class="rp-hero__pill">TERRA SYS</div>
+                    <div class="rp-hero__title">ROLES &amp; PERMISSIONS</div>
+                    <div class="rp-hero__sub">RBAC Editor · Clearance Tier Management</div>
                 </div>
-                <div class="rp-hero__desc">
-                    Define clearance tiers, assign permission slugs to roles,<br>
-                    and control what each operator class can access across Terra.
+                <div class="rp-hero__right">
+                    <div class="rp-hero__desc">
+                        Define clearance tiers, assign permission slugs,<br>
+                        and control operator access across Terra.
+                    </div>
                 </div>
             </div>
 

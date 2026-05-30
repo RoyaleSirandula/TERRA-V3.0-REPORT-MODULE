@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terra — UI Study Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset ──────────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── Tokens ─────────────────────────────────────────────── */
+    :root {
+      --bg:           #07090e;
+      --surface:      #0d1117;
+      --surface-2:    #161b22;
+      --surface-3:    #1c2128;
+      --brand:        #b8f000;
+      --brand-dim:    rgba(184,240,0,0.12);
+      --brand-glow:   rgba(184,240,0,0.06);
+      --purple:       #7c5cbf;
+      --purple-dim:   rgba(124,92,191,0.35);
+      --border:       rgba(255,255,255,0.07);
+      --border-mid:   rgba(255,255,255,0.11);
+      --text:         #e6edf3;
+      --text-muted:   #7d8590;
+      --text-dim:     #3d444d;
+      --danger:       #f05050;
+
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-label:   'Syne', sans-serif;
+      --font-sans:    'DM Sans', sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ── Base ───────────────────────────────────────────────── */
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+    }
+
+    /* Dashed grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cpath d='M 80 0 L 0 0 0 80' fill='none' stroke='rgba(255,255,255,0.035)' stroke-width='1' stroke-dasharray='3 5'/%3E%3C/svg%3E");
+      background-size: 80px 80px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Edge vignette */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 50%, transparent 45%, rgba(7,9,14,0.72) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HUD root ───────────────────────────────────────────── */
+    .hud {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────── */
+    .hud-sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      padding: 20px 0;
+      gap: 0;
+      position: relative;
+      background: rgba(7,9,14,0.6);
+      backdrop-filter: blur(8px);
+    }
+
+    .hud-sidebar-section {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .hud-sidebar-section:last-child { border-bottom: none; }
+
+    /* Wordmark / identity block */
+    .hud-wordmark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 2px;
+    }
+    .hud-wordmark-logo {
+      width: 24px;
+      height: 24px;
+      border: 1px solid var(--brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hud-wordmark-logo svg { display: block; }
+    .hud-wordmark-text {
+      font-family: var(--font-display);
+      font-size: 18px;
+      letter-spacing: 0.08em;
+      color: var(--text);
+    }
+    .hud-status-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .hud-status-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--brand);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    .hud-status-text {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* Large ops number */
+    .hud-ops-block {
+      display: flex;
+      flex-direction: column;
+    }
+    .hud-ops-val {
+      font-family: var(--font-display);
+      font-size: 56px;
+      line-height: 1;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+    .hud-ops-lbl {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* Sector gauge block */
+    .hud-sector {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .hud-sector-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .hud-sector-body {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .hud-sector-gauge { flex-shrink: 0; }
+    .hud-sector-indices {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .hud-sector-index {
+      display: flex;
+      flex-direction: column;
+    }
+    .hud-sector-index-val {
+      font-family: var(--font-display);
+      font-size: 22px;
+      line-height: 1;
+      color: var(--text);
+    }
+    .hud-sector-index-lbl {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* Bottom mini stats */
+    .hud-mini-stats {
+      display: flex;
+      gap: 0;
+    }
+    .hud-mini-stat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 0 8px;
+      border-right: 1px solid var(--border);
+    }
+    .hud-mini-stat:first-child { padding-left: 0; }
+    .hud-mini-stat:last-child { border-right: none; }
+    .hud-mini-stat-val {
+      font-family: var(--font-display);
+      font-size: 20px;
+      line-height: 1;
+      color: var(--text-muted);
+    }
+    .hud-mini-stat-lbl {
+      font-family: var(--font-mono);
+      font-size: 7px;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* ── Main area ──────────────────────────────────────────── */
+    .hud-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── Route card ─────────────────────────────────────────── */
+    .route-card {
+      width: 310px;
+      margin: auto;
+      background: rgba(13,17,23,0.88);
+      border: 1px solid var(--border-mid);
+      backdrop-filter: blur(16px);
+      padding: 18px 20px;
+      z-index: 10;
+    }
+    /* Corner ticks */
+    .route-card::before,
+    .route-card::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-color: var(--brand);
+      border-style: solid;
+      opacity: 0.6;
+    }
+    .route-card::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+    .route-card::after  { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+
+    .rc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .rc-route {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+    }
+    .rc-route strong {
+      font-family: var(--font-label);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.04em;
+    }
+    .rc-badge {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--brand);
+      border: 1px solid var(--brand);
+      padding: 2px 7px;
+      opacity: 0.75;
+    }
+    .rc-menu {
+      color: var(--text-dim);
+      font-size: 14px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .rc-metrics {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+    }
+    .rc-metric {
+      flex: 1;
+    }
+    .rc-metric + .rc-metric {
+      border-left: 1px solid var(--border);
+      padding-left: 14px;
+    }
+    .rc-metric-lbl {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      color: var(--text-muted);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .rc-metric-val {
+      font-family: var(--font-sans);
+      font-size: 28px;
+      font-weight: 300;
+      color: var(--text);
+      line-height: 1;
+    }
+    .rc-metric-delta {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--brand);
+      letter-spacing: 0.04em;
+      margin-top: 3px;
+    }
+
+    /* Segmented bar */
+    .seg-bar {
+      display: flex;
+      height: 5px;
+      gap: 2px;
+      margin-bottom: 10px;
+    }
+    .seg-bar__seg { border-radius: 0; }
+    .seg-bar__seg--active   { background: var(--brand); flex: 50.6; }
+    .seg-bar__seg--relay    { background: var(--purple); flex: 31.7; }
+    .seg-bar__seg--fallback {
+      flex: 17.7;
+      background-color: rgba(255,255,255,0.06);
+      background-image: repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.2) 0px, rgba(255,255,255,0.2) 2px,
+        transparent 2px, transparent 6px
+      );
+    }
+
+    .seg-legend {
+      display: flex;
+      gap: 14px;
+    }
+    .seg-legend__item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-mono);
+      font-size: 8px;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+    }
+    .seg-legend__dot {
+      width: 7px;
+      height: 7px;
+      flex-shrink: 0;
+    }
+    .seg-legend__dot--active   { background: var(--brand); }
+    .seg-legend__dot--relay    { background: var(--purple); }
+    .seg-legend__dot--fallback {
+      background-color: rgba(255,255,255,0.06);
+      background-image: repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.3) 0px, rgba(255,255,255,0.3) 2px,
+        transparent 2px, transparent 5px
+      );
+    }
+
+    /* ── Keyframes ──────────────────────────────────────────── */
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="hud">
+
+  <!-- ══════════════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════════════ -->
+  <aside class="hud-sidebar">
+
+    <!-- Identity -->
+    <div class="hud-sidebar-section">
+      <div class="hud-wordmark">
+        <div class="hud-wordmark-logo">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M6 1L11 10H1L6 1Z" stroke="#b8f000" stroke-width="1" fill="none"/>
+          </svg>
+        </div>
+        <span class="hud-wordmark-text">TERRA</span>
+      </div>
+      <div class="hud-status-line">
+        <div class="hud-status-dot"></div>
+        <span class="hud-status-text">Live · Mara North</span>
+      </div>
+    </div>
+
+    <!-- Ops count -->
+    <div class="hud-sidebar-section">
+      <div class="hud-ops-block">
+        <div class="hud-ops-val">327</div>
+        <div class="hud-ops-lbl">No. Operations</div>
+      </div>
+    </div>
+
+    <!-- Sector A -->
+    <div class="hud-sidebar-section">
+      <div class="hud-sector">
+        <div class="hud-sector-label">Sector A · Northern Zone</div>
+        <div class="hud-sector-body">
+          <!-- Dual ring gauge -->
+          <svg class="hud-sector-gauge" width="86" height="86" viewBox="0 0 86 86">
+            <!-- Outer track -->
+            <circle cx="43" cy="43" r="37" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="5"/>
+            <!-- Outer arc: 78% → circumference 232.5 → 181.3 filled -->
+            <circle cx="43" cy="43" r="37" fill="none" stroke="#b8f000" stroke-width="5"
+              stroke-dasharray="181.3 51.2" stroke-linecap="butt"
+              transform="rotate(-90 43 43)"/>
+            <!-- Inner track -->
+            <circle cx="43" cy="43" r="25" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
+            <!-- Inner arc: 62% → circumference 157.1 → 97.4 filled -->
+            <circle cx="43" cy="43" r="25" fill="none" stroke="#b8f000" stroke-width="4" opacity="0.45"
+              stroke-dasharray="97.4 59.7" stroke-linecap="butt"
+              transform="rotate(-90 43 43)"/>
+            <!-- Center text -->
+            <text x="43" y="39" text-anchor="middle" font-family="'Bebas Neue'" font-size="16" fill="#e6edf3">78</text>
+            <text x="43" y="50" text-anchor="middle" font-family="'JetBrains Mono'" font-size="7" fill="#7d8590" letter-spacing="1">INDEX</text>
+          </svg>
+          <div class="hud-sector-indices">
+            <div class="hud-sector-index">
+              <div class="hud-sector-index-val">15.8</div>
+              <div class="hud-sector-index-lbl">Patrol Radius</div>
+            </div>
+            <div class="hud-sector-index">
+              <div class="hud-sector-index-val" style="opacity:0.5">34.8</div>
+              <div class="hud-sector-index-lbl">Signal Reach</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sector B -->
+    <div class="hud-sidebar-section">
+      <div class="hud-sector">
+        <div class="hud-sector-label">Sector B · Eastern Corridor</div>
+        <div class="hud-sector-body">
+          <svg class="hud-sector-gauge" width="86" height="86" viewBox="0 0 86 86">
+            <!-- Outer track -->
+            <circle cx="43" cy="43" r="37" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="5"/>
+            <!-- Outer arc: 45% → 104.6 -->
+            <circle cx="43" cy="43" r="37" fill="none" stroke="#b8f000" stroke-width="5" opacity="0.6"
+              stroke-dasharray="104.6 127.9" stroke-linecap="butt"
+              transform="rotate(-90 43 43)"/>
+            <!-- Inner track -->
+            <circle cx="43" cy="43" r="25" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
+            <!-- Inner arc: 81% → 127.2 -->
+            <circle cx="43" cy="43" r="25" fill="none" stroke="#b8f000" stroke-width="4" opacity="0.4"
+              stroke-dasharray="127.2 29.9" stroke-linecap="butt"
+              transform="rotate(-90 43 43)"/>
+            <text x="43" y="39" text-anchor="middle" font-family="'Bebas Neue'" font-size="16" fill="#e6edf3">45</text>
+            <text x="43" y="50" text-anchor="middle" font-family="'JetBrains Mono'" font-size="7" fill="#7d8590" letter-spacing="1">INDEX</text>
+          </svg>
+          <div class="hud-sector-indices">
+            <div class="hud-sector-index">
+              <div class="hud-sector-index-val">24.2</div>
+              <div class="hud-sector-index-lbl">Patrol Radius</div>
+            </div>
+            <div class="hud-sector-index">
+              <div class="hud-sector-index-val" style="opacity:0.5">13.1</div>
+              <div class="hud-sector-index-lbl">Signal Reach</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mini stats strip -->
+    <div class="hud-sidebar-section" style="margin-top: auto;">
+      <div class="hud-mini-stats">
+        <div class="hud-mini-stat">
+          <div class="hud-mini-stat-val">13%</div>
+          <div class="hud-mini-stat-lbl">Risk</div>
+        </div>
+        <div class="hud-mini-stat">
+          <div class="hud-mini-stat-val">16%</div>
+          <div class="hud-mini-stat-lbl">Latency</div>
+        </div>
+        <div class="hud-mini-stat">
+          <div class="hud-mini-stat-val">15%</div>
+          <div class="hud-mini-stat-lbl">Sensor</div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ══════════════════════════════════════════════
+       MAIN
+  ══════════════════════════════════════════════ -->
+  <main class="hud-main">
+
+    <!-- Route performance card -->
+    <div class="route-card">
+
+      <div class="rc-header">
+        <div>
+          <div class="rc-route">route: <strong>MARA-N → SAMBURU</strong></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="rc-badge">corridor</span>
+          <span class="rc-menu">⋮</span>
+        </div>
+      </div>
+
+      <div class="rc-metrics">
+        <div class="rc-metric">
+          <div class="rc-metric-lbl">Corridor Integrity</div>
+          <div class="rc-metric-val">92.4%</div>
+          <div class="rc-metric-delta">↑ 3.7%</div>
+        </div>
+        <div class="rc-metric">
+          <div class="rc-metric-lbl">Signal Coverage</div>
+          <div class="rc-metric-val">82.3%</div>
+          <div class="rc-metric-delta">↑ 1.9%</div>
+        </div>
+      </div>
+
+      <div class="seg-bar">
+        <div class="seg-bar__seg seg-bar__seg--active"></div>
+        <div class="seg-bar__seg seg-bar__seg--relay"></div>
+        <div class="seg-bar__seg seg-bar__seg--fallback"></div>
+      </div>
+
+      <div class="seg-legend">
+        <div class="seg-legend__item">
+          <span class="seg-legend__dot seg-legend__dot--active"></span>
+          ACTIVE 50.6%
+        </div>
+        <div class="seg-legend__item">
+          <span class="seg-legend__dot seg-legend__dot--relay"></span>
+          RELAY 31.7%
+        </div>
+        <div class="seg-legend__item">
+          <span class="seg-legend__dot seg-legend__dot--fallback"></span>
+          FALLBACK 17.7%
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

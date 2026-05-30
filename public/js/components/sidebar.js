@@ -30,6 +30,7 @@ const Sidebar = (() => {
       section: 'Analysis',
       items: [
         { id: 'site-analysis',          label: 'Site Analysis',  icon: 'SITE', permission: 'export_data' },
+        { id: 'sa-sandbox',             label: 'SA Sandbox',     icon: 'SBOX', permission: 'export_data' },
         { id: 'test-site',              label: 'Field Intel',    icon: 'INTL', permission: 'export_data' },
         { id: 'site-analysis--tracker', label: 'Animal Tracker', icon: 'TRKR', permission: 'export_data' },
         { id: 'site-analysis--data',    label: 'Upload Data',    icon: 'UPLD', permission: 'export_data' },
@@ -57,8 +58,7 @@ const Sidebar = (() => {
         aria-current="${isActive ? 'page' : 'false'}"
         title="${item.label}"
       >
-        <span class="sb-link__icon">${item.icon}</span>
-        <span class="sb-link__label">${item.label}</span>
+        <span class="sb-link__label">${item.label.toUpperCase()}</span>
         ${isActive ? '<span class="sb-link__pip"></span>' : ''}
       </button>`;
   }
@@ -73,6 +73,7 @@ const Sidebar = (() => {
 
       return `
         <div class="sb-section">
+          <div class="sb-section__header">${section.section}</div>
           ${visible.map(item => renderNavLink(item, activePage)).join('')}
         </div>`;
     }).join('');

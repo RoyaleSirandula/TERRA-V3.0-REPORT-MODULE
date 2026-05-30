@@ -167,7 +167,25 @@
 
 /* ── Section ────────────────────────────────────────────────── */
 .sb-section {
-    margin-bottom: 2px;
+    margin-bottom: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 4px;
+}
+.sb-section:first-child {
+    border-top: none;
+    padding-top: 0;
+}
+
+.sb-section__header {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.18);
+    padding: 8px 16px 4px;
+    pointer-events: none;
+    user-select: none;
 }
 
 /* ── Nav link ───────────────────────────────────────────────── */
@@ -209,36 +227,12 @@
     box-shadow: 0 0 5px rgba(195, 255, 0, 0.55);
 }
 
-/* Icon tag */
-.sb-link__icon {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: rgba(255, 255, 255, 0.48);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    padding: 3px 6px;
-    flex-shrink: 0;
-    transition: color 0.12s, border-color 0.12s, background 0.12s;
-    white-space: nowrap;
-}
-.sb-link:hover .sb-link__icon {
-    color: rgba(255, 255, 255, 0.75);
-    border-color: rgba(255, 255, 255, 0.20);
-}
-.sb-link--active .sb-link__icon {
-    color: #c3ff00;
-    border-color: rgba(195, 255, 0, 0.35);
-    background: rgba(195, 255, 0, 0.08);
-}
-
 /* Label */
 .sb-link__label {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
     color: rgba(255, 255, 255, 0.62);
     white-space: nowrap;
     overflow: hidden;
@@ -323,6 +317,7 @@
 .sb--collapsed .sb-logo__live,
 .sb--collapsed .sb-ruler__label,
 .sb--collapsed .sb-ruler__track,
+.sb--collapsed .sb-section__header,
 .sb--collapsed .sb-link__label,
 .sb--collapsed .sb-link__pip,
 .sb--collapsed .sb-footer__info,
@@ -335,7 +330,6 @@
 .sb--collapsed .sb-ruler__tick { margin: 0 auto; }
 
 .sb--collapsed .sb-link  { padding: 9px 0; justify-content: center; gap: 0; }
-.sb--collapsed .sb-link__icon { padding: 3px 6px; }
 
 .sb--collapsed .sb-footer { padding: 12px 0; justify-content: center; }
 .sb--collapsed .sb-footer__avatar { margin: 0 auto; }

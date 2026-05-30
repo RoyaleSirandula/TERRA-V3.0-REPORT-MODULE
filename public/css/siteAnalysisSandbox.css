@@ -1,0 +1,440 @@
+/* ============================================================
+   TERRA – siteAnalysisSandbox.css
+   Scoped Session Architecture sandbox page.
+   Uses global design tokens and .btn / .badge components.
+   Only sandbox-specific layout and data-vis styles live here.
+   ============================================================ */
+
+/* ── Page shell ─────────────────────────────────────────────── */
+.sasb-shell {
+  display: flex;
+  height: calc(100vh - var(--topbar-h));
+  overflow: hidden;
+  background: var(--clr-bg);
+}
+
+/* ── Left control panel ──────────────────────────────────────── */
+.sasb-panel {
+  width: 268px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--clr-border);
+  background: var(--clr-surface);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sasb-panel::-webkit-scrollbar { display: none; }
+
+/* ── Panel header ─────────────────────────────────────────────── */
+.sasb-panel-header {
+  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  border-bottom: 1px solid var(--clr-border);
+  flex-shrink: 0;
+  background: var(--clr-surface);
+}
+
+.sasb-panel-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--clr-brand);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: var(--sp-2);
+}
+
+.sasb-panel-title {
+  font-family: var(--font-label);
+  font-size: var(--text-base);
+  font-weight: var(--fw-bold);
+  color: var(--clr-text);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin-bottom: var(--sp-4);
+}
+
+.sasb-panel-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sasb-panel-status-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--clr-text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Panel sections ──────────────────────────────────────────── */
+.sasb-section {
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.sasb-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+}
+
+.sasb-section-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--clr-text-dim);
+  letter-spacing: 0.1em;
+}
+
+/* ── Key-value readout (boundary info) ───────────────────────── */
+.sasb-kv-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--clr-surface-2);
+  border: 1px solid var(--clr-border);
+}
+
+.sasb-kv-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sasb-kv-key {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--clr-text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sasb-kv-val {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--clr-text-muted);
+}
+
+.sasb-kv-val.is-set { color: var(--clr-accent); }
+
+/* ── Button stack (full-width stacked buttons) ───────────────── */
+.sasb-btn-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.sasb-btn-full {
+  width: 100%;
+  justify-content: center;
+}
+
+.sasb-btn-full:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Layer toggles ───────────────────────────────────────────── */
+.sasb-layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.sasb-layer-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--clr-surface-2);
+  border: 1px solid var(--clr-border);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+  user-select: none;
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+.sasb-layer-row.is-available {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.sasb-layer-row.is-available:hover {
+  background: var(--clr-surface-3);
+  border-color: rgba(255,255,255,0.16);
+}
+
+.sasb-layer-row.is-on {
+  border-color: var(--layer-color, var(--clr-border));
+  background: color-mix(in srgb, var(--layer-color, transparent) 5%, var(--clr-surface-2));
+}
+
+.sasb-layer-toggle {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--layer-color, var(--clr-border));
+  flex-shrink: 0;
+  position: relative;
+  transition: background var(--transition-fast);
+}
+
+.sasb-layer-row.is-on .sasb-layer-toggle {
+  background: var(--layer-color, var(--clr-border));
+}
+
+.sasb-layer-row.is-on .sasb-layer-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 4px;
+  width: 4px; height: 7px;
+  border-right: 2px solid var(--clr-bg);
+  border-bottom: 2px solid var(--clr-bg);
+  transform: rotate(45deg);
+}
+
+.sasb-layer-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.sasb-layer-name {
+  font-family: var(--font-label);
+  font-size: var(--text-2xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--clr-text);
+  margin-bottom: 2px;
+}
+
+.sasb-layer-cadence {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--clr-text-dim);
+  letter-spacing: 0.06em;
+}
+
+.sasb-layer-status {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--clr-text-dim);
+  text-align: right;
+  flex-shrink: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sasb-layer-status.is-streaming { color: var(--layer-color, var(--clr-text-muted)); }
+
+/* ── Stats readout ───────────────────────────────────────────── */
+.sasb-stats-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.sasb-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--clr-surface-2);
+  border-left: 2px solid var(--layer-color, var(--clr-border));
+}
+
+.sasb-stat-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--clr-text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sasb-stat-counts {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+}
+
+.sasb-stat-in {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--layer-color, var(--clr-text-muted));
+  line-height: 1;
+}
+
+.sasb-stat-blocked {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--clr-text-dim);
+  letter-spacing: 0.04em;
+}
+
+/* ── Session log ─────────────────────────────────────────────── */
+.sasb-log {
+  flex: 1;
+  padding: var(--sp-3) var(--sp-4);
+  overflow-y: auto;
+  min-height: 100px;
+  max-height: 190px;
+}
+
+.sasb-log::-webkit-scrollbar { display: none; }
+
+.sasb-log-entry {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-1);
+  line-height: 1.5;
+}
+
+.sasb-log-ts {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--clr-text-dim);
+  flex-shrink: 0;
+  padding-top: 1px;
+  letter-spacing: 0.04em;
+}
+
+.sasb-log-msg {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--clr-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.sasb-log-msg.is-ok    { color: var(--clr-brand); }
+.sasb-log-msg.is-warn  { color: var(--clr-warning); }
+.sasb-log-msg.is-error { color: var(--clr-danger); }
+.sasb-log-msg.is-info  { color: var(--clr-accent); }
+
+/* ── Spec link ───────────────────────────────────────────────── */
+.sasb-spec-link {
+  padding: var(--sp-3) var(--sp-4);
+  border-top: 1px solid var(--clr-border);
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.sasb-spec-link a {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--clr-text-dim);
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color var(--transition-fast);
+}
+
+.sasb-spec-link a:hover { color: var(--clr-accent); }
+
+/* ── Map container ───────────────────────────────────────────── */
+.sasb-map-wrap {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+#sasb-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Map overlay: empty state ────────────────────────────────── */
+.sasb-map-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  text-align: center;
+  z-index: 500;
+  transition: opacity 0.3s;
+}
+
+.sasb-map-overlay.is-hidden { opacity: 0; }
+
+.sasb-overlay-icon {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--clr-text-dim);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: var(--sp-2);
+}
+
+.sasb-overlay-msg {
+  font-family: var(--font-label);
+  font-size: var(--text-sm);
+  color: var(--clr-text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ── Leaflet overrides ───────────────────────────────────────── */
+.sasb-map-wrap .leaflet-control-attribution { display: none; }
+.sasb-map-wrap .leaflet-draw-toolbar a { background-color: var(--clr-surface) !important; border-color: var(--clr-border) !important; }
+.sasb-map-wrap .leaflet-draw-toolbar a:hover { background-color: var(--clr-surface-2) !important; }
+
+/* ── GPS trail markers ───────────────────────────────────────── */
+.sasb-gps-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--clr-brand);
+  background: rgba(184,240,0,0.3);
+}
+
+.sasb-gps-dot.is-exited {
+  border-color: var(--clr-text-dim);
+  background: rgba(255,255,255,0.05);
+}
+
+/* ── Acoustic sensor markers ─────────────────────────────────── */
+.sasb-sensor-marker {
+  width: 14px; height: 14px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sasb-sensor-core {
+  width: 6px; height: 6px;
+  background: var(--clr-accent);
+  border-radius: 50%;
+}
+
+.sasb-sensor-ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(0,200,224,0.4);
+  border-radius: 50%;
+  animation: none;
+}
+
+.sasb-sensor-marker.is-firing .sasb-sensor-ring {
+  animation: sasb-ripple 0.9s ease-out forwards;
+}
+
+@keyframes sasb-ripple {
+  0%   { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(3.5); opacity: 0; }
+}
+
+/* ── Vegetation polygon tooltip ──────────────────────────────── */
+.sasb-veg-tooltip {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--clr-brand);
+  letter-spacing: 0.08em;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  padding: 3px 6px;
+}

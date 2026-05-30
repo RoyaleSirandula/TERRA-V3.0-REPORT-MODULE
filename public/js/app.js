@@ -36,6 +36,7 @@ const Router = (() => {
         // Sidebar nav targets
         'map': { title: 'Ops Console', render: (c) => MapPage.render(c) },
         'test-site': { title: 'Test Site', render: (c) => TestSitePage.render(c) },
+        'sa-sandbox': { title: 'SA Sandbox', render: (c) => SiteAnalysisSandboxPage.render(c) },
         'analytics': { title: 'Analytics', render: (c) => AnalyticsPage.render(c) },
         'export': { title: 'Export Data', render: (c) => renderPlaceholder(c, '📤', 'Export Datasets', 'CSV / GeoJSON export coming soon.') },
         'users': { title: 'Manage Users', render: (c) => UsersPage.render(c) },
@@ -162,6 +163,11 @@ const Router = (() => {
             container.style.padding  = '';
             container.style.overflow = '';
             container.style.position = '';
+        }
+
+        // Teardown report detail if leaving it
+        if (pageId !== 'report-detail') {
+            ReportDetailPage.destroy();
         }
 
         // Scroll to top

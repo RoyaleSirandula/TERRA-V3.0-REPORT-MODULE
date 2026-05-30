@@ -665,17 +665,28 @@ const UsersPage = (() => {
         /* Loading skeleton */
         container.innerHTML = `
         <div class="um-page anim-fade-in">
+            <div class="um-ruler">
+                <div class="um-ruler__tick"></div>
+                <span class="um-ruler__label">TERRA // ACCESS CONTROL</span>
+                <div class="um-ruler__track">
+                    <div class="um-ruler__pip"></div>
+                    <div class="um-ruler__pip"></div>
+                    <div class="um-ruler__pip"></div>
+                </div>
+                <span class="um-ruler__ver">ACL/1.0</span>
+            </div>
             <div class="um-hero">
                 <div class="um-hero__left">
-                    <div class="um-hero__eyebrow">Terra // Access Control</div>
-                    <h1 class="um-hero__title">Operator<br>Management</h1>
+                    <div class="um-hero__pill">TERRA SYS</div>
+                    <div class="um-hero__title">OPERATOR MANAGEMENT</div>
+                    <div class="um-hero__sub">Access Control Roster · Clearance Assignment</div>
                 </div>
                 <div class="um-hero__right">
                     <div class="spinner"></div>
                 </div>
             </div>
-            <div style="padding:var(--sp-8);color:var(--clr-text-muted);display:flex;align-items:center;gap:var(--sp-3)">
-                <div class="spinner"></div> Loading operator roster…
+            <div style="padding:32px 24px;color:var(--clr-text-muted);display:flex;align-items:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;">
+                <div class="spinner"></div> LOADING OPERATOR ROSTER…
             </div>
         </div>
         `;
@@ -697,16 +708,29 @@ const UsersPage = (() => {
         container.innerHTML = `
         <div class="um-page anim-fade-in">
 
+            <!-- Frame ruler -->
+            <div class="um-ruler">
+                <div class="um-ruler__tick"></div>
+                <span class="um-ruler__label">TERRA // ACCESS CONTROL</span>
+                <div class="um-ruler__track">
+                    <div class="um-ruler__pip"></div>
+                    <div class="um-ruler__pip"></div>
+                    <div class="um-ruler__pip"></div>
+                </div>
+                <span class="um-ruler__ver">ACL/1.0</span>
+            </div>
+
             <!-- Hero -->
             <div class="um-hero">
                 <div class="um-hero__left">
-                    <div class="um-hero__eyebrow">Terra // Access Control Layer</div>
-                    <h1 class="um-hero__title">Operator<br>Management</h1>
+                    <div class="um-hero__pill">TERRA SYS</div>
+                    <div class="um-hero__title">OPERATOR MANAGEMENT</div>
+                    <div class="um-hero__sub">Access Control Roster · Clearance Assignment</div>
                 </div>
                 <div class="um-hero__right">
                     <div class="um-hero__desc">
-                        Manage operator clearance levels, verify field personnel,<br>
-                        suspend compromised accounts, and provision new operators.
+                        Manage clearance levels, verify field personnel,<br>
+                        suspend accounts, provision new operators.
                     </div>
                 </div>
             </div>
