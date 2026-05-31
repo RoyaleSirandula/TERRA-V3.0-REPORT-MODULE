@@ -488,3 +488,21 @@
   .mr-row__conf { display: none; }
   .mr-stats-strip { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Light Mode ──────────────────────────────────────────────── */
+body.light #mr-root,
+body.light .mr-page {
+    --mr-bg:       #f0f2f5;
+    --mr-surface:  #ffffff;
+    --mr-surface2: #e8ebf0;
+    --mr-border:   rgba(0, 0, 0, 0.08);
+    --mr-text:     #1a1f27;
+    --mr-muted:    #4a5568;
+    --mr-dim:      #8a96a5;
+    --mr-green:    #4e7e00;
+    --mr-cyan:     #0099b0;
+    --mr-amber:    #b36a00;
+    --mr-red:      #c0392b;
+    --mr-rule:     rgba(0, 0, 0, 0.08);
+    --mr-rule-h:   rgba(0, 0, 0, 0.04);
+}

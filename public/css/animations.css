@@ -116,73 +116,211 @@
     flex-shrink: 0;
 }
 
+/* ── Tactical flicker keyframe ──────────────────────────────── */
+@keyframes tac-flicker {
+    0%   { opacity: 0; }
+    18%  { opacity: 1; }
+    22%  { opacity: 0; }
+    38%  { opacity: 1; }
+    42%  { opacity: 0; }
+    58%  { opacity: 1; }
+    100% { opacity: 1; }
+}
+
 /* ── Toast Notifications ────────────────────────────────────── */
 .toast-container {
     position: fixed;
-    bottom: var(--sp-8);
-    right: var(--sp-8);
+    bottom: 32px;
+    right: 32px;
     z-index: var(--z-toast);
     display: flex;
     flex-direction: column;
-    gap: var(--sp-3);
+    gap: 8px;
     pointer-events: none;
 }
 
 .toast {
-    background: var(--clr-surface);
-    border: 1px solid var(--clr-border);
-    padding: var(--sp-4) var(--sp-5);
-    box-shadow: var(--shadow-lg);
-    font-size: var(--text-sm);
+    position: relative;
+    /* hatch accent strip at top — same pattern as route card fallback segment */
+    background-color: rgba(13, 17, 23, 0.94);
+    background-image: repeating-linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.09) 0px, rgba(255, 255, 255, 0.09) 2px,
+        transparent 2px, transparent 6px
+    );
+    background-size: 100% 4px;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 14px 16px 12px;
     pointer-events: all;
-    animation: fadeInUp 0.3s both;
-    max-width: 320px;
+    animation: fadeInUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+    max-width: 300px;
     display: flex;
     align-items: flex-start;
-    gap: var(--sp-3);
+    gap: 12px;
+    border-radius: 0;
+    overflow: visible;
 }
 
-.toast--success { border-left: 2px solid var(--clr-brand); }
-.toast--error   { border-left: 2px solid var(--clr-danger); }
-.toast--warning { border-left: 2px solid var(--clr-warning); }
+/* corner ticks — exact route-card approach */
+.toast::before,
+.toast::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: #b8f000;
+    border-style: solid;
+    opacity: 0;
+    animation: tac-flicker 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
+}
+.toast::before { top: -1px;    left: -1px;  border-width: 1px 0 0 1px; }
+.toast::after  { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+
+.toast-icon {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: 1px solid currentColor;
+    flex-shrink: 0;
+    margin-top: 2px;
+    line-height: 1.4;
+    opacity: 0;
+    animation: tac-flicker 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+.toast-message {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: rgba(230, 237, 243, 0.85);
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+    opacity: 0;
+    animation: fadeIn 0.3s ease 0.38s both;
+}
+
+.toast--success .toast-icon { color: #b8f000; border-color: rgba(184, 240, 0, 0.55); }
+.toast--error   .toast-icon { color: #f05050; border-color: rgba(240, 80, 80, 0.55); }
+.toast--warning .toast-icon { color: #e8a020; border-color: rgba(232, 160, 32, 0.55); }
 
 /* ── Modal ──────────────────────────────────────────────────── */
 .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(5, 10, 12, 0.80);
+    background: rgba(5, 9, 14, 0.78);
     z-index: var(--z-modal);
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeIn 0.2s both;
-    backdrop-filter: blur(4px);
+    animation: fadeIn 0.18s both;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 
 .modal {
-    background: var(--clr-surface);
-    border: 1px solid var(--clr-border);
-    padding: var(--sp-8);
-    width: min(560px, 95vw);
+    position: relative;
+    background: rgba(13, 17, 23, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 24px 28px;
+    width: min(520px, 95vw);
     max-height: 90vh;
     overflow-y: auto;
-    animation: fadeInUp 0.25s both;
-    box-shadow: var(--shadow-lg);
+    overflow-x: visible;
+    animation: fadeInUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+    border-radius: 0;
 }
+
+/* corner ticks — flickered in after shell appears */
+.modal::before,
+.modal::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-color: #b8f000;
+    border-style: solid;
+    opacity: 0;
+    animation: tac-flicker 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+    pointer-events: none;
+}
+.modal::before { top: -1px;    left: -1px;  border-width: 1px 0 0 1px; }
+.modal::after  { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
 
 .modal__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--sp-6);
-    padding-bottom: var(--sp-4);
-    border-bottom: 1px solid var(--clr-border);
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .modal__title {
-    font-family: var(--font-label);
-    font-size: var(--text-xl);
-    font-weight: var(--fw-bold);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.18em;
+    color: #e6edf3;
+    opacity: 0;
+    animation: tac-flicker 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+.modal__body {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: rgba(230, 237, 243, 0.7);
+    letter-spacing: 0.03em;
+    line-height: 1.65;
+    opacity: 0;
+    animation: fadeIn 0.3s ease 0.38s both;
+}
+
+.modal__footer {
+    position: relative;
+    margin-top: 24px;
+    padding-top: 16px;
+}
+
+/* hatch accent strip above footer — mirrors route card fallback segment */
+.modal__footer::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background-image: repeating-linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.11) 0px, rgba(255, 255, 255, 0.11) 2px,
+        transparent 2px, transparent 6px
+    );
+}
+
+/* close button override inside modal */
+.modal .btn--icon {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.35);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    border-radius: 0;
+    padding: 0;
+}
+.modal .btn--icon:hover {
+    color: #e6edf3;
+    border-color: rgba(255, 255, 255, 0.35);
 }

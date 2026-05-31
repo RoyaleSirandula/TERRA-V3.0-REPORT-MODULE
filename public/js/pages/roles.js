@@ -202,7 +202,7 @@ const RolesPage = (() => {
                 </div>` : ''}
             </div>
             <div class="rp-perm-panel__dirty ${_dirty ? 'visible' : ''}" id="rp-dirty-bar">
-                ⚠ UNSAVED CHANGES — click SAVE CHANGES to apply
+                [!] UNSAVED CHANGES — click SAVE CHANGES to apply
             </div>
             <div class="rp-perm-list" id="rp-perm-list">
                 ${permRows}
@@ -357,7 +357,7 @@ const RolesPage = (() => {
             body: `
             <div style="display:flex;flex-direction:column;gap:var(--sp-4);">
                 <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);padding:var(--sp-4);font-size:var(--text-sm);">
-                    <strong style="color:var(--clr-danger);">⚠ This is permanent.</strong>
+                    <strong style="color:var(--clr-danger);">[!] This is permanent.</strong>
                     Role <code>${esc(_selected.name)}</code> and all its permission assignments will be deleted.
                     This cannot be undone.
                 </div>

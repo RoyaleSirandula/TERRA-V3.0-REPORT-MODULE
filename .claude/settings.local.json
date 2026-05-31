@@ -17,7 +17,9 @@
       "Bash(cp panel-4.html speciesintel.html)",
       "Bash(start \"c:\\\\Users\\\\User\\\\TERRA REPORT\\\\reticle-preview.html\")",
       "Bash(python3 -c ' *)",
-      "Bash(Copy-Item \"c:\\\\Users\\\\User\\\\TERRA REPORT\\\\assets\\\\MINI TERRA LOGO.png\" \"c:\\\\Users\\\\User\\\\TERRA REPORT\\\\public\\\\assets\\\\MINI TERRA LOGO.png\")"
+      "Bash(Copy-Item \"c:\\\\Users\\\\User\\\\TERRA REPORT\\\\assets\\\\MINI TERRA LOGO.png\" \"c:\\\\Users\\\\User\\\\TERRA REPORT\\\\public\\\\assets\\\\MINI TERRA LOGO.png\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\User\\\\TERRA REPORT\" -Recurse -Include \"*ops*\", \"*console*\", \"*dashboard*\" -Directory)",
+      "Bash(Select-Object FullName)"
     ],
     "additionalDirectories": [
       "c:\\Users\\User\\TERRA REPORT"

@@ -24,9 +24,9 @@
   --clr-success:  var(--clr-brand);
 
   /* Text — cool off-white hierarchy */
-  --clr-text:         #dde1e5;  /* Primary — readable off-white   */
-  --clr-text-muted:   #7d8693;  /* Secondary — cool blue-gray     */
-  --clr-text-dim:     #465060;  /* Tertiary — disabled/captions   */
+  --clr-text:         #e8ecf0;  /* Primary — readable off-white   */
+  --clr-text-muted:   #9ba5b4;  /* Secondary — cool blue-gray     */
+  --clr-text-dim:     #60717f;  /* Tertiary — disabled/captions   */
   --clr-text-inverse: #07090e;  /* Text on bright surfaces        */
 
   /* ── Typography ─────────────────────────────────────────── */
@@ -36,9 +36,9 @@
   --font-mono:    'JetBrains Mono', 'Fira Code', monospace; /* Data / IDs */
 
   /* Type scale — 4px step base */
-  --text-2xs:  0.6875rem;  /* 11px — badges, captions        */
-  --text-xs:   0.75rem;    /* 12px — labels, meta            */
-  --text-sm:   0.8125rem;  /* 13px — body default            */
+  --text-2xs:  0.75rem;    /* 12px — badges, captions        */
+  --text-xs:   0.8125rem;  /* 13px — labels, meta            */
+  --text-sm:   0.875rem;   /* 14px — body default            */
   --text-base: 1rem;       /* 16px                           */
   --text-lg:   1.125rem;   /* 18px                           */
   --text-xl:   1.25rem;    /* 20px                           */
@@ -95,6 +95,16 @@
   --z-toast:       400;
 }
 
+/* ── Font Scale ─────────────────────────────────────────────
+   Applied via data-font-size attribute on <html>.
+   Targets .main-content with zoom so that all content scales
+   uniformly — px values, rem values, spacing — regardless of
+   how individual page CSS files declare their sizes.
+   The shell (sidebar, topbar) is intentionally unaffected.
+   ─────────────────────────────────────────────────────────── */
+html[data-font-size="large"]  .main-content { zoom: 1.125; }
+html[data-font-size="xlarge"] .main-content { zoom: 1.25;  }
+
 /* ── Light Mode ─────────────────────────────────────────────
    Applied via .light class on <body>.
    Brand lime is kept; surfaces flip to cool whites/grays.
@@ -117,8 +127,8 @@ body.light {
   --clr-success:  var(--clr-brand);
 
   --clr-text:         #1a1f27;
-  --clr-text-muted:   #5a6373;
-  --clr-text-dim:     #96a0ae;
+  --clr-text-muted:   #4a5568;
+  --clr-text-dim:     #7a8799;
   --clr-text-inverse: #f0f2f5;
 
   --shadow-xs:   0 1px 2px rgba(0, 0, 0, 0.08);

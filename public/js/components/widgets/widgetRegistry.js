@@ -126,7 +126,7 @@ const WidgetRegistry = (() => {
             try {
                 def.render(body, _currentReport, { span: w.span });
             } catch (err) {
-                body.innerHTML = `<p style="color:var(--clr-danger);font-size:var(--text-xs)">⚠ Widget failed to render: ${err.message}</p>`;
+                body.innerHTML = `<p style="color:var(--clr-danger);font-size:var(--text-xs)">[ERR] Widget failed to render: ${err.message}</p>`;
             }
         });
 

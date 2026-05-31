@@ -38,10 +38,10 @@ const Router = (() => {
         'test-site': { title: 'Test Site', render: (c) => TestSitePage.render(c) },
         'sa-sandbox': { title: 'SA Sandbox', render: (c) => SiteAnalysisSandboxPage.render(c) },
         'analytics': { title: 'Analytics', render: (c) => AnalyticsPage.render(c) },
-        'export': { title: 'Export Data', render: (c) => renderPlaceholder(c, '📤', 'Export Datasets', 'CSV / GeoJSON export coming soon.') },
+        'export': { title: 'Export Data', render: (c) => renderPlaceholder(c, '[ EXPORT ]', 'Export Datasets', 'CSV / GeoJSON export coming soon.') },
         'users': { title: 'Manage Users', render: (c) => UsersPage.render(c) },
         'roles': { title: 'Roles & Permissions', render: (c) => RolesPage.render(c) },
-        'audit-logs': { title: 'Audit Logs', render: (c) => renderPlaceholder(c, '📜', 'Audit Logs', 'Immutable event log viewer coming soon.') },
+        'audit-logs': { title: 'Audit Logs', render: (c) => renderPlaceholder(c, '[ LOGS ]', 'Audit Logs', 'Immutable event log viewer coming soon.') },
     };
 
     /* ── Internal: placeholder for upcoming pages ────────────── */
@@ -49,7 +49,7 @@ const Router = (() => {
         container.innerHTML = `
       <div class="page-header"><h1>${title}</h1><p>${subtitle}</p></div>
       <div class="card" style="text-align:center;padding:var(--sp-16);color:var(--clr-text-muted);">
-        <div style="font-size:4rem;margin-bottom:var(--sp-4);">${icon}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;letter-spacing:0.22em;margin-bottom:var(--sp-4);color:rgba(255,255,255,0.18);">${icon}</div>
         <p style="font-size:var(--text-lg);font-weight:var(--fw-semibold);color:var(--clr-text);">${title}</p>
         <p style="margin-top:var(--sp-3);">${subtitle}</p>
       </div>
@@ -58,7 +58,7 @@ const Router = (() => {
 
     /* ── Internal: forbidden page ────────────────────────────── */
     function renderForbidden(container) {
-        renderPlaceholder(container, '🔒', 'Access Denied', 'You do not have permission to view this page.');
+        renderPlaceholder(container, '[ DENIED ]', 'Access Denied', 'You do not have permission to view this page.');
     }
 
     /* ── Internal: admin lock modal ──────────────────────────── */

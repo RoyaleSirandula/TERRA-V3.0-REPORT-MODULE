@@ -879,3 +879,26 @@
     padding-top: 8px;
     border-top: 1px solid rgba(255,255,255,0.05);
 }
+
+/* ── Light Mode ──────────────────────────────────────────────── */
+body.light .ts-shell    { background: #f0f2f5; }
+body.light .ts-header {
+    background: rgba(240, 242, 245, 0.96);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+body.light .ts-header__title { color: #1a1f27; }
+body.light .ts-header__sub   { color: #4a5568; }
+
+/* Panels and overlays with dark hardcoded backgrounds */
+body.light .ts-intel-panel,
+body.light .ts-legend {
+    background: rgba(240, 242, 245, 0.95);
+    border-color: rgba(0, 0, 0, 0.10);
+}
+
+/* White text that vanishes on a light surface */
+body.light .ts-legend__hint  { border-top-color: rgba(0,0,0,0.08); color: #6a7485; }
+
+/* Data labels that use near-invisible colours on dark */
+body.light .ts-data-label,
+body.light .ts-coord-label   { color: #4a5568; }

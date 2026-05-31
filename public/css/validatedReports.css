@@ -1118,4 +1118,20 @@ body.light .vr-page {
     .pq-stats-strip { grid-template-columns: 1fr 1fr; }
 }
 
-body.light .pq-page { color: var(--pq-text); }
+/* ── Light Mode ──────────────────────────────────────────────── */
+body.light #vr-root,
+body.light .vr-page {
+    --vr-bg:       #f0f2f5;
+    --vr-surface:  #ffffff;
+    --vr-surface2: #e8ebf0;
+    --vr-border:   rgba(0, 0, 0, 0.08);
+    --vr-text:     #1a1f27;
+    --vr-muted:    #4a5568;
+    --vr-dim:      #8a96a5;
+    --vr-green:    #4e7e00;
+    --vr-cyan:     #0099b0;
+    --vr-amber:    #b36a00;
+    --vr-red:      #c0392b;
+    --vr-rule:     rgba(0, 0, 0, 0.08);
+    --vr-rule-h:   rgba(0, 0, 0, 0.04);
+}

@@ -16,6 +16,8 @@ const teamsRoutes         = require('./routes/teamsRoutes');
 const notificationsRoutes = require('./routes/notificationsRoutes');
 const movebankRoutes      = require('./routes/movebankRoutes');
 const portalDataRoutes    = require('./routes/portalDataRoutes');
+const opsRoutes           = require('./routes/opsRoutes');
+const operatorRoutes      = require('./routes/operatorRoutes');
 
 
 const app = express();
@@ -49,6 +51,8 @@ app.use('/api/teams',         teamsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/movebank',      movebankRoutes);
 app.use('/api/portal-data',  portalDataRoutes);
+app.use('/api/ops',          opsRoutes);
+app.use('/api/operator',     operatorRoutes);
 
 
 // Health Check

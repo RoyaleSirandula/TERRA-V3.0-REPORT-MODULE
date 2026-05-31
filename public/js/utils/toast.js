@@ -10,12 +10,12 @@ const Toast = (() => {
         const container = document.getElementById('toast-container');
         if (!container) return;
 
-        const icons = { success: '✅', error: '❌', warning: '⚠️' };
+        const labels = { success: 'OK', error: 'ERR', warning: 'WARN' };
 
         const toast = document.createElement('div');
         toast.className = `toast toast--${type}`;
         toast.innerHTML = `
-      <span class="toast-icon">${icons[type] || '🔔'}</span>
+      <span class="toast-icon">${labels[type] || 'SYS'}</span>
       <span class="toast-message">${message}</span>
     `;
 

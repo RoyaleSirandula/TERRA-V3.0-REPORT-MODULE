@@ -1014,3 +1014,17 @@
         animation: none !important;
     }
 }
+
+/* ── Light Mode ──────────────────────────────────────────────── */
+body.light .ops-console {
+    --ops-bg:       #f0f2f5;
+    --ops-surface:  #ffffff;
+    --ops-border:   rgba(0, 0, 0, 0.08);
+    --ops-border-h: rgba(0, 0, 0, 0.15);
+    --ops-text:     rgba(0, 0, 0, 0.82);
+    --ops-muted:    rgba(0, 0, 0, 0.48);
+    --ops-dim:      rgba(0, 0, 0, 0.28);
+    --ops-red:      #c0392b;
+    --ops-amber:    #b36a00;
+    --ops-green:    #4e7e00;
+}

@@ -330,7 +330,7 @@ const MovebankWidget = (() => {
         container.innerHTML = `
           <div class="mb-attach-panel">
             <div class="mb-attach-header">
-              <span class="mb-icon">🦓</span>
+              <span class="mb-icon">TRK</span>
               <div>
                 <div class="mb-attach-title">Link a Movebank Study</div>
                 <div class="mb-attach-sub">
@@ -487,7 +487,7 @@ const MovebankWidget = (() => {
         container.innerHTML = `
           <div class="mb-study-bar">
             <div class="mb-study-info">
-              <span class="mb-icon">🦓</span>
+              <span class="mb-icon">TRK</span>
               <span class="mb-study-name" id="mb-study-name">Study ${studyId}</span>
               <span class="mb-study-meta" id="mb-study-meta">Loading…</span>
             </div>
@@ -569,7 +569,7 @@ const MovebankWidget = (() => {
     WidgetRegistry.register({
         id:          'movebank-tracker',
         name:        'Movebank Movement Tracker',
-        icon:        '🦓',
+        icon:        'TRK',
         desc:        'Link a Movebank study to visualise animal tracks, trajectories, and CRW predictions around this sighting.',
         defaultSpan: 12,
         flush:       false,

@@ -671,3 +671,21 @@
     .rp-hero { flex-direction: column; align-items: flex-start; gap: 12px; }
     .rp-hero__desc { text-align: left; }
 }
+
+/* ── Light Mode ──────────────────────────────────────────────── */
+body.light .rp-page {
+    --rp-bg:       #f0f2f5;
+    --rp-surface:  #ffffff;
+    --rp-surface2: #e8ebf0;
+    --rp-border:   rgba(0, 0, 0, 0.08);
+    --rp-rule:     rgba(0, 0, 0, 0.05);
+    --rp-text:     #1a1f27;
+    --rp-muted:    #4a5568;
+    --rp-dim:      #8a96a5;
+    --rp-green:    #4e7e00;
+    --rp-amber:    #b36a00;
+    --rp-red:      #c0392b;
+    --rp-cyan:     #0099b0;
+}
+
+body.light .rp-hero__title { color: var(--rp-text); }

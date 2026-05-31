@@ -819,3 +819,35 @@
   .db-conf-body            { grid-template-columns: 1fr; }
   .db-conf-score-cell      { border-right: none; border-bottom: 1px solid var(--db-border); }
 }
+
+/* ── Light Mode ──────────────────────────────────────────────── */
+body.light #db-root,
+body.light .db-page {
+    --db-bg:       #f0f2f5;
+    --db-surface:  #ffffff;
+    --db-surface2: #e8ebf0;
+    --db-surface3: #dde1e8;
+    --db-border:   rgba(0, 0, 0, 0.08);
+    --db-rule:     rgba(0, 0, 0, 0.10);
+    --db-rule-h:   rgba(0, 0, 0, 0.05);
+    --db-text:     rgba(0, 0, 0, 0.82);
+    --db-muted:    rgba(0, 0, 0, 0.48);
+    --db-dim:      rgba(0, 0, 0, 0.28);
+    --db-green:    #4e7e00;
+    --db-amber:    #b36a00;
+    --db-red:      #c0392b;
+}
+
+body.light .db-map-wrap { background: #e4e8ee; }
+body.light .db-map-grid {
+    background-image:
+        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+}
+body.light .db-leaflet-tip {
+    background: rgba(240, 242, 245, 0.96) !important;
+    border-color: rgba(0,0,0,0.10) !important;
+    color: rgba(0,0,0,0.80) !important;
+}
+body.light .db-leaflet-tip .db-lm-tip-sub { color: rgba(0,0,0,0.40) !important; }
+body.light #db-leaflet-map .leaflet-tile  { filter: saturate(0.7) brightness(1.0); }

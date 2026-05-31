@@ -50,7 +50,7 @@ const MapWidget = (() => {
     const mapDefinition = {
         id: 'map-location',
         name: 'Geospatial Map',
-        icon: '🗺️',
+        icon: 'MAP',
         desc: 'Interactive dark map showing the sighting location and observation radius.',
         defaultSpan: 8,
         flush: true,      // No body padding so map fills edge-to-edge
@@ -65,7 +65,7 @@ const MapWidget = (() => {
         <div class="map-widget-container">
           <!-- Glassmorphic overlay badge -->
           <div class="map-overlay-badge">
-            📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}
+            ◈ ${lat.toFixed(4)}, ${lng.toFixed(4)}
             &nbsp;|&nbsp;
             ${report?.region_id ? `Region: ${report.region_id.slice(0, 8)}` : 'Region: —'}
           </div>
@@ -80,7 +80,7 @@ const MapWidget = (() => {
                 if (typeof L === 'undefined') {
                     document.getElementById(uid).innerHTML = `
             <div style="height:380px;display:flex;align-items:center;justify-content:center;color:var(--clr-text-muted);flex-direction:column;gap:var(--sp-3);">
-              <span style="font-size:2rem">🗺️</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;letter-spacing:0.2em;color:rgba(255,255,255,0.2);">MAP//ERR</span>
               <p style="font-size:var(--text-sm)">Leaflet.js not loaded — include it in index.html</p>
             </div>
           `;

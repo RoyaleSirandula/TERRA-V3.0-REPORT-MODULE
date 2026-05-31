@@ -855,7 +855,20 @@
     }
 }
 
-/* Light mode: keep dark palette regardless */
+/* ── Light Mode ──────────────────────────────────────────────── */
+body.light #an2-root,
 body.light .an2-page {
-    /* intentionally inherits page tokens above */
+    --an2-bg:       #f0f2f5;
+    --an2-surface:  #ffffff;
+    --an2-surface2: #e8ebf0;
+    --an2-border:   rgba(0, 0, 0, 0.08);
+    --an2-text:     #1a1f27;
+    --an2-muted:    #4a5568;
+    --an2-dim:      #8a96a5;
+    --an2-green:    #4e7e00;
+    --an2-cyan:     #0099b0;
+    --an2-amber:    #b36a00;
+    --an2-red:      #c0392b;
+    --an2-rule:     rgba(0, 0, 0, 0.08);
+    --an2-rule-h:   rgba(0, 0, 0, 0.04);
 }

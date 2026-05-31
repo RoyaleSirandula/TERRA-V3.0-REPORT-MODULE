@@ -7,47 +7,14 @@
 
 const MapPage = (() => {
 
-  /* ── Mock data ───────────────────────────────────────────── */
-  const MARKERS = [
-    { id: 'ranger-1', kind: 'ranger', x: 31, y: 45, label: 'Adwoa K.', lat: -1.2740, lng: 36.8812 },
-    { id: 'ranger-2', kind: 'ranger', x: 38, y: 63, label: 'Kofi M.', lat: -1.2880, lng: 36.8864 },
-    { id: 'ranger-3', kind: 'ranger', x: 65, y: 37, label: 'Linnet O.', lat: -1.2540, lng: 36.9040 },
-    { id: 'ranger-4', kind: 'ranger', x: 45, y: 40, label: 'Boateng S.', lat: -1.2600, lng: 36.8900 },
-    { id: 'ranger-5', kind: 'ranger', x: 85, y: 45, label: 'Adjei P.', lat: -1.2700, lng: 36.9200 },
-    { id: 'sensor-1', kind: 'sensor', x: 23, y: 25, label: 'Acoustic 14', lat: -1.2510, lng: 36.8720 },
-    { id: 'sensor-2', kind: 'sensor', x: 71, y: 71, label: 'Acoustic 09', lat: -1.3040, lng: 36.9090 },
-    { id: 'sensor-3', kind: 'sensor', x: 85, y: 45, label: 'Camera 03', lat: -1.2700, lng: 36.9200 },
-    { id: 'sensor-4', kind: 'sensor', x: 35, y: 55, label: 'LoRa Node 7', lat: -1.2800, lng: 36.8780 },
-    { id: 'ranger-6', kind: 'ranger', x: 50, y: 50, label: 'Nia Z.', lat: -1.2921, lng: 36.8380 },
-    { id: 'sensor-5', kind: 'sensor', x: 52, y: 55, label: 'Satellite Link 1', lat: -1.2950, lng: 36.8400 },
-    { id: 'command-1', kind: 'command', x: 50, y: 79, label: 'Base Karoo', lat: -1.3180, lng: 36.8950 },
-    { id: 'threat-1', kind: 'threat', x: 58, y: 78, label: 'T-1', lat: -1.3140, lng: 36.8975 },
-    { id: 'ts-threat-1', kind: 'threat', x: 15, y: 25, label: 'T-3', lat: -1.2650, lng: 36.8420 },
-    { id: 'ts-report-1', kind: 'caution', x: 20, y: 65, label: 'R-1', lat: -1.2950, lng: 36.8560 },
-  ];
+  /* ── Live data — populated by loadOpsData() on mount ────── */
+  let MARKERS   = [];
+  let ALL_ALERTS = [];
+  let RANGERS   = [];
+  let SENSORS   = [];
 
-  const ALL_ALERTS = [
-    { id: 'threat-1', kind: 'alert', sector: 'SECTOR 21A', time: '02:14', title: 'Poaching Activity', conf: '0.92', source: 'acoustic array 09' },
-    { id: 'ts-threat-1', kind: 'alert', sector: 'SECTOR 17B', time: '04:10', title: 'Wildfire Cluster', conf: '0.98', source: 'satellite imagery' },
-    { id: 'ts-report-1', kind: 'warn', sector: 'SECTOR 17B', time: '05:45', title: 'Elephant Sighting', conf: '0.85', source: 'field report' },
-  ];
-
-  const RANGERS = [
-    { id: 'ranger-1', name: 'Adwoa K.', sector: '17B', lastPing: '04:21', status: 'go', label: 'On patrol' },
-    { id: 'ranger-2', name: 'Kofi M.', sector: '17B', lastPing: '04:18', status: 'go', label: 'On patrol' },
-    { id: 'ranger-3', name: 'Linnet O.', sector: '21A', lastPing: '03:49', status: 'warn', label: 'Caution' },
-    { id: 'ranger-4', name: 'Boateng S.', sector: '21A', lastPing: '02:14', status: 'alert', label: 'Lost signal' },
-    { id: 'ranger-5', name: 'Adjei P.', sector: '09C', lastPing: '04:20', status: 'idle', label: 'Standing by' },
-    { id: 'ranger-6', name: 'Nia Z.', sector: '17B', lastPing: 'NOW', status: 'go', label: 'On patrol' },
-  ];
-
-  const SENSORS = [
-    { id: 'sensor-1', name: 'Acoustic 14', type: 'Acoustic Array', sector: '7B', status: 'online', battery: '78%', lastSync: '04:20:12', lat: -1.2510, lng: 36.8720 },
-    { id: 'sensor-2', name: 'Acoustic 09', type: 'Acoustic Array', sector: '21A', status: 'online', battery: '62%', lastSync: '04:19:44', lat: -1.3040, lng: 36.9090 },
-    { id: 'sensor-3', name: 'Camera 03', type: 'Camera Trap', sector: '09C', status: 'offline', battery: '12%', lastSync: '01:04:22', lat: -1.2700, lng: 36.9200 },
-    { id: 'sensor-4', name: 'LoRa Node 7', type: 'LoRa Gateway', sector: '17B', status: 'online', battery: '91%', lastSync: '04:21:00', lat: -1.2800, lng: 36.8780 },
-    { id: 'sensor-5', name: 'Satellite Link 1', type: 'VSAT Station', sector: '17B', status: 'online', battery: '100%', lastSync: 'NOW', lat: -1.2950, lng: 36.8400 },
-  ];
+  /* Command bases — populated from DB via loadOpsData() */
+  let COMMAND_MARKERS = [];
 
   /* ── Inner nav tabs ──────────────────────────────────────── */
   const INNER_NAV = [
@@ -73,8 +40,111 @@ const MapPage = (() => {
     drawerCollapsed: localStorage.getItem(DRAWER_COLLAPSED_KEY) === '1',
   };
 
-  let _clockId = null;
+  let _clockId  = null;
+  let _pollId   = null;
   let _container = null;
+
+  const POLL_INTERVAL_MS = 30_000;
+
+  /* ── Map spatial bounds ──────────────────────────────────── */
+  // These bounds define what lat/lng maps to the visible SVG canvas.
+  // Widen when field operations expand to new sectors.
+  const MAP_BOUNDS = { minLat: -1.33, maxLat: -1.24, minLng: 36.83, maxLng: 36.93 };
+
+  function latLngToXY(lat, lng) {
+    const x = ((lng - MAP_BOUNDS.minLng) / (MAP_BOUNDS.maxLng - MAP_BOUNDS.minLng)) * 100;
+    const y = ((lat - MAP_BOUNDS.maxLat) / (MAP_BOUNDS.minLat - MAP_BOUNDS.maxLat)) * 100;
+    return {
+      x: Math.max(5, Math.min(93, Math.round(x * 10) / 10)),
+      y: Math.max(5, Math.min(93, Math.round(y * 10) / 10)),
+    };
+  }
+
+  function _statusLabel(status) {
+    return { go: 'On patrol', warn: 'Caution', alert: 'Lost signal', idle: 'Standing by' }[status] || 'Standing by';
+  }
+
+  /* ── Data loader ─────────────────────────────────────────── */
+  async function loadOpsData() {
+    const data = await API.get('/ops/summary');
+
+    RANGERS = data.rangers.map(r => ({
+      id:       r.id,
+      user_id:  r.user_id,
+      name:     r.name,
+      sector:   r.region || r.team || '—',
+      lastPing: r.lastPing || '—',
+      status:   r.status  || 'idle',
+      label:    _statusLabel(r.status),
+      lat:      r.lat  ?? null,
+      lng:      r.lng  ?? null,
+      home_lat: r.home_lat ?? null,
+      home_lng: r.home_lng ?? null,
+    }));
+
+    // Rangers appear on the map only when device telemetry provides a position.
+    // In Phase 1 all rangers have lat/lng = null, so rangerMarkers will be empty.
+    const rangerMarkers = data.rangers
+      .filter(r => r.lat !== null && r.lng !== null)
+      .map(r => {
+        const { x, y } = latLngToXY(r.lat, r.lng);
+        return { id: r.id, kind: 'ranger', x, y, label: r.name, lat: r.lat, lng: r.lng };
+      });
+
+    const threatMarkers = data.threats
+      .filter(t => t.lat !== null && t.lng !== null)
+      .map(t => {
+        const { x, y } = latLngToXY(t.lat, t.lng);
+        return { id: t.id, kind: t.kind, x, y, label: t.label, lat: t.lat, lng: t.lng };
+      });
+
+    const sensorMarkers = data.sensors
+      .filter(s => s.lat !== null && s.lng !== null)
+      .map(s => {
+        const { x, y } = latLngToXY(s.lat, s.lng);
+        return { id: s.id, kind: 'sensor', x, y, label: s.name, lat: s.lat, lng: s.lng };
+      });
+
+    COMMAND_MARKERS = (data.command_bases || []).map(b => {
+      const { x, y } = latLngToXY(b.lat, b.lng);
+      return { id: b.id, base_id: b.base_id, kind: 'command', x, y, label: b.label, lat: b.lat, lng: b.lng };
+    });
+
+    MARKERS    = [...COMMAND_MARKERS, ...rangerMarkers, ...sensorMarkers, ...threatMarkers];
+    ALL_ALERTS = data.alerts;
+    SENSORS    = data.sensors;
+
+    // Restore ACKed state from server — merges with any in-session ACKs
+    // so optimistic updates made before the poll aren't lost.
+    const serverAcked = data.alerts.filter(a => a.acked_by_me).map(a => a.id);
+    state.ackedIds = [...new Set([...state.ackedIds, ...serverAcked])];
+  }
+
+  /* ── Poll tick ───────────────────────────────────────────── */
+  async function _pollTick() {
+    try {
+      await loadOpsData();
+    } catch {
+      // Silent on poll errors — don't disrupt the UI mid-session
+      return;
+    }
+
+    // ackedIds already updated by loadOpsData() from server state.
+    // Prune any in-session ACKs for alerts that have now aged out entirely.
+    const liveIds = new Set(ALL_ALERTS.map(a => a.id));
+    state.ackedIds = state.ackedIds.filter(id => liveIds.has(id));
+
+    // If the selected marker no longer exists in the new data, clear the selection
+    if (state.selectedMarkerId && !MARKERS.find(m => m.id === state.selectedMarkerId)) {
+      state.selectedMarkerId = null;
+      state.selectedAlertId  = null;
+      state.callout          = null;
+    }
+
+    renderPage();
+    injectTopbarStrip();
+    if (state.activeTab === 'live-map') mountReticleMarkers(_container);
+  }
 
   /* ── Derived ─────────────────────────────────────────────── */
   function activeAlerts() {
@@ -657,8 +727,8 @@ const MapPage = (() => {
               </div>
             </div>
             <div class="ops-actions">
-              <button class="ops-btn ops-btn--ghost">Open comms</button>
-              <button class="ops-btn ops-btn--primary">Send waypoint</button>
+              <button class="ops-btn ops-btn--ghost" id="ops-btn-comms">Open comms</button>
+              <button class="ops-btn ops-btn--primary" id="ops-btn-waypoint">Send waypoint</button>
             </div>`;
     }
 
@@ -763,13 +833,19 @@ const MapPage = (() => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
         const id = btn.dataset.ackId;
+
+        // Optimistic update — dismiss immediately, persist in background
         if (!state.ackedIds.includes(id)) state.ackedIds.push(id);
         if (state.selectedAlertId === id) {
-          state.selectedAlertId = null;
+          state.selectedAlertId  = null;
           state.selectedMarkerId = null;
-          state.callout = null;
+          state.callout          = null;
         }
         renderPage();
+
+        API.patch(`/ops/alerts/${id}/ack`).catch(err => {
+          console.warn('[OPS] ACK persist failed:', err.message);
+        });
       });
     });
 
@@ -819,9 +895,6 @@ const MapPage = (() => {
           state.selectedMarkerId = null;
           state.selectedAlertId = null;
           renderPage();
-        } else {
-          // comms, waypoint, ping, report — feedback only for now
-          Toast.show('Action queued (demo mode)', 'info');
         }
       });
     });
@@ -870,6 +943,9 @@ const MapPage = (() => {
       state.selectedAlertId = null;
       state.callout = null;
       renderPage();
+      API.post('/ops/actions', { type: 'deploy', target_id: id })
+        .then(() => Toast.success('Team deployed'))
+        .catch(() => Toast.warning('Action logged locally — server sync failed'));
     });
     const clearedBtn = root.querySelector('#ops-btn-cleared');
     if (clearedBtn) clearedBtn.addEventListener('click', () => {
@@ -879,6 +955,25 @@ const MapPage = (() => {
       state.selectedAlertId = null;
       state.callout = null;
       renderPage();
+      API.post('/ops/actions', { type: 'clear', target_id: id })
+        .then(() => Toast.success('Threat marked cleared'))
+        .catch(() => Toast.warning('Action logged locally — server sync failed'));
+    });
+
+    /* Ranger actions from drawer */
+    const commsBtn = root.querySelector('#ops-btn-comms');
+    if (commsBtn) commsBtn.addEventListener('click', () => {
+      const id = state.selectedMarkerId || state.selectedRangerId;
+      API.post('/ops/actions', { type: 'comms', target_id: id })
+        .then(() => Toast.success('Comms channel opened'))
+        .catch(() => Toast.error('Could not open comms — server unreachable'));
+    });
+    const waypointBtn = root.querySelector('#ops-btn-waypoint');
+    if (waypointBtn) waypointBtn.addEventListener('click', () => {
+      const id = state.selectedMarkerId || state.selectedRangerId;
+      API.post('/ops/actions', { type: 'waypoint', target_id: id })
+        .then(() => Toast.success('Waypoint sent'))
+        .catch(() => Toast.error('Could not send waypoint — server unreachable'));
     });
 
     /* ESC to dismiss callout */
@@ -908,33 +1003,88 @@ const MapPage = (() => {
     document.querySelector('.ops-topbar-strip')?.remove();
   }
 
-  /* ── Public API ──────────────────────────────────────────── */
-  function render(container) {
-    state = {
-      ackedIds: [],
-      selectedMarkerId: 'threat-1',
-      selectedRangerId: null,
-      selectedAlertId: 'threat-1',
-      callout: { markerId: 'threat-1' },
-      activeTab: 'live-map',
-      utcTime: '--:--:--',
-      drawerCollapsed: localStorage.getItem(DRAWER_COLLAPSED_KEY) === '1',
-    };
+  /* ── Loading / error screens ─────────────────────────────── */
+  function renderLoading() {
+    if (!_container) return;
+    _container.innerHTML = `
+      <div class="ops-console ops-console--loading">
+        <div class="ops-load-state">
+          <span class="ops-live-dot" style="margin-right:8px"></span>
+          <span class="ops-eyebrow">Connecting to ops network…</span>
+        </div>
+      </div>`;
+  }
 
-    _container = container;
-    container.style.padding = '0';
-    container.style.overflow = 'hidden';
-    container.style.position = 'relative';
+  function renderLoadError(err) {
+    console.error('[OPS] Failed to load summary:', err);
+    if (!_container) return;
+    const msg = err?.message || String(err);
+    _container.innerHTML = `
+      <div class="ops-console ops-console--loading">
+        <div class="ops-load-state">
+          <span class="ops-eyebrow" style="color:rgba(255,60,60,0.8)">
+            Could not connect to ops network
+          </span>
+          <span style="font-size:10.5px;color:rgba(255,100,100,0.65);margin-top:6px;font-family:monospace;max-width:380px;text-align:center;line-height:1.5">
+            ${msg}
+          </span>
+          <button class="ops-btn ops-btn--ghost" id="ops-retry-btn"
+                  style="margin-top:12px;font-size:11px">Retry</button>
+        </div>
+      </div>`;
+    _container.querySelector('#ops-retry-btn')?.addEventListener('click', () => {
+      _bootstrapOps(_container);
+    });
+  }
+
+  async function _bootstrapOps(container) {
+    renderLoading();
+    try {
+      await loadOpsData();
+    } catch (err) {
+      renderLoadError(err);
+      return;
+    }
+
+    // Auto-select first threat so the drawer has something on mount
+    const firstThreat = MARKERS.find(m => m.kind === 'threat' || m.kind === 'caution');
+    state.selectedMarkerId = firstThreat?.id || null;
+    state.selectedAlertId  = firstThreat?.id || null;
+    state.callout          = firstThreat ? { markerId: firstThreat.id } : null;
 
     renderPage();
     injectTopbarStrip();
     tickClock();
-    _clockId = setInterval(() => { tickClock(); }, 1000);
+    _clockId = setInterval(tickClock, 1000);
+    _pollId  = setInterval(_pollTick, POLL_INTERVAL_MS);
+  }
+
+  /* ── Public API ──────────────────────────────────────────── */
+  function render(container) {
+    state = {
+      ackedIds: [],
+      selectedMarkerId: null,
+      selectedRangerId: null,
+      selectedAlertId:  null,
+      callout:          null,
+      activeTab:        'live-map',
+      utcTime:          '--:--:--',
+      drawerCollapsed:  localStorage.getItem(DRAWER_COLLAPSED_KEY) === '1',
+    };
+
+    _container = container;
+    container.style.padding   = '0';
+    container.style.overflow  = 'hidden';
+    container.style.position  = 'relative';
+
+    _bootstrapOps(container);
   }
 
   function destroy() {
     clearInterval(_clockId);
+    clearInterval(_pollId);
     _clockId = null;
+    _pollId  = null;
     document.removeEventListener('keydown', _onEsc);
     if (_container) _container._opsEscBound = false;
     _container = null;

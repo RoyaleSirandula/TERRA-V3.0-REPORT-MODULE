@@ -1,6 +1,6 @@
 /* ============================================================
    TERRA – users.js
-   Operator Management // Access Control Roster
+   Operator Management // Access Control Roster + Field Assets
 
    Tactical/security-operations aesthetic:
      ✦ SOC terminology: Operators, Provision, Revoke, Clearance
@@ -9,14 +9,21 @@
      ✦ Permission matrix: firewall-rule table across all roles
      ✦ Inline role reassignment without page navigation
      ✦ Self-mutation guards on all destructive actions
+     ✦ Field Assets tab: manage command base / sensor / ranger locations
 
    API consumed:
-     GET    /api/users             – full roster
-     GET    /api/users/roles       – role definitions + permissions
-     PATCH  /api/users/:id/role    – reassign clearance
-     PATCH  /api/users/:id/status  – set access status
-     DELETE /api/users/:id         – revoke access permanently
-     POST   /api/auth/register     – provision new operator
+     GET    /api/users                          – full roster
+     GET    /api/users/roles                    – role definitions + permissions
+     PATCH  /api/users/:id/role                 – reassign clearance
+     PATCH  /api/users/:id/status               – set access status
+     DELETE /api/users/:id                      – revoke access permanently
+     POST   /api/auth/register                  – provision new operator
+     GET    /api/operator/assets                – command bases, sensors, rangers
+     POST   /api/operator/command-bases         – create command base
+     PATCH  /api/operator/command-bases/:id     – edit command base
+     DELETE /api/operator/command-bases/:id     – delete command base
+     PATCH  /api/operator/sensors/:id           – edit sensor location/metadata
+     PATCH  /api/operator/rangers/:id/home      – set ranger home position
    ============================================================ */
 
 const UsersPage = (() => {
@@ -33,6 +40,12 @@ const UsersPage = (() => {
 
     /* Current user — used for self-guard highlighting */
     const _selfId = () => Auth.getUser()?.user_id;
+
+    /* Active top-level tab */
+    let _activeTab = 'operators';
+
+    /* Field asset data */
+    let _assets = { command_bases: [], sensors: [], rangers: [] };
 
     /* ══════════════════════════════════════════════════════════
        ROLE / STATUS DISPLAY HELPERS
@@ -371,6 +384,355 @@ const UsersPage = (() => {
     }
 
     /* ══════════════════════════════════════════════════════════
+       TAB BAR
+    ══════════════════════════════════════════════════════════ */
+
+    function buildTabBar() {
+        const tabs = [
+            { id: 'operators',    label: 'OPERATORS' },
+            { id: 'field-assets', label: 'FIELD ASSETS' },
+        ];
+        return `
+        <div class="um-tabs" id="um-tabs">
+            ${tabs.map(t => `
+            <button class="um-tab${_activeTab === t.id ? ' um-tab--active' : ''}"
+                    data-tab="${t.id}">${t.label}</button>
+            `).join('')}
+        </div>`;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       FIELD ASSETS PANEL
+    ══════════════════════════════════════════════════════════ */
+
+    function _fmtCoord(v) {
+        return v != null ? Number(v).toFixed(5) : '—';
+    }
+
+    function buildAssetsPanel() {
+        const { command_bases, sensors, rangers } = _assets;
+
+        const basesRows = command_bases.length === 0
+            ? `<tr><td colspan="5" class="um-empty-cell">No command bases configured.</td></tr>`
+            : command_bases.map(b => `
+            <tr class="um-asset-row">
+                <td class="um-cell">${esc(b.name)}</td>
+                <td class="um-cell um-cell--mono">${_fmtCoord(b.lat)}</td>
+                <td class="um-cell um-cell--mono">${_fmtCoord(b.lng)}</td>
+                <td class="um-cell">${esc(b.sector || '—')}</td>
+                <td class="um-cell um-cell--actions">
+                    <button class="btn btn--xs btn--secondary" data-asset-action="edit-base" data-id="${b.base_id}">EDIT</button>
+                    <button class="btn btn--xs btn--danger"    data-asset-action="delete-base" data-id="${b.base_id}" data-name="${esc(b.name)}">DELETE</button>
+                </td>
+            </tr>`).join('');
+
+        const sensorsRows = sensors.length === 0
+            ? `<tr><td colspan="7" class="um-empty-cell">No sensors found.</td></tr>`
+            : sensors.map(s => `
+            <tr class="um-asset-row">
+                <td class="um-cell">${esc(s.name)}</td>
+                <td class="um-cell">${esc(s.type)}</td>
+                <td class="um-cell">${esc(s.sector || '—')}</td>
+                <td class="um-cell um-cell--mono">${_fmtCoord(s.lat)}</td>
+                <td class="um-cell um-cell--mono">${_fmtCoord(s.lng)}</td>
+                <td class="um-cell">
+                    <span class="um-status-dot um-dot--${s.status === 'online' ? 'green' : s.status === 'degraded' ? 'amber' : 'red'}"></span>
+                    ${esc(s.status)}
+                </td>
+                <td class="um-cell um-cell--actions">
+                    <button class="btn btn--xs btn--secondary" data-asset-action="edit-sensor" data-id="${s.sensor_id}">EDIT</button>
+                </td>
+            </tr>`).join('');
+
+        const rangersRows = rangers.length === 0
+            ? `<tr><td colspan="5" class="um-empty-cell">No rangers found.</td></tr>`
+            : rangers.map(r => `
+            <tr class="um-asset-row">
+                <td class="um-cell">${esc(r.username)}</td>
+                <td class="um-cell um-cell--mono">${_fmtCoord(r.home_lat)}</td>
+                <td class="um-cell um-cell--mono">${_fmtCoord(r.home_lng)}</td>
+                <td class="um-cell um-cell--mono" style="font-size:10px;color:var(--clr-text-dim)">
+                    ${r.last_ping ? new Date(r.last_ping).toUTCString().slice(0, 25) : '—'}
+                </td>
+                <td class="um-cell um-cell--actions">
+                    <button class="btn btn--xs btn--secondary" data-asset-action="edit-ranger-home" data-id="${r.user_id}" data-name="${esc(r.username)}">SET HOME</button>
+                </td>
+            </tr>`).join('');
+
+        return `
+        <div class="um-assets-panel" id="um-assets-panel">
+
+            <div class="um-assets-section">
+                <div class="um-assets-header">
+                    <div class="um-assets-title">COMMAND BASES</div>
+                    <button class="btn btn--primary btn--sm" id="btn-add-base">+ ADD BASE</button>
+                </div>
+                <div class="um-assets-table-wrap">
+                    <table class="um-assets-table">
+                        <colgroup>
+                            <col style="width:30%">
+                            <col style="width:18%">
+                            <col style="width:18%">
+                            <col style="width:14%">
+                            <col style="width:20%">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>Name</th><th>Latitude</th><th>Longitude</th><th>Sector</th><th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${basesRows}</tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="um-assets-section">
+                <div class="um-assets-header">
+                    <div class="um-assets-title">SENSORS</div>
+                    <span class="um-assets-hint">Locations updated automatically via device ping or manually here.</span>
+                </div>
+                <div class="um-assets-table-wrap">
+                    <table class="um-assets-table">
+                        <colgroup>
+                            <col style="width:22%">
+                            <col style="width:14%">
+                            <col style="width:10%">
+                            <col style="width:14%">
+                            <col style="width:14%">
+                            <col style="width:12%">
+                            <col style="width:14%">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>Name</th><th>Type</th><th>Sector</th><th>Latitude</th><th>Longitude</th><th>Status</th><th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${sensorsRows}</tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="um-assets-section">
+                <div class="um-assets-header">
+                    <div class="um-assets-title">RANGERS — HOME POSITIONS</div>
+                    <span class="um-assets-hint">Live positions update via device ping. Home position is the fallback when no live ping exists.</span>
+                </div>
+                <div class="um-assets-table-wrap">
+                    <table class="um-assets-table">
+                        <colgroup>
+                            <col style="width:25%">
+                            <col style="width:16%">
+                            <col style="width:16%">
+                            <col style="width:28%">
+                            <col style="width:15%">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>Handle</th><th>Home Lat</th><th>Home Lng</th><th>Last Live Ping</th><th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rangersRows}</tbody>
+                    </table>
+                </div>
+            </div>
+
+
+        </div>`;
+    }
+
+    /* ── Asset modal helpers ─────────────────────────────────── */
+
+    function _coordFields(latVal, lngVal, sectorVal) {
+        return `
+        <div class="form-group">
+            <label class="form-label" for="fa-lat">Latitude</label>
+            <input type="number" id="fa-lat" class="form-input" step="any"
+                   value="${latVal != null ? latVal : ''}" placeholder="e.g. -1.31800" />
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="fa-lng">Longitude</label>
+            <input type="number" id="fa-lng" class="form-input" step="any"
+                   value="${lngVal != null ? lngVal : ''}" placeholder="e.g. 36.89500" />
+        </div>
+        ${sectorVal !== undefined ? `
+        <div class="form-group">
+            <label class="form-label" for="fa-sector">Sector <span style="opacity:.5">(optional)</span></label>
+            <input type="text" id="fa-sector" class="form-input"
+                   value="${esc(sectorVal || '')}" placeholder="e.g. 7B" />
+        </div>` : ''}`;
+    }
+
+    function _openAssetModal(title, bodyHtml, onSave) {
+        const mc = document.getElementById('modal-container');
+        mc.innerHTML = `
+        <div class="modal-backdrop" id="fa-modal-backdrop">
+            <div class="modal" role="dialog" aria-modal="true" style="max-width:440px;">
+                <div class="modal__header">
+                    <div>
+                        <div style="font-family:var(--font-mono);font-size:var(--text-xs);color:var(--clr-accent);letter-spacing:.1em;margin-bottom:4px;">◈ FIELD ASSETS</div>
+                        <h2 class="modal__title">${title}</h2>
+                    </div>
+                    <button class="btn btn--icon" id="fa-modal-close" aria-label="Cancel">&#x2715;</button>
+                </div>
+                <div class="modal__body">
+                    ${bodyHtml}
+                    <div id="fa-modal-err" style="color:var(--clr-danger);font-size:var(--text-xs);font-family:var(--font-mono);min-height:16px;margin-top:4px;"></div>
+                </div>
+                <div class="modal__footer" style="display:flex;gap:var(--sp-3);justify-content:flex-end;">
+                    <button class="btn btn--secondary" id="fa-modal-cancel">Cancel</button>
+                    <button class="btn btn--primary"   id="fa-modal-save">SAVE</button>
+                </div>
+            </div>
+        </div>`;
+
+        const close = () => { mc.innerHTML = ''; };
+        document.getElementById('fa-modal-close').addEventListener('click', close);
+        document.getElementById('fa-modal-cancel').addEventListener('click', close);
+        document.getElementById('fa-modal-backdrop').addEventListener('click', e => { if (e.target.id === 'fa-modal-backdrop') close(); });
+
+        const saveBtn = document.getElementById('fa-modal-save');
+        const errEl   = document.getElementById('fa-modal-err');
+
+        saveBtn.addEventListener('click', async () => {
+            errEl.textContent = '';
+            saveBtn.disabled  = true;
+            saveBtn.textContent = 'SAVING…';
+            try {
+                await onSave();
+                close();
+                _assets = await API.get('/operator/assets');
+                refreshAssetsPanel();
+            } catch (err) {
+                errEl.textContent = err.message;
+                saveBtn.disabled  = false;
+                saveBtn.textContent = 'SAVE';
+            }
+        });
+    }
+
+    function openAddBaseModal() {
+        _openAssetModal('Add Command Base', `
+        <div class="form-group">
+            <label class="form-label" for="fa-name">Name</label>
+            <input type="text" id="fa-name" class="form-input" placeholder="e.g. Base Karoo" />
+        </div>
+        ${_coordFields(null, null, '')}
+        `, async () => {
+            const name   = document.getElementById('fa-name').value.trim();
+            const lat    = parseFloat(document.getElementById('fa-lat').value);
+            const lng    = parseFloat(document.getElementById('fa-lng').value);
+            const sector = document.getElementById('fa-sector').value.trim() || null;
+            if (!name) throw new Error('Name is required');
+            if (isNaN(lat) || isNaN(lng)) throw new Error('Valid lat and lng are required');
+            await API.post('/operator/command-bases', { name, lat, lng, sector });
+            Toast.success('Command base created');
+        });
+    }
+
+    function openEditBaseModal(base) {
+        _openAssetModal(`Edit Base — ${esc(base.name)}`, `
+        <div class="form-group">
+            <label class="form-label" for="fa-name">Name</label>
+            <input type="text" id="fa-name" class="form-input" value="${esc(base.name)}" />
+        </div>
+        ${_coordFields(base.lat, base.lng, base.sector)}
+        `, async () => {
+            const name   = document.getElementById('fa-name').value.trim();
+            const lat    = parseFloat(document.getElementById('fa-lat').value);
+            const lng    = parseFloat(document.getElementById('fa-lng').value);
+            const sector = document.getElementById('fa-sector').value.trim() || null;
+            if (!name) throw new Error('Name is required');
+            if (isNaN(lat) || isNaN(lng)) throw new Error('Valid lat and lng are required');
+            await API.patch(`/operator/command-bases/${base.base_id}`, { name, lat, lng, sector });
+            Toast.success('Command base updated');
+        });
+    }
+
+    function openEditSensorModal(sensor) {
+        _openAssetModal(`Edit Sensor — ${esc(sensor.name)}`, `
+        <div class="form-group">
+            <label class="form-label" for="fa-name">Name</label>
+            <input type="text" id="fa-name" class="form-input" value="${esc(sensor.name)}" />
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="fa-type">Type</label>
+            <input type="text" id="fa-type" class="form-input" value="${esc(sensor.type)}" />
+        </div>
+        ${_coordFields(sensor.lat, sensor.lng, sensor.sector)}
+        `, async () => {
+            const name   = document.getElementById('fa-name').value.trim();
+            const type   = document.getElementById('fa-type').value.trim();
+            const lat    = parseFloat(document.getElementById('fa-lat').value);
+            const lng    = parseFloat(document.getElementById('fa-lng').value);
+            const sector = document.getElementById('fa-sector').value.trim() || null;
+            if (!name) throw new Error('Name is required');
+            if (isNaN(lat) || isNaN(lng)) throw new Error('Valid lat and lng are required');
+            await API.patch(`/operator/sensors/${sensor.sensor_id}`, { name, type, lat, lng, sector });
+            Toast.success('Sensor updated');
+        });
+    }
+
+    function openEditRangerHomeModal(ranger) {
+        _openAssetModal(`Set Home — ${esc(ranger.username)}`, `
+        <p style="font-size:var(--text-xs);color:var(--clr-text-muted);margin-bottom:var(--sp-4);line-height:1.6;">
+            Home position is the fallback location shown on the Ops Console when no live device ping has been received.
+        </p>
+        ${_coordFields(ranger.home_lat, ranger.home_lng, undefined)}
+        `, async () => {
+            const home_lat = parseFloat(document.getElementById('fa-lat').value);
+            const home_lng = parseFloat(document.getElementById('fa-lng').value);
+            if (isNaN(home_lat) || isNaN(home_lng)) throw new Error('Valid lat and lng are required');
+            await API.patch(`/operator/rangers/${ranger.user_id}/home`, { home_lat, home_lng });
+            Toast.success(`Home position set for ${ranger.username}`);
+        });
+    }
+
+    async function deleteBase(baseId, name) {
+        if (!confirm(`Delete command base "${name}"? This cannot be undone.`)) return;
+        try {
+            await API.delete(`/operator/command-bases/${baseId}`);
+            Toast.success('Command base deleted');
+            _assets = await API.get('/operator/assets');
+            refreshAssetsPanel();
+        } catch (err) {
+            Toast.error(err.message);
+        }
+    }
+
+    function refreshAssetsPanel() {
+        const el = document.getElementById('um-assets-panel');
+        if (el) el.outerHTML = buildAssetsPanel();
+        attachAssetsListeners();
+    }
+
+    function attachAssetsListeners() {
+        const panel = document.getElementById('um-assets-panel');
+        if (!panel) return;
+
+        document.getElementById('btn-add-base')?.addEventListener('click', openAddBaseModal);
+
+        panel.querySelectorAll('[data-asset-action]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.assetAction;
+                const id     = btn.dataset.id;
+
+                if (action === 'edit-base') {
+                    const base = _assets.command_bases.find(b => b.base_id === id);
+                    if (base) openEditBaseModal(base);
+                } else if (action === 'delete-base') {
+                    deleteBase(id, btn.dataset.name);
+                } else if (action === 'edit-sensor') {
+                    const sensor = _assets.sensors.find(s => s.sensor_id === id);
+                    if (sensor) openEditSensorModal(sensor);
+                } else if (action === 'edit-ranger-home') {
+                    const ranger = _assets.rangers.find(r => r.user_id === id);
+                    if (ranger) openEditRangerHomeModal(ranger);
+                }
+            });
+        });
+    }
+
+    /* ══════════════════════════════════════════════════════════
        FILTER LOGIC
     ══════════════════════════════════════════════════════════ */
 
@@ -453,7 +815,7 @@ const UsersPage = (() => {
                     <select id="prov-role" class="form-input">${roleOptions}</select>
                 </div>
                 <div class="um-modal-note">
-                    ⚠ The operator will be created with PENDING verification status and must be manually verified.
+                    [!] Operator created with PENDING status — manual verification required.
                 </div>
             </div>
             `,
@@ -494,7 +856,7 @@ const UsersPage = (() => {
             body: `
             <div class="um-modal-form">
                 <div class="um-revoke-warning">
-                    <div class="um-revoke-warning__icon">⚠</div>
+                    <div class="um-revoke-warning__icon">[!]</div>
                     <p>This will <strong>permanently delete</strong> operator
                     <span class="um-mono">${esc(user.username)}</span>
                     and revoke all system access. This action cannot be undone.</p>
@@ -645,6 +1007,10 @@ const UsersPage = (() => {
         applyFilters();
     }
 
+    async function loadAssets() {
+        _assets = await API.get('/operator/assets');
+    }
+
     /* ══════════════════════════════════════════════════════════
        PUBLIC ENTRY POINT
     ══════════════════════════════════════════════════════════ */
@@ -692,7 +1058,7 @@ const UsersPage = (() => {
         `;
 
         try {
-            await reloadData();
+            await Promise.all([reloadData(), loadAssets()]);
         } catch (err) {
             container.innerHTML = `
             <div class="um-page">
@@ -735,23 +1101,43 @@ const UsersPage = (() => {
                 </div>
             </div>
 
-            <!-- Stat strip -->
-            <div id="um-stat-strip">${buildStatStrip()}</div>
+            <!-- Tab bar -->
+            ${buildTabBar()}
 
-            <!-- Controls -->
-            <div id="um-controls-wrap" class="um-controls-wrap">${buildControls()}</div>
+            <!-- Operators tab content -->
+            <div id="um-operators-content" ${_activeTab !== 'operators' ? 'style="display:none"' : ''}>
+                <div id="um-stat-strip">${buildStatStrip()}</div>
+                <div id="um-controls-wrap" class="um-controls-wrap">${buildControls()}</div>
+                <div id="um-roster-wrap" class="um-roster-wrap">${buildRoster()}</div>
+                <div id="um-matrix-wrap">${buildPermissionMatrix()}</div>
+            </div>
 
-            <!-- Roster -->
-            <div id="um-roster-wrap" class="um-roster-wrap">${buildRoster()}</div>
-
-            <!-- Permission matrix (hidden by default) -->
-            <div id="um-matrix-wrap">${buildPermissionMatrix()}</div>
+            <!-- Field Assets tab content -->
+            <div id="um-assets-content" ${_activeTab !== 'field-assets' ? 'style="display:none"' : ''}>
+                ${buildAssetsPanel()}
+            </div>
 
         </div>
         `;
 
         attachControlListeners();
         attachTableListeners();
+        attachAssetsListeners();
+        attachTabListeners();
+    }
+
+    function attachTabListeners() {
+        document.querySelectorAll('.um-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                _activeTab = btn.dataset.tab;
+                document.querySelectorAll('.um-tab').forEach(b =>
+                    b.classList.toggle('um-tab--active', b.dataset.tab === _activeTab));
+                const opEl = document.getElementById('um-operators-content');
+                const asEl = document.getElementById('um-assets-content');
+                if (opEl) opEl.style.display = _activeTab === 'operators'    ? '' : 'none';
+                if (asEl) asEl.style.display = _activeTab === 'field-assets' ? '' : 'none';
+            });
+        });
     }
 
     return { render };

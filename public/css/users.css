@@ -811,3 +811,195 @@
         grid-template-columns: 160px repeat(var(--role-count, 4), minmax(70px, 1fr));
     }
 }
+
+/* ── Tab bar ─────────────────────────────────────────────────── */
+.um-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--um-border);
+    padding: 0 24px;
+    background: var(--um-surface);
+}
+
+.um-tab {
+    padding: 10px 20px;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--um-muted);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+    margin-bottom: -1px;
+}
+
+.um-tab:hover { color: var(--um-text); }
+
+.um-tab--active {
+    color: var(--um-green);
+    border-bottom-color: var(--um-green);
+}
+
+/* ── Field Assets panel ──────────────────────────────────────── */
+.um-assets-panel {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.um-assets-section {
+    background: var(--um-surface);
+    border: 1px solid var(--um-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.um-assets-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--um-border);
+    background: var(--um-surface2);
+}
+
+.um-assets-title {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--um-cyan);
+    flex-shrink: 0;
+}
+
+.um-assets-hint {
+    font-size: 10px;
+    color: var(--um-muted);
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.um-assets-table-wrap {
+    overflow-x: auto;
+}
+
+.um-assets-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    table-layout: fixed;
+}
+
+.um-assets-table thead th {
+    padding: 8px 14px;
+    text-align: left;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--um-muted);
+    border-bottom: 1px solid var(--um-border);
+    background: var(--um-surface2);
+    white-space: nowrap;
+}
+
+.um-cell {
+    padding: 9px 14px;
+    color: var(--um-text);
+    border-bottom: 1px solid var(--um-rule);
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.um-cell--mono {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 12px;
+    color: var(--um-muted);
+}
+
+.um-cell--actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.um-asset-row:last-child .um-cell { border-bottom: none; }
+
+.um-empty-cell {
+    padding: 20px 16px;
+    color: var(--um-muted);
+    font-size: 11px;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    text-align: center;
+}
+
+.um-status-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+/* btn size variants */
+.btn--xs  { padding: 3px 8px; font-size: 9px; letter-spacing: .1em; }
+.btn--sm  { padding: 5px 12px; font-size: 10px; }
+.btn--danger {
+    background: transparent;
+    border: 1px solid var(--um-red);
+    color: var(--um-red);
+}
+.btn--danger:hover { background: rgba(224,60,60,.1); }
+
+/* ── Light Mode ──────────────────────────────────────────────────
+   Override the locally-scoped dark palette vars so every
+   component that reads var(--um-*) automatically adapts.
+   Hardcoded colours that bypass the var() system get explicit
+   selector overrides below.
+   ─────────────────────────────────────────────────────────────── */
+body.light .um-page {
+    --um-bg:       #f0f2f5;
+    --um-surface:  #ffffff;
+    --um-surface2: #e8ebf0;
+    --um-border:   rgba(0, 0, 0, 0.08);
+    --um-rule:     rgba(0, 0, 0, 0.05);
+    --um-text:     #1a1f27;
+    --um-muted:    #4a5568;
+    --um-dim:      #8a96a5;
+    --um-green:    #4e7e00;
+    --um-amber:    #b36a00;
+    --um-red:      #c0392b;
+    --um-cyan:     #0099b0;
+}
+
+/* Hardcoded colour fixes */
+body.light .um-hero__title { color: var(--um-text); }
+
+body.light .um-stat__val--green  { color: #2e7d32; }
+body.light .um-dot--green        { background: #2e7d32; box-shadow: 0 0 5px rgba(46,125,50,0.4); }
+
+body.light .um-status--verified {
+    color: #2e7d32;
+    background: rgba(46, 125, 50, 0.07);
+    border-color: rgba(46, 125, 50, 0.25);
+}
+
+body.light .um-action-btn--verify:hover {
+    border-color: #2e7d32;
+    color: #2e7d32;
+    background: rgba(46, 125, 50, 0.06);
+}
+
+body.light .um-row--self {
+    background: rgba(78, 126, 0, 0.04);
+    border-left-color: var(--um-green);
+}
+body.light .um-row--self:hover { background: rgba(78, 126, 0, 0.07); }
+

@@ -664,7 +664,7 @@ const TestSitePage = (() => {
 
         const kindLabel = document.createElement('div');
         kindLabel.className = 'ts-exp-kind';
-        kindLabel.textContent = '⚠ THREAT DETECTED';
+        kindLabel.textContent = '[!] THREAT DETECTED';
         kindLabel.style.color = meta.bar;
         detail.appendChild(kindLabel);
 

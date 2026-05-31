@@ -436,11 +436,35 @@
 }
 .tb-icon-btn:hover { border-color: rgba(255,255,255,0.22); color: rgba(255,255,255,0.70); }
 
-/* User pill */
-.tb-user {
+/* User pill — now a button that opens the preferences panel */
+.tb-user-btn {
     display: flex;
     align-items: center;
     gap: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+}
+
+.tb-user-btn:focus-visible {
+    outline: 1px solid rgba(255, 255, 255, 0.30);
+    outline-offset: 2px;
+}
+
+/* Chevron indicator */
+.tb-user-btn::after {
+    content: '▾';
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.22);
+    margin-left: 2px;
+    transition: color 0.13s;
+}
+
+.tb-user-btn:hover::after,
+.tb-user-btn[aria-expanded="true"]::after {
+    color: rgba(255, 255, 255, 0.55);
 }
 
 .tb-user__avatar {
@@ -457,6 +481,13 @@
     color: rgba(255, 255, 255, 0.55);
     letter-spacing: 0.04em;
     flex-shrink: 0;
+    transition: border-color 0.13s;
+}
+
+.tb-user-btn:hover .tb-user__avatar,
+.tb-user-btn[aria-expanded="true"] .tb-user__avatar {
+    border-color: rgba(255, 255, 255, 0.28);
+    color: rgba(255, 255, 255, 0.80);
 }
 
 .tb-user__name {
@@ -465,6 +496,198 @@
     letter-spacing: 0.08em;
     color: rgba(255, 255, 255, 0.50);
     white-space: nowrap;
+}
+
+/* ── Preferences panel ──────────────────────────────────────
+   Floats below the topbar, anchored to the right edge.
+   The panel is rendered into the topbar element itself and
+   uses position:fixed so it escapes any overflow:hidden parents.
+   ─────────────────────────────────────────────────────────── */
+.tb-prefs-panel {
+    position: fixed;
+    top: var(--topbar-h);
+    right: 12px;
+    z-index: var(--z-modal);
+    width: 260px;
+    background: #0d1117;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65);
+    font-family: 'JetBrains Mono', monospace;
+
+    /* Entry animation */
+    animation: tb-panel-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+body.light .tb-prefs-panel {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes tb-panel-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* Panel header — operator identity */
+.tb-prefs-panel__head {
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+body.light .tb-prefs-panel__head {
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+.tb-prefs-panel__label {
+    font-size: 8px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.28);
+    margin-bottom: 2px;
+}
+
+body.light .tb-prefs-panel__label {
+    color: rgba(0, 0, 0, 0.35);
+}
+
+.tb-prefs-panel__name {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.80);
+}
+
+body.light .tb-prefs-panel__name {
+    color: rgba(0, 0, 0, 0.80);
+}
+
+/* Panel section */
+.tb-prefs-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+body.light .tb-prefs-section {
+    border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+
+.tb-prefs-section:last-of-type {
+    border-bottom: none;
+}
+
+.tb-prefs-section__title {
+    font-size: 8px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.28);
+    margin-bottom: 8px;
+}
+
+body.light .tb-prefs-section__title {
+    color: rgba(0, 0, 0, 0.35);
+}
+
+/* Option button group */
+.tb-prefs-group {
+    display: flex;
+    gap: 4px;
+}
+
+.tb-pref-btn {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.45);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding: 7px 6px;
+    cursor: pointer;
+    transition: background 0.13s, border-color 0.13s, color 0.13s;
+    white-space: nowrap;
+    text-align: center;
+    line-height: 1;
+}
+
+.tb-pref-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.tb-pref-btn[aria-pressed="true"] {
+    background: rgba(195, 255, 0, 0.08);
+    border-color: rgba(195, 255, 0, 0.50);
+    color: #c3ff00;
+}
+
+body.light .tb-pref-btn {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.10);
+    color: rgba(0, 0, 0, 0.45);
+}
+
+body.light .tb-pref-btn:hover {
+    background: rgba(0, 0, 0, 0.07);
+    border-color: rgba(0, 0, 0, 0.20);
+    color: rgba(0, 0, 0, 0.75);
+}
+
+body.light .tb-pref-btn[aria-pressed="true"] {
+    background: rgba(106, 168, 0, 0.10);
+    border-color: rgba(106, 168, 0, 0.55);
+    color: #4e7e00;
+}
+
+/* Font-size buttons — show relative size difference */
+.tb-pref-btn--font-normal  { font-size: 9px;  }
+.tb-pref-btn--font-large   { font-size: 10px; }
+.tb-pref-btn--font-xlarge  { font-size: 11px; }
+
+/* Panel footer — logout */
+.tb-prefs-panel__footer {
+    padding: 10px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+body.light .tb-prefs-panel__footer {
+    border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+.tb-prefs-panel__logout {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.28);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: border-color 0.13s, color 0.13s, background 0.13s;
+    text-align: left;
+}
+
+.tb-prefs-panel__logout:hover {
+    border-color: rgba(224, 60, 60, 0.40);
+    color: rgba(224, 60, 60, 0.80);
+    background: rgba(224, 60, 60, 0.04);
+}
+
+body.light .tb-prefs-panel__logout {
+    border-color: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.30);
+}
+
+body.light .tb-prefs-panel__logout:hover {
+    border-color: rgba(192, 57, 43, 0.40);
+    color: rgba(192, 57, 43, 0.80);
+    background: rgba(192, 57, 43, 0.04);
 }
 
 /* ── Main Content ───────────────────────────────────────────── */
@@ -541,8 +764,94 @@
 }
 
 /* ── Light Mode Overrides ───────────────────────────────────── */
+
+/* Sidebar shell */
+body.light .sidebar {
+    background: #f0f2f5;
+    border-right-color: rgba(0, 0, 0, 0.08);
+}
+body.light .sb-logo             { border-bottom-color: rgba(0, 0, 0, 0.08); }
+body.light .sb-logo__mark       { color: rgba(0, 0, 0, 0.45); }
+body.light .sb-logo__wordmark   { color: rgba(0, 0, 0, 0.75); }
+
+body.light .sb-toggle {
+    border-color: rgba(0, 0, 0, 0.10);
+    color: rgba(0, 0, 0, 0.30);
+}
+body.light .sb-toggle:hover {
+    border-color: rgba(0, 0, 0, 0.25);
+    color: rgba(0, 0, 0, 0.65);
+}
+
+body.light .sb-ruler            { border-bottom-color: rgba(0, 0, 0, 0.06); }
+body.light .sb-ruler__tick      { border-color: rgba(0, 0, 0, 0.18); }
+body.light .sb-ruler__label     { color: rgba(0, 0, 0, 0.25); }
+body.light .sb-ruler__track     { background: rgba(0, 0, 0, 0.06); }
+
+body.light .sb-section          { border-top-color: rgba(0, 0, 0, 0.06); }
+body.light .sb-section__header  { color: rgba(0, 0, 0, 0.28); }
+
+body.light .sb-link:hover       { background: rgba(0, 0, 0, 0.04); }
+body.light .sb-link--active     { background: rgba(78, 126, 0, 0.07); }
+
+body.light .sb-link__label                 { color: rgba(0, 0, 0, 0.60); }
+body.light .sb-link:hover .sb-link__label  { color: rgba(0, 0, 0, 0.85); }
+body.light .sb-link--active .sb-link__label { color: rgba(0, 0, 0, 0.90); }
+
+body.light .sb-footer           { border-top-color: rgba(0, 0, 0, 0.08); }
+body.light .sb-footer__avatar {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: rgba(0, 0, 0, 0.50);
+}
+body.light .sb-footer__name     { color: rgba(0, 0, 0, 0.70); }
+body.light .sb-footer__role     { color: rgba(0, 0, 0, 0.35); }
+
+/* Topbar background + border */
 body.light .topbar {
-    background: rgba(240, 242, 245, 0.92);
+    background: rgba(240, 242, 245, 0.96);
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Topbar breadcrumb */
+body.light .tb-identity__section { color: rgba(0, 0, 0, 0.30); }
+body.light .tb-identity__sep     { color: rgba(0, 0, 0, 0.18); }
+body.light .tb-identity__page    { color: rgba(0, 0, 0, 0.82); }
+
+/* Topbar divider */
+body.light .tb-divider           { background: rgba(0, 0, 0, 0.10); }
+
+/* Topbar CTA buttons */
+body.light .tb-btn {
+    border-color: rgba(0, 0, 0, 0.12);
+    color: rgba(0, 0, 0, 0.55);
+}
+body.light .tb-btn:hover {
+    border-color: rgba(0, 0, 0, 0.28);
+    color: rgba(0, 0, 0, 0.85);
+}
+body.light .tb-btn--primary      { border-color: #4e7e00; color: #4e7e00; }
+body.light .tb-btn--primary:hover { background: rgba(78, 126, 0, 0.07); }
+body.light .tb-btn--ghost        { border-color: rgba(0,0,0,0.07); color: rgba(0,0,0,0.28); }
+body.light .tb-btn--ghost:hover  {
+    border-color: rgba(192, 57, 43, 0.40);
+    color: rgba(192, 57, 43, 0.80);
+}
+
+/* Topbar user button */
+body.light .tb-user__name        { color: rgba(0, 0, 0, 0.55); }
+body.light .tb-user-btn::after   { color: rgba(0, 0, 0, 0.28); }
+body.light .tb-user-btn:hover::after,
+body.light .tb-user-btn[aria-expanded="true"]::after { color: rgba(0, 0, 0, 0.55); }
+body.light .tb-user__avatar {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: rgba(0, 0, 0, 0.55);
+}
+body.light .tb-user-btn:hover .tb-user__avatar,
+body.light .tb-user-btn[aria-expanded="true"] .tb-user__avatar {
+    border-color: rgba(0, 0, 0, 0.28);
+    color: rgba(0, 0, 0, 0.80);
 }
 
 body.light .main-content::before {
