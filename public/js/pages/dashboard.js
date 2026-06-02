@@ -108,56 +108,7 @@ const DashboardPage = (() => {
   }
 
   function buildBody() {
-    return `
-      <div class="db-body">
-        <div class="db-col-left">
-          ${buildMapPanel()}
-        </div>
-        <div class="db-col-right">
-          ${buildFeedPanel()}
-        </div>
-      </div>`;
-  }
-
-  function buildMapPanel() {
-    return `
-      <div class="db-map-panel reveal d2">
-        <div class="db-map-panel__head">
-          <span class="db-map-panel__title">FIELD MAP — REPORTS · THREATS · SENSORS</span>
-          <span class="db-map-panel__badge" id="db-map-count">— SIGHTINGS</span>
-        </div>
-        <div class="db-map-wrap" id="db-map-wrap">
-          <!-- Leaflet live map -->
-          <div id="db-leaflet-map" style="position:absolute;inset:0;width:100%;height:100%;z-index:1;"></div>
-          <!-- Tactical overlays on top of map tiles -->
-          <div class="db-map-grid" style="z-index:2;pointer-events:none;"></div>
-          <div class="db-map-scanline" style="z-index:2;pointer-events:none;"></div>
-          <div class="db-map-coord db-map-coord--tl" style="z-index:3;">TERRA / MARA<br>SECTOR GRID</div>
-          <div class="db-map-coord db-map-coord--tr" id="db-map-tr" style="z-index:3;">— ACTIVE</div>
-          <div class="db-map-coord db-map-coord--bl" style="z-index:3;">LAT 1.5°S – 0.8°N</div>
-          <div class="db-map-coord db-map-coord--br" style="z-index:3;">LNG 34.8°E – 36.0°E</div>
-        </div>
-        <div class="db-map-legend">
-          <div class="db-map-legend__item">
-            <div class="db-map-legend__dot db-map-legend__dot--validated"></div>
-            <span>Validated</span>
-          </div>
-          <div class="db-map-legend__item">
-            <div class="db-map-legend__dot db-map-legend__dot--pending"></div>
-            <span>Pending</span>
-          </div>
-          <div class="db-map-legend__item">
-            <div class="db-map-legend__dot db-map-legend__dot--threat"></div>
-            <span>Threat</span>
-          </div>
-          <div class="db-map-legend__item">
-            <div class="db-map-legend__dot db-map-legend__dot--sensor"></div>
-            <span>Sensor</span>
-          </div>
-          <div class="db-map-legend__sep"></div>
-          <button class="db-map-legend__link" data-page="map">OPEN OPS CONSOLE →</button>
-        </div>
-      </div>`;
+    return buildFeedPanel();
   }
 
 
@@ -245,110 +196,6 @@ const DashboardPage = (() => {
     if (_clockInterval) { clearInterval(_clockInterval); _clockInterval = null; }
   }
 
-  /* ══════════════════════════════════════════════════════════
-     LEAFLET MAP — tactical dark-theme live map
-  ══════════════════════════════════════════════════════════ */
-
-  let _dbMap = null; // Leaflet map instance; destroyed on re-render
-
-  /* Hypothetical sensor grid — fixed positions across the Mara */
-  const SENSOR_GRID = [
-    { id: 'S-01', lat: -1.285, lng: 35.010, label: 'SENSOR S-01', zone: 'NORTH MARA' },
-    { id: 'S-02', lat: -1.380, lng: 35.180, label: 'SENSOR S-02', zone: 'CENTRAL PLAIN' },
-    { id: 'S-03', lat: -1.190, lng: 35.340, label: 'SENSOR S-03', zone: 'EAST RIDGE' },
-    { id: 'S-04', lat: -1.460, lng: 35.080, label: 'SENSOR S-04', zone: 'WEST FLANK' },
-    { id: 'S-05', lat: -1.310, lng: 35.520, label: 'SENSOR S-05', zone: 'TALEK REGION' },
-    { id: 'S-06', lat: -1.550, lng: 35.260, label: 'SENSOR S-06', zone: 'SOUTH MARA' },
-  ];
-
-  function destroyMap() {
-    if (_dbMap) {
-      try { _dbMap.remove(); } catch (_) {}
-      _dbMap = null;
-    }
-  }
-
-  function makeDivIcon(cls, size) {
-    return L.divIcon({ className: '', html: `<div class="${cls}"></div>`, iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
-  }
-
-  function buildLiveMap(reports) {
-    destroyMap();
-    const wrap = document.getElementById('db-map-wrap');
-    if (!wrap || typeof L === 'undefined') return;
-
-    /* Leaflet needs an explicit non-zero size before init */
-    const mapEl = document.getElementById('db-leaflet-map');
-    if (!mapEl) return;
-
-    /* Map center: Maasai Mara */
-    _dbMap = L.map(mapEl, {
-      center:          [-1.35, 35.20],
-      zoom:            10,
-      zoomControl:     false,
-      attributionControl: false,
-      scrollWheelZoom: false,
-      dragging:        true,
-      doubleClickZoom: false,
-    });
-
-    /* Dark tile layer — CartoDB dark matter */
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 18,
-    }).addTo(_dbMap);
-
-    /* ── Report markers ─────────────────────────────────── */
-    const reportList = reports.slice(0, 40);
-    let plotCount = 0;
-
-    reportList.forEach(r => {
-      const lat = parseFloat(r.latitude ?? r.lat);
-      const lng = parseFloat(r.longitude ?? r.lng);
-      if (isNaN(lat) || isNaN(lng)) return;
-
-      const status  = (r.validation_status || 'PENDING').toLowerCase();
-      const isThreat = (r.sensitivity_tier || 1) >= 3;
-      const markerCls = isThreat ? 'db-lm-pip db-lm-pip--threat' : `db-lm-pip db-lm-pip--${status}`;
-      const size = isThreat ? 14 : 10;
-
-      const marker = L.marker([lat, lng], { icon: makeDivIcon(markerCls, size) }).addTo(_dbMap);
-
-      const species  = (r.species_name || 'Unknown').toUpperCase().slice(0, 20);
-      const dateStr  = r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'2-digit' }) : '—';
-      const tierTag  = isThreat ? ` · T${r.sensitivity_tier}` : '';
-      marker.bindTooltip(
-        `<span class="db-lm-tip">${species}${tierTag}<br><span class="db-lm-tip-sub">${dateStr} · ${status.toUpperCase()}</span></span>`,
-        { direction: 'top', offset: [0, -6], className: 'db-leaflet-tip', permanent: false }
-      );
-      if (r.report_id) {
-        marker.on('click', () => Router.navigate('report-detail', { reportId: r.report_id }));
-      }
-      plotCount++;
-    });
-
-    /* ── Sensor markers ─────────────────────────────────── */
-    SENSOR_GRID.forEach(s => {
-      const marker = L.marker([s.lat, s.lng], { icon: makeDivIcon('db-lm-pip db-lm-pip--sensor', 12) }).addTo(_dbMap);
-      marker.bindTooltip(
-        `<span class="db-lm-tip">${s.label}<br><span class="db-lm-tip-sub">${s.zone} · ACTIVE</span></span>`,
-        { direction: 'top', offset: [0, -6], className: 'db-leaflet-tip', permanent: false }
-      );
-    });
-
-    /* ── Update header counts ───────────────────────────── */
-    const mapCountEl = document.getElementById('db-map-count');
-    const mapTrEl    = document.getElementById('db-map-tr');
-    if (mapCountEl) mapCountEl.textContent = `${plotCount} SIGHTINGS`;
-    if (mapTrEl)    mapTrEl.textContent    = `${plotCount} ACTIVE`;
-
-    /* Invalidate size after paint so tiles load correctly */
-    setTimeout(() => { if (_dbMap) _dbMap.invalidateSize(); }, 120);
-  }
-
-  /* ══════════════════════════════════════════════════════════
-     TIMELINE
-  ══════════════════════════════════════════════════════════ */
   /* ══════════════════════════════════════════════════════════
      ACTIVITY FEED
   ══════════════════════════════════════════════════════════ */
@@ -493,7 +340,6 @@ const DashboardPage = (() => {
       const ctx = document.getElementById('db-context');
       if (ctx) ctx.innerHTML = buildContextSentence(stats, reports);
 
-      buildLiveMap(reports);
       renderFeed(reports);
       setSyncAge();
 
@@ -513,7 +359,6 @@ const DashboardPage = (() => {
   ══════════════════════════════════════════════════════════ */
   function render(container) {
     stopClock();
-    destroyMap();
 
     container.innerHTML = `
       <div id="db-root" class="db-page">
