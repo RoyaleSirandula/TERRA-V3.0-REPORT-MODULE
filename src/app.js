@@ -32,6 +32,12 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Disable caching for development so all code changes reflect instantly
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    next();
+});
+
 // Serve frontend static files from /public
 app.use(express.static(path.join(__dirname, '../public')));
 
