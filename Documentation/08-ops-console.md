@@ -20,6 +20,89 @@ The Ops Console is a real-time command interface for field operations. It displa
 | 4 | Alert ACK persistence (`PATCH /api/ops/alerts/:id/ack`) | ✅ Done | ✅ Done | **Complete** |
 | 5 | Sensors table + seeding | ✅ Done | ✅ Done | **Complete** |
 | 6 | Action endpoints (deploy, waypoint, comms) | ✅ Done | ✅ Done | **Complete** |
+| 7 | Field Intel sightings on Ops Console map | ✅ Done | ✅ Done | **Complete** |
+
+---
+
+## Phase 7 — Field Intel Sightings on Ops Console Map
+
+### What changed
+
+All tier 1–2 field reports with coordinates now appear as additional markers on the Ops Console live map, mirroring what Field Intel shows. Tier 3–4 continue to render as `threat`/`caution` markers; tier 1–2 render as:
+
+| Kind | Condition | Colour |
+|------|-----------|--------|
+| `sighting` | `validation_status = VALIDATED` | Cyan (#22d3ee) |
+| `report` | PENDING / REJECTED | Muted blue-grey |
+
+### `GET /api/ops/summary` — new `sightings` array
+
+Fifth parallel query added to the existing `Promise.all`:
+
+```sql
+SELECT r.report_id, r.sensitivity_tier, r.validation_status,
+       r.ai_confidence_score, r.created_at, r.description, r.region_id,
+       ST_Y(r.geom) AS lat, ST_X(r.geom) AS lng,
+       COALESCE(s.common_name, r.species_name_custom, 'Unknown Species') AS species_name,
+       u.username AS submitted_by
+FROM   reports r
+LEFT   JOIN species s ON r.species_id = s.species_id
+LEFT   JOIN users   u ON r.user_id    = u.user_id
+WHERE  r.sensitivity_tier IN (1, 2)
+  AND  r.geom IS NOT NULL
+  AND  r.created_at > NOW() - INTERVAL '30 days'
+ORDER  BY r.created_at DESC
+LIMIT  200
+```
+
+Response shape per item:
+```json
+{
+  "id":           "sighting-<uuid>",
+  "report_id":    "<uuid>",
+  "kind":         "sighting | report",
+  "lat":          number,
+  "lng":          number,
+  "label":        "species name",
+  "tier":         1 | 2,
+  "status":       "VALIDATED | PENDING | REJECTED",
+  "confidence":   0.0–1.0 | null,
+  "submitted_by": "username | null",
+  "description":  "string | null",
+  "created_at":   "ISO8601"
+}
+```
+
+### `map.js` changes
+
+- `SIGHTINGS = []` module-level array, populated from `data.sightings` in `loadOpsData()`
+- Sighting markers inserted **before** rangers/sensors/threats in `MARKERS` so high-priority markers always render on top
+- `_MARKER_META` extended with `sighting` (cyan) and `report` (muted grey) visual styles
+- `getSelectedEntity()` returns species, tier, confidence, submitter, and description for sighting/report kinds
+- Drawer shows a "Notes" section with the report description
+- Both `kindLabel` maps updated: reticle panel shows `SIGHTING` / `FIELD REPORT`
+
+### Implementation Checklist
+
+#### Load-Bearing Requirements
+- [x] Tier 1–2 query is separate from tier 3–4 — no double-rendering of the same report
+- [x] `r.geom IS NOT NULL` — only reports with coordinates produce markers
+- [x] 30-day window + LIMIT 200 — prevents unbounded results while covering longer observation history than the 24h threat window
+- [x] Sightings rendered behind threats in MARKERS array — z-order preserved by insertion order
+
+#### Test Checklist
+- [ ] `GET /api/ops/summary` returns `sightings` array alongside existing arrays
+- [ ] Validated tier 1–2 reports appear as cyan `sighting` markers on the live map
+- [ ] Pending tier 1–2 reports appear as grey `report` markers
+- [ ] Clicking a sighting marker opens drawer with species, tier, confidence, submitter
+- [ ] Tier 3–4 markers (threat/caution) are unaffected — no duplication
+- [ ] Reports older than 30 days or without geometry do not appear
+- [ ] Poll tick refreshes sightings alongside threats every 30s
+
+#### Top Priority SE Practices Applied
+- [x] **Non-overlapping tier split** — tier 1–2 in `sightings`, tier 3–4 in `threats`; clear contract
+- [x] **Parallel query** — 5th entry in `Promise.all`, no added latency vs existing queries
+- [x] **Consistent coordinate extraction** — `ST_Y/ST_X(geom)` matches the existing threat query pattern
 
 ---
 

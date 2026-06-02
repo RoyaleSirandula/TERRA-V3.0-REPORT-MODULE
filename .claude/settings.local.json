@@ -19,7 +19,9 @@
       "Bash(python3 -c ' *)",
       "Bash(Copy-Item \"c:\\\\Users\\\\User\\\\TERRA REPORT\\\\assets\\\\MINI TERRA LOGO.png\" \"c:\\\\Users\\\\User\\\\TERRA REPORT\\\\public\\\\assets\\\\MINI TERRA LOGO.png\")",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\User\\\\TERRA REPORT\" -Recurse -Include \"*ops*\", \"*console*\", \"*dashboard*\" -Directory)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(node -e \"require\\('./src/config/db'\\).pool.query\\('SELECT COUNT\\(*\\) FROM command_bases'\\).then\\(r => console.log\\('command_bases rows:', r.rows[0].count\\)\\).catch\\(e => console.log\\('Error:', e.message\\)\\)\")",
+      "Bash(node -e \"require\\('./src/config/db'\\).pool.query\\('SELECT COUNT\\(*\\) FROM sensors'\\).then\\(r => console.log\\('sensors rows:', r.rows[0].count\\)\\).catch\\(e => console.log\\('Error:', e.message\\)\\)\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\User\\TERRA REPORT"

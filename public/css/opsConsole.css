@@ -388,13 +388,21 @@
     background: var(--ops-bg);
 }
 
-/* ── Map canvas background ─────────────────────────────────── */
-.ops-map-bg {
-    position: absolute;
-    inset: 0;
-    background: var(--ops-bg);
-    overflow: hidden;
+/* ── Leaflet map fills the ops-map column ──────────────────── */
+#ops-leaflet-map,
+#ops-leaflet-map .leaflet-container {
+    width: 100%;
+    height: 100%;
+    background: #0b0d0f;
 }
+
+/* Subdue Leaflet attribution to match dark theme */
+.ops-map .leaflet-control-attribution {
+    background: rgba(0,0,0,0.55) !important;
+    color: rgba(255,255,255,0.25) !important;
+    font-size: 9px !important;
+}
+.ops-map .leaflet-control-attribution a { color: rgba(255,255,255,0.35) !important; }
 
 /* Fine grid — very subtle, matches reference */
 .ops-map-grid {
@@ -516,32 +524,27 @@
 }
 
 /* =============================================================
-   RETICLE MARKER LAYER
+   LEAFLET RETICLE MARKERS  (mirrors testSite.css .ts-* classes)
 ============================================================= */
-.ops-reticle-layer {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 5;
-}
+.ops-leaflet-icon { background: none !important; border: none !important; }
 
-.ops-rp-card {
-    position: absolute;
-    transform: translate(-50%, -50%);
+.ops-reticle-card {
+    position: relative;
     display: flex;
     align-items: flex-start;
-    cursor: pointer;
-    pointer-events: all;
+    pointer-events: none;
     font-family: var(--ops-mono);
+    cursor: pointer;
 }
 
-.ops-rp-card svg { display: block; flex-shrink: 0; }
+.ops-reticle-card.ops-mini { pointer-events: all; }
+.ops-mini-tri { cursor: pointer; pointer-events: all; display: block; }
+.ops-reticle-svg { pointer-events: all; }
 
-/* Hover info panel */
-.ops-rp-info {
+/* Info panel (hover) */
+.ops-info-panel {
     position: absolute;
-    top: 0;
-    left: 54px;
+    top: 0; left: 26px;
     width: 0;
     overflow: hidden;
     opacity: 0;
@@ -549,35 +552,84 @@
     pointer-events: none;
     z-index: 10;
 }
-.ops-rp-card:hover .ops-rp-info {
-    width: 160px;
-    opacity: 1;
-    pointer-events: all;
-}
-.ops-rp-info__inner {
-    width: 160px;
+.ops-info-inner {
+    width: 180px;
     padding: 6px 10px 8px 6px;
+    background: rgba(0,0,0,0.72);
+    border: 1px solid rgba(255,255,255,0.09);
     position: relative;
 }
-.ops-rp-corner-tr {
-    position: absolute;
-    top: 0; right: 0;
-    width: 8px; height: 8px;
-    border-top: 1px solid rgba(255,255,255,0.4);
-    border-right: 1px solid rgba(255,255,255,0.4);
-}
-.ops-rp-title {
+.ops-info-title {
     font-size: 9px;
-    font-weight: 400;
+    font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     line-height: 1.4;
 }
-.ops-rp-sub {
+.ops-info-eyebrow {
     font-size: 8px;
-    color: var(--ops-muted);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 2px;
+}
+.ops-info-sub {
+    font-size: 8px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.04em;
     line-height: 1.7;
+}
+
+/* Expanded panel (click) */
+.ops-exp-panel {
+    position: absolute;
+    top: 0; left: 26px;
+    width: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 11;
+}
+.ops-reticle-card.ops-expanded .ops-exp-panel {
+    width: 200px;
+    pointer-events: all;
+}
+.ops-exp-inner {
+    width: 200px;
+    padding: 8px 12px 10px 8px;
+    background: rgba(0,0,0,0.82);
+    border: 1px solid rgba(255,255,255,0.12);
+    position: relative;
+}
+.ops-exp-kind {
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+.ops-exp-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+    margin-bottom: 6px;
+}
+
+/* Dock actions */
+.ops-dock-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+/* Fresh pulse ring on triangle */
+.ops-mini-tri.ts-fresh polygon {
+    animation: ts-pulse 2s ease-in-out infinite;
+}
+@keyframes ts-pulse {
+    0%, 100% { stroke-opacity: 1; }
+    50%       { stroke-opacity: 0.3; }
 }
 
 /* =============================================================
@@ -1027,4 +1079,40 @@ body.light .ops-console {
     --ops-red:      #c0392b;
     --ops-amber:    #b36a00;
     --ops-green:    #4e7e00;
+}
+
+/* =============================================================
+   MAP LEGEND
+============================================================= */
+.ops-map-legend {
+    background: rgba(0,0,0,0.75);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 8px 12px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    min-width: 170px;
+}
+.ops-legend-title {
+    font-size: 8px;
+    letter-spacing: 0.18em;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 7px;
+    text-transform: uppercase;
+}
+.ops-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+.ops-legend-row:last-child { margin-bottom: 0; }
+.ops-legend-dot {
+    width: 8px;
+    height: 8px;
+    border: 1.5px solid;
+    border-radius: 50%;
+    flex-shrink: 0;
 }

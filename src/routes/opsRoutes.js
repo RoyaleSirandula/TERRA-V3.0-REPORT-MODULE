@@ -35,8 +35,9 @@ router.use(authenticate);
    acknowledged state across page loads.
 ─────────────────────────────────────────────────────────── */
 router.get('/summary', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
     try {
-        const [rangersResult, threatsResult, sensorsResult, basesResult] = await Promise.all([
+        const [rangersResult, threatsResult, sensorsResult, basesResult, sightingsResult] = await Promise.all([
             pool.query(`
                 SELECT
                     u.user_id,
@@ -78,9 +79,8 @@ router.get('/summary', async (req, res) => {
                 LEFT  JOIN species s ON r.species_id = s.species_id
                 LEFT  JOIN users   u ON r.user_id    = u.user_id
                 WHERE r.sensitivity_tier IN (3, 4)
-                  AND r.created_at > NOW() - INTERVAL '24 hours'
                 ORDER BY r.created_at DESC
-                LIMIT 50
+                LIMIT 200
             `, [req.user.user_id]),
 
             // Sensors: all records, ordered by status then name
@@ -106,6 +106,30 @@ router.get('/summary', async (req, res) => {
                 SELECT base_id, name, lat, lng, sector
                 FROM   command_bases
                 ORDER  BY name ASC
+            `),
+
+            // Field sightings: tier 1–2 reports with coordinates, last 30 days.
+            // Tier 3–4 are already covered by the threats query above.
+            pool.query(`
+                SELECT
+                    r.report_id,
+                    r.sensitivity_tier,
+                    r.validation_status,
+                    r.ai_confidence_score,
+                    r.created_at,
+                    r.description,
+                    r.region_id,
+                    ST_Y(r.geom) AS lat,
+                    ST_X(r.geom) AS lng,
+                    COALESCE(s.common_name, r.species_name_custom, 'Unknown Species') AS species_name,
+                    u.username AS submitted_by
+                FROM  reports r
+                LEFT  JOIN species s ON r.species_id = s.species_id
+                LEFT  JOIN users   u ON r.user_id    = u.user_id
+                WHERE r.sensitivity_tier IN (1, 2)
+                  AND r.geom IS NOT NULL
+                ORDER BY r.created_at DESC
+                LIMIT 500
             `)
         ]);
 
@@ -179,7 +203,22 @@ router.get('/summary', async (req, res) => {
             sector: b.sector || null,
         }));
 
-        res.json({ rangers, threats, alerts, sensors, command_bases });
+        const sightings = sightingsResult.rows.map(r => ({
+            id:           `sighting-${r.report_id}`,
+            report_id:    r.report_id,
+            kind:         r.validation_status === 'VALIDATED' ? 'sighting' : 'report',
+            lat:          r.lat  != null ? parseFloat(r.lat)  : null,
+            lng:          r.lng  != null ? parseFloat(r.lng)  : null,
+            label:        r.species_name,
+            tier:         Number(r.sensitivity_tier),
+            status:       r.validation_status,
+            confidence:   r.ai_confidence_score != null ? r.ai_confidence_score / 100 : null,
+            submitted_by: r.submitted_by || null,
+            description:  r.description  || null,
+            created_at:   r.created_at,
+        }));
+
+        res.json({ rangers, threats, alerts, sensors, command_bases, sightings });
     } catch (err) {
         console.error('[OPS] Summary error:', err.message);
         console.error(err.stack);

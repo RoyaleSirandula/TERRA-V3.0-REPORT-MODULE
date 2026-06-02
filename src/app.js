@@ -35,6 +35,15 @@ app.use(express.urlencoded({ extended: true }));
 // Serve frontend static files from /public
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Serve root assets and HTML pages for the landing pages (terra, solutions, etc.)
+app.use('/assets', express.static(path.join(__dirname, '../assets')));
+const rootPages = ['terra', 'solutions', 'index', 'fieldreporting', 'firemonitoring', 'speciesintel', 'siteanalysis', 'coming-soon', 'kpi', 'goals', 'grant', 'home', 'Ho', 'reticle-preview', 't3', 't4'];
+rootPages.forEach(page => {
+    app.get(`/${page}.html`, (req, res) => {
+        res.sendFile(path.join(__dirname, `../${page}.html`));
+    });
+});
+
 // Serve uploaded media files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
